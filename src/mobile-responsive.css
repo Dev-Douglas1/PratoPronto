@@ -1,0 +1,17 @@
+@media (min-width: 700px) {
+  body { padding: 28px; }
+  .app-shell {
+    min-height: 850px;
+    border-radius: 28px;
+    box-shadow: 0 28px 60px rgba(0,0,0,.5);
+  }
+  .app-screen { min-height: 850px; }
+}
+
+@media (max-width: 360px) {
+  .app-screen { padding: 12px; }
+  .product-grid { gap: 8px; }
+  .product-card img { height: 100px; }
+  .btn { padding-inline: 14px; }
+  .title-pill { font-size: 13px; }
+}
