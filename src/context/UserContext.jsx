@@ -18,18 +18,9 @@ import {
   TERMS_VERSION,
   updateUserProfile,
 } from '../services/storage.js'
+import { criarErroFirebase } from '../utils/firebaseError.js'
 
 const UserContext = createContext(null)
-
-function firebaseMessage(error) {
-  const code = error?.code ?? ''
-  if (code.includes('email-already-in-use')) return 'Este e-mail já está cadastrado.'
-  if (code.includes('invalid-credential')) return 'E-mail ou senha inválidos.'
-  if (code.includes('weak-password')) return 'A senha é muito fraca.'
-  if (code.includes('invalid-email')) return 'Informe um e-mail válido.'
-  if (code.includes('requires-recent-login')) return 'Por segurança, entre novamente antes de excluir sua conta.'
-  return error?.message || 'Não foi possível concluir a operação.'
-}
 
 export function UserProvider({ children }) {
   const [usuario, setUsuario] = useState(null)
@@ -67,33 +58,64 @@ export function UserProvider({ children }) {
   async function entrar(email, senha) {
     if (!firebaseConfigured || !auth) throw new Error('Firebase não configurado.')
     try {
-      const credential = await signInWithEmailAndPassword(auth, email.trim(), senha)
+      const credential = await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), senha)
       const profile = await getUserProfile(credential.user.uid)
-      const finalUser = { uid: credential.user.uid, email: credential.user.email, ...profile }
+      const finalUser = {
+        uid: credential.user.uid,
+        email: credential.user.email,
+        nome: profile?.nome || credential.user.displayName || '',
+        ...profile,
+      }
       setUsuario(finalUser)
       return finalUser
     } catch (error) {
-      throw new Error(firebaseMessage(error))
+      throw criarErroFirebase(error)
     }
   }
 
   async function cadastrar(dados) {
     if (!firebaseConfigured || !auth) throw new Error('Firebase não configurado.')
+    let novoUsuario = null
+
     try {
-      const credential = await createUserWithEmailAndPassword(auth, dados.email.trim(), dados.senha)
-      await updateProfile(credential.user, { displayName: dados.nome.trim() })
-      const profile = await saveUserProfile(credential.user.uid, {
-        ...dados,
+      const credential = await createUserWithEmailAndPassword(
+        auth,
+        dados.email.trim().toLowerCase(),
+        dados.senha,
+      )
+      novoUsuario = credential.user
+
+      await updateProfile(novoUsuario, { displayName: dados.nome.trim() })
+
+      // A senha nunca é enviada ao Firestore. Ela é processada apenas pelo
+      // Firebase Authentication, que mantém a credencial protegida.
+      const profile = await saveUserProfile(novoUsuario.uid, {
+        nome: dados.nome,
         email: credential.user.email,
+        telefone: dados.telefone,
+        endereco: dados.endereco,
+        numero: dados.numero,
+        bairro: dados.bairro,
+        complemento: dados.complemento,
+        aceitarMarketing: dados.aceitarMarketing,
         privacyPolicyVersion: PRIVACY_POLICY_VERSION,
         termsVersion: TERMS_VERSION,
         consentTimestamp: new Date().toISOString(),
       })
-      const finalUser = { uid: credential.user.uid, ...profile }
+      const finalUser = { uid: novoUsuario.uid, ...profile }
       setUsuario(finalUser)
       return finalUser
     } catch (error) {
-      throw new Error(firebaseMessage(error))
+      // Evita conta incompleta caso a gravação do perfil falhe depois que o
+      // usuário foi criado no Authentication.
+      if (novoUsuario && auth.currentUser?.uid === novoUsuario.uid) {
+        try {
+          await deleteUser(novoUsuario)
+        } catch {
+          await signOut(auth).catch(() => undefined)
+        }
+      }
+      throw criarErroFirebase(error)
     }
   }
 
@@ -113,7 +135,7 @@ export function UserProvider({ children }) {
       setUsuario(finalUser)
       return finalUser
     } catch (error) {
-      throw new Error(firebaseMessage(error))
+      throw criarErroFirebase(error)
     }
   }
 
@@ -133,7 +155,7 @@ export function UserProvider({ children }) {
       await deleteUser(auth.currentUser)
       setUsuario(null)
     } catch (error) {
-      throw new Error(firebaseMessage(error))
+      throw criarErroFirebase(error)
     }
   }
 

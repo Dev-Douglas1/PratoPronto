@@ -26,3 +26,5 @@
 8. Calcular/validar preços e pagamentos em backend confiável antes do uso comercial. Não confie no total enviado pelo navegador.
 9. Para status de entrega, criar backend/painel administrativo com autorização própria; clientes não devem editar status do pedido.
 10. Habilitar HTTPS no domínio final e manter dependências atualizadas.
+11. Ativar a proteção contra enumeração de e-mails no Firebase Authentication.
+12. Configurar Firebase App Check com reCAPTCHA Enterprise, monitorar as métricas e só então habilitar a aplicação obrigatória.

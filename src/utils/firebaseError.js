@@ -11,6 +11,9 @@ export function traduzirErroFirebase(error) {
   }
 
   const mensagens = {
+    'auth/configuration-not-found':
+      'O login por e-mail ainda não foi ativado. No Firebase, abra Authentication → Método de login → E-mail/senha, ative e salve.',
+
     'auth/email-already-in-use':
       'Este e-mail já está cadastrado. Tente entrar na sua conta.',
 
@@ -24,7 +27,10 @@ export function traduzirErroFirebase(error) {
       'Digite uma senha.',
 
     'auth/operation-not-allowed':
-      'O cadastro por e-mail e senha ainda não foi ativado no Firebase.',
+      'O login por e-mail ainda não foi ativado. No Firebase, abra Authentication → Método de login → E-mail/senha, ative e salve.',
+
+    'auth/unauthorized-domain':
+      'Este endereço do Codespace não está autorizado no Firebase. Adicione o domínio atual em Authentication → Configurações → Domínios autorizados.',
 
     'auth/network-request-failed':
       'Não foi possível conectar ao Firebase. Verifique sua internet.',
@@ -55,4 +61,11 @@ export function traduzirErroFirebase(error) {
     mensagens[codigo] ||
     'Não foi possível concluir a operação. Confira os dados e tente novamente.'
   )
+}
+
+export function criarErroFirebase(error) {
+  const erroTraduzido = new Error(traduzirErroFirebase(error))
+  erroTraduzido.code = error?.code || ''
+  erroTraduzido.cause = error
+  return erroTraduzido
 }

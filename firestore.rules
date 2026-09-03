@@ -12,17 +12,99 @@ service cloud.firestore {
              request.auth.uid == userId;
     }
 
+    function textoValido(valor, maximo) {
+      return valor is string && valor.size() <= maximo;
+    }
+
+    function perfilValido() {
+      return request.resource.data.keys().hasOnly([
+               "nome",
+               "email",
+               "telefone",
+               "endereco",
+               "numero",
+               "bairro",
+               "complemento",
+               "aceitarMarketing",
+               "privacyPolicyVersion",
+               "termsVersion",
+               "consentTimestamp",
+               "updatedAt"
+             ])
+             && request.resource.data.keys().hasAll([
+               "nome",
+               "email",
+               "telefone",
+               "endereco",
+               "numero",
+               "bairro",
+               "complemento",
+               "aceitarMarketing",
+               "privacyPolicyVersion",
+               "termsVersion",
+               "consentTimestamp",
+               "updatedAt"
+             ])
+             && textoValido(request.resource.data.nome, 100)
+             && textoValido(request.resource.data.email, 254)
+             && textoValido(request.resource.data.telefone, 30)
+             && textoValido(request.resource.data.endereco, 180)
+             && textoValido(request.resource.data.numero, 20)
+             && textoValido(request.resource.data.bairro, 100)
+             && textoValido(request.resource.data.complemento, 180)
+             && request.resource.data.aceitarMarketing is bool
+             && textoValido(request.resource.data.privacyPolicyVersion, 40)
+             && textoValido(request.resource.data.termsVersion, 40)
+             && textoValido(request.resource.data.consentTimestamp, 50)
+             && request.resource.data.updatedAt == request.time
+             && request.auth.token.email is string
+             && request.resource.data.email == request.auth.token.email;
+    }
+
+    function clienteValido(cliente) {
+      return cliente is map
+             && cliente.keys().hasOnly(["nome", "email", "telefone"])
+             && textoValido(cliente.nome, 100)
+             && textoValido(cliente.email, 254)
+             && textoValido(cliente.telefone, 30)
+             && cliente.email == request.auth.token.email;
+    }
+
+    function entregaValida(entrega) {
+      return entrega is map
+             && entrega.keys().hasOnly([
+               "endereco", "numero", "bairro", "complemento"
+             ])
+             && textoValido(entrega.endereco, 180)
+             && textoValido(entrega.numero, 20)
+             && textoValido(entrega.bairro, 100)
+             && textoValido(entrega.complemento, 180);
+    }
+
+    function pagamentoValido(pagamento) {
+      return pagamento is map
+             && pagamento.keys().hasOnly(["metodo", "referencia"])
+             && textoValido(pagamento.metodo, 60)
+             && textoValido(pagamento.referencia, 160);
+    }
+
     // =========================
     // DADOS DO USUÁRIO
     // =========================
 
     match /users/{userId} {
 
-      allow create: if ehDono(userId);
+      allow create: if ehDono(userId)
+        && perfilValido();
 
       allow read: if ehDono(userId);
 
-      allow update: if ehDono(userId);
+      allow update: if ehDono(userId)
+        && perfilValido()
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.privacyPolicyVersion == resource.data.privacyPolicyVersion
+        && request.resource.data.termsVersion == resource.data.termsVersion
+        && request.resource.data.consentTimestamp == resource.data.consentTimestamp;
 
       allow delete: if ehDono(userId);
     }
@@ -44,8 +126,20 @@ service cloud.firestore {
           "pagamento",
           "status",
           "createdAt",
-          "updatedAt"
-        ]);
+              "updatedAt"
+            ])
+        && clienteValido(request.resource.data.cliente)
+        && entregaValida(request.resource.data.entrega)
+        && request.resource.data.itens is list
+        && request.resource.data.itens.size() > 0
+        && request.resource.data.itens.size() <= 50
+        && request.resource.data.total is number
+        && request.resource.data.total > 0
+        && request.resource.data.total <= 50000
+        && pagamentoValido(request.resource.data.pagamento)
+        && request.resource.data.status == "Pedido confirmado • preparando"
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
 
       allow read: if estaLogado()
         && resource.data.userId == request.auth.uid;
