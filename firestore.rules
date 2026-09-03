@@ -1,0 +1,69 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function estaLogado() {
+      return request.auth != null;
+    }
+
+    function ehDono(userId) {
+      return estaLogado() &&
+             request.auth.uid == userId;
+    }
+
+    // =========================
+    // DADOS DO USUÁRIO
+    // =========================
+
+    match /users/{userId} {
+
+      allow create: if ehDono(userId);
+
+      allow read: if ehDono(userId);
+
+      allow update: if ehDono(userId);
+
+      allow delete: if ehDono(userId);
+    }
+
+    // =========================
+    // PEDIDOS
+    // =========================
+
+    match /orders/{orderId} {
+
+      allow create: if estaLogado()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.keys().hasOnly([
+          "userId",
+          "cliente",
+          "entrega",
+          "itens",
+          "total",
+          "pagamento",
+          "status",
+          "createdAt",
+          "updatedAt"
+        ]);
+
+      allow read: if estaLogado()
+        && resource.data.userId == request.auth.uid;
+
+      allow delete: if estaLogado()
+        && resource.data.userId == request.auth.uid;
+
+      // O cliente não pode alterar sozinho
+      // preço, itens ou status do pedido.
+      allow update: if false;
+    }
+
+    // =========================
+    // BLOQUEIA TODO O RESTO
+    // =========================
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

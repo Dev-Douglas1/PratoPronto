@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext.jsx'
 
-export default function TopBar({ titulo, voltar = true, carrinho = false }) {
+export default function TopBar({ titulo, voltar = true, carrinho = false, perfil = false }) {
   const navigate = useNavigate()
   const { quantidadeTotal } = useCart()
 
@@ -25,6 +25,10 @@ export default function TopBar({ titulo, voltar = true, carrinho = false }) {
         >
           🛒
           {quantidadeTotal > 0 && <span className="cart-count">{quantidadeTotal}</span>}
+        </button>
+      ) : perfil ? (
+        <button className="icon-button" onClick={() => navigate('/perfil')} aria-label="Abrir perfil">
+          ☺
         </button>
       ) : (
         <span />

@@ -24,6 +24,7 @@ export default function Bebidas() {
         <button className="btn btn-secondary" onClick={() => navigate('/pizzas')}>Ver pizzas</button>
         <button className="btn btn-primary" onClick={() => navigate('/pedido')}>Ver pedido</button>
       </BottomActions>
+      <button className="btn ghost-button wide-button" onClick={() => navigate('/perfil')}>Meu perfil</button>
     </AppScreen>
   )
 }

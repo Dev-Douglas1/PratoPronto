@@ -1,6 +1,20 @@
-# PratoPronto — React + Vite
+# PratoPronto — React + Firebase
 
-Versão do aplicativo **PratoPronto** organizada em React, usando componentes, páginas, rotas e arquivos separados, seguindo a estrutura sugerida no projeto de referência.
+Versão reorganizada para transformar o protótipo em uma base mais segura para publicação.
+
+## O que foi corrigido
+
+- React com páginas, componentes, contexto e serviços separados.
+- Firebase Authentication para cadastro/login: a senha não é salva no Firestore nem no localStorage.
+- Cloud Firestore para perfil e pedidos.
+- Carrinho permanece no localStorage apenas para conveniência do usuário.
+- Área `Privacidade` com exportação, correção e exclusão dos dados da conta.
+- Consentimento de marketing separado e opcional.
+- Registro da versão da Política de Privacidade/Termos aceita pelo usuário.
+- Política de Privacidade e Termos de Uso dentro do app.
+- Regras do Firestore para impedir que um usuário leia os dados de outro.
+- Pagamento demonstrativo sem persistir número do cartão ou CVV.
+- Imagens dos produtos refeitas em SVG local, centralizadas e condizentes com o nome de cada pizza/bebida.
 
 ## Estrutura
 
@@ -8,24 +22,21 @@ Versão do aplicativo **PratoPronto** organizada em React, usando componentes, p
 src/
 ├── App.jsx
 ├── App.css
-├── index.css
-├── index.jsx
 ├── firebase.js
-├── mobile-responsive.css
-│
+├── config/
+│   └── privacy.js
 ├── components/
 │   ├── AppScreen.jsx
 │   ├── BottomActions.jsx
 │   ├── ProductCard.jsx
 │   ├── ProductGrid.jsx
+│   ├── ProtectedRoute.jsx
 │   └── TopBar.jsx
-│
 ├── context/
-│   └── CartContext.jsx
-│
+│   ├── CartContext.jsx
+│   └── UserContext.jsx
 ├── data/
 │   └── produtos.js
-│
 ├── pages/
 │   ├── Home.jsx
 │   ├── Login.jsx
@@ -34,69 +45,98 @@ src/
 │   ├── Bebidas.jsx
 │   ├── Pedido.jsx
 │   ├── Pagamento.jsx
-│   └── Acompanhamento.jsx
-│
+│   ├── Acompanhamento.jsx
+│   ├── Perfil.jsx
+│   ├── PrivacidadeDados.jsx
+│   ├── PoliticaPrivacidade.jsx
+│   └── TermosUso.jsx
+├── services/
+│   └── storage.js
 └── utils/
-    ├── cartao.js
-    └── moeda.js
 ```
 
-## O que cada parte faz
+## 1. Configurar Firebase
 
-- `Home.jsx`: tela inicial com logo e botão Entrar.
-- `Login.jsx`: login demonstrativo.
-- `Cadastro.jsx`: cadastro demonstrativo.
-- `Pizzas.jsx`: lista e pesquisa de pizzas.
-- `Bebidas.jsx`: lista e pesquisa de bebidas.
-- `Pedido.jsx`: carrinho, quantidades e total.
-- `Pagamento.jsx`: formulário de cartão e total da compra.
-- `Acompanhamento.jsx`: acompanhamento ilustrativo da entrega.
-- `produtos.js`: dados das pizzas e bebidas.
-- `CartContext.jsx`: carrinho compartilhado entre as páginas e salvo no `localStorage`.
-- `firebase.js`: configuração preparada para Firebase por variáveis de ambiente.
-- `utils/`: funções pequenas reutilizáveis, como moeda e formatação de cartão.
+No Firebase Console:
 
-## Rodando no GitHub Codespaces
-
-1. Suba todo o projeto para um repositório no GitHub.
-2. Abra **Code → Codespaces → Create codespace on main**.
-3. O Codespace executa `npm install` automaticamente.
-4. No terminal, rode:
-
-```bash
-npm run dev
-```
-
-5. Abra a porta `5173` quando o Codespaces oferecer o preview.
-
-## Firebase
-
-O projeto funciona em modo demonstração mesmo sem Firebase.
-
-Se quiser ativar Firebase, copie `.env.example` para `.env` e preencha os valores do projeto criado no Firebase Console.
+1. Crie um projeto.
+2. Adicione um **Web App**.
+3. Em **Authentication**, ative `Email/Password`.
+4. Em **Firestore Database**, crie o banco.
+5. Copie `.env.example` para `.env`.
+6. Preencha as variáveis `VITE_FIREBASE_*` com os dados do seu projeto.
+7. Preencha `VITE_CONTROLLER_NAME` e `VITE_PRIVACY_EMAIL` com os dados reais do responsável pelo aplicativo.
 
 ```bash
 cp .env.example .env
 ```
 
-Nunca coloque senhas ou chaves privadas no GitHub. As chaves web públicas do Firebase devem ser configuradas nas variáveis `VITE_FIREBASE_*`.
+Não coloque senhas, chaves privadas ou credenciais de servidor no `.env`. As chaves Web do Firebase identificam o projeto; a proteção do banco depende principalmente de Authentication + Security Rules.
 
-## Rotas
+## 2. Aplicar as regras do Firestore
 
-- `/` — início
-- `/login` — login
-- `/cadastro` — cadastro
-- `/pizzas` — pizzas
-- `/bebidas` — bebidas
-- `/pedido` — carrinho
-- `/pagamento` — pagamento
-- `/acompanhamento` — acompanhamento
+O arquivo `firestore.rules` já está no projeto.
 
-## Próximas melhorias sugeridas
+Você pode copiar seu conteúdo para **Firestore > Rules** no Firebase Console ou usar o Firebase CLI.
 
-- Firebase Authentication real.
-- Firestore para produtos e pedidos.
-- Endereço de entrega.
-- PIX e outras formas de pagamento.
-- Painel administrativo para cadastrar produtos.
-- Mapa real com API de mapas.
+```bash
+npm install -g firebase-tools
+firebase login
+firebase init firestore
+firebase deploy --only firestore:rules
+```
+
+Se `firebase init` perguntar pelo arquivo de regras, use `firestore.rules`.
+
+## 3. Rodar
+
+```bash
+npm install
+npm run dev
+```
+
+No Codespaces, abra a porta `5173`.
+
+## Dados salvos
+
+### `users/{uid}`
+
+- nome
+- e-mail
+- telefone
+- endereço
+- número
+- bairro
+- complemento
+- preferência de marketing
+- versão da Política de Privacidade
+- versão dos Termos
+- data/hora do aceite
+
+### `orders/{orderId}`
+
+- dono do pedido (`userId`)
+- itens e quantidades
+- total
+- dados mínimos de contato
+- endereço usado na entrega
+- status
+- método/referência não sensível de pagamento
+- timestamps
+
+### Não salvar
+
+- senha do usuário
+- número completo do cartão
+- CVV
+- PIN/senha do cartão
+
+## Pagamento
+
+A tela atual é **demonstrativa**. Antes de cobrar clientes reais, substitua o fluxo por Mercado Pago, Stripe ou outro gateway de pagamento com tokenização. Os dados brutos do cartão não devem ser enviados ao Firestore.
+
+## LGPD
+
+O projeto implementa mecanismos técnicos úteis para LGPD: transparência, separação do consentimento de marketing, acesso/exportação, correção, exclusão, autenticação, minimização de dados e regras de acesso.
+
+Isso não substitui a parte jurídica/operacional: antes do lançamento comercial, preencha o controlador e o canal de privacidade reais, defina retenção, fornecedores, atendimento de solicitações, resposta a incidentes e revise Política/Termos conforme a operação real.
