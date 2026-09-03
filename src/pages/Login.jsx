@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
+import BrandMark from '../components/BrandMark.jsx'
 import { useUser } from '../context/UserContext.jsx'
 
 export default function Login() {
@@ -39,33 +40,38 @@ export default function Login() {
   return (
     <AppScreen className="centered-screen">
       <div className="login-wrapper">
-        <div className="avatar-placeholder" />
+        <BrandMark compact />
         <form className="login-card" onSubmit={handleEntrar}>
-          <h2>faça seu login</h2>
+          <span className="eyebrow">BEM-VINDO DE VOLTA</span>
+          <h2>Entre para fazer seu pedido</h2>
+          <label htmlFor="login-email">E-mail</label>
           <input
+            id="login-email"
             type="email"
             value={usuario}
             onChange={(e) => setUsuario(e.target.value)}
             placeholder="Seu e-mail"
             autoComplete="username"
           />
+          <label htmlFor="login-senha">Senha</label>
           <input
+            id="login-senha"
             type="password"
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
             placeholder="Senha"
             autoComplete="current-password"
           />
-          {erro && <p className="form-error">{erro}</p>}
+          {erro && <p className="form-error" role="alert">{erro}</p>}
           <button className="btn btn-primary" type="submit" disabled={enviando}>
-            {enviando ? 'entrando...' : 'entrar'}
+            {enviando ? 'Entrando...' : 'Entrar'}
           </button>
-          <Link className="text-link" to="/cadastro">Criar uma conta</Link>
+          <p className="auth-switch">Ainda não tem uma conta? <Link to="/cadastro">Cadastre-se</Link></p>
           <div className="legal-links">
             <Link to="/politica-de-privacidade">Política de Privacidade</Link>
             <Link to="/termos-de-uso">Termos de Uso</Link>
           </div>
-          <small className="demo-note">Senha gerenciada pelo Firebase Authentication. O PratoPronto não salva sua senha no banco do aplicativo.</small>
+          <small className="demo-note">🔒 Sua senha é protegida pelo Firebase e não fica salva no banco do PratoPronto.</small>
         </form>
       </div>
     </AppScreen>

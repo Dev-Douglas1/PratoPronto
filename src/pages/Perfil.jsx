@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
 import TopBar from '../components/TopBar.jsx'
 import { useUser } from '../context/UserContext.jsx'
+import BottomNav from '../components/BottomNav.jsx'
 
 export default function Perfil() {
   const navigate = useNavigate()
@@ -36,8 +37,12 @@ export default function Perfil() {
   if (!usuario) return <Navigate to="/login" replace />
 
   return (
-    <AppScreen>
+    <AppScreen className="screen-with-nav">
       <TopBar titulo="Meu perfil" />
+      <div className="profile-heading">
+        <div className="profile-avatar">{(usuario.nome || usuario.email || 'U').charAt(0).toUpperCase()}</div>
+        <div><span className="eyebrow">MINHA CONTA</span><h1>{usuario.nome || 'Cliente PratoPronto'}</h1><p>{usuario.email}</p></div>
+      </div>
       <form className="light-card form-card" onSubmit={salvar}>
         <label>Nome</label>
         <input name="nome" value={form.nome ?? ''} onChange={handleChange} />
@@ -66,6 +71,7 @@ export default function Perfil() {
         <button className="btn ghost-button" type="button" onClick={() => navigate('/privacidade')}>Privacidade e meus dados</button>
         <button className="btn btn-secondary" type="button" onClick={async () => { await sair(); navigate('/login') }}>Sair</button>
       </form>
+      <BottomNav />
     </AppScreen>
   )
 }

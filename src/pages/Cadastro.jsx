@@ -136,8 +136,14 @@ export default function Cadastro() {
   }
 
   return (
-    <AppScreen>
+    <AppScreen className="auth-page">
       <TopBar titulo="Cadastro" />
+
+      <div className="page-heading">
+        <span className="eyebrow">NOVO CLIENTE</span>
+        <h1>Crie sua conta</h1>
+        <p>Preencha seus dados para receber o pedido no endereço certo.</p>
+      </div>
 
       <form
         className="light-card form-card"

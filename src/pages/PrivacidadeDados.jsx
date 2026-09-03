@@ -57,6 +57,7 @@ export default function PrivacidadeDados() {
     <AppScreen>
       <TopBar titulo="Privacidade" />
       <div className="light-card legal-card">
+        <div className="privacy-hero-icon">🔒</div>
         <h3>Controle dos seus dados</h3>
         <p>Você pode acessar uma cópia dos dados, corrigir seu perfil, revogar marketing e solicitar a exclusão da conta.</p>
         <ul>

@@ -14,13 +14,19 @@ export default function ProductCard({ produto }) {
 
   return (
     <article className="product-card">
-      <img src={produto.imagem} alt={produto.nome} />
+      <div className="product-card__image">
+        <img src={produto.imagem} alt={produto.nome} loading="lazy" />
+        <span className="product-card__tag">Feito na hora</span>
+      </div>
       <div className="product-card-content">
         <h3>{produto.nome}</h3>
         <p>{produto.descricao}</p>
         <div className="product-card-bottom">
-          <strong>{formatarMoeda(produto.preco)}</strong>
-          <button className="add-button" onClick={handleAdd} aria-label={`Adicionar ${produto.nome}`}>
+          <div className="product-price">
+            <small>A partir de</small>
+            <strong>{formatarMoeda(produto.preco)}</strong>
+          </div>
+          <button type="button" className={`add-button ${adicionado ? 'is-added' : ''}`} onClick={handleAdd} aria-label={`Adicionar ${produto.nome}`}>
             {adicionado ? '✓' : '+'}
           </button>
         </div>

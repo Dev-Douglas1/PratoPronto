@@ -4,6 +4,7 @@ import TopBar from '../components/TopBar.jsx'
 import { useCart } from '../context/CartContext.jsx'
 import { formatarMoeda } from '../utils/moeda.js'
 import { useUser } from '../context/UserContext.jsx'
+import BottomNav from '../components/BottomNav.jsx'
 
 export default function Pedido() {
   const navigate = useNavigate()
@@ -11,13 +12,21 @@ export default function Pedido() {
   const { usuario } = useUser()
 
   return (
-    <AppScreen>
+    <AppScreen className="screen-with-nav">
       <TopBar titulo="Pedidos" perfil />
+      <div className="page-heading">
+        <span className="eyebrow">SEU CARRINHO</span>
+        <h1>Revise o pedido</h1>
+        <p>Confira os itens antes de seguir para o pagamento.</p>
+      </div>
       {usuario && (
         <div className="delivery-summary">
-          <strong>Entrega para:</strong>
-          <span>{usuario.endereco}, {usuario.numero} • {usuario.bairro}</span>
-          {usuario.complemento ? <small>{usuario.complemento}</small> : null}
+          <span className="delivery-summary__icon">⌂</span>
+          <div>
+            <strong>Entregar em</strong>
+            <span>{usuario.endereco}, {usuario.numero} • {usuario.bairro}</span>
+            {usuario.complemento ? <small>{usuario.complemento}</small> : null}
+          </div>
         </div>
       )}
       <div className="cart-panel">
@@ -29,7 +38,8 @@ export default function Pedido() {
         ) : (
           lista.map(({ produto, quantidade }) => (
             <div className="cart-item" key={produto.id}>
-              <div>
+              <img src={produto.imagem} alt="" />
+              <div className="cart-item__copy">
                 <strong>{produto.nome}</strong>
                 <small>{formatarMoeda(produto.preco * quantidade)}</small>
               </div>
@@ -43,7 +53,7 @@ export default function Pedido() {
         )}
 
         <div className="order-total">
-          <span>Valor:</span>
+          <span>Total do pedido</span>
           <strong>{formatarMoeda(total)}</strong>
         </div>
 
@@ -52,6 +62,7 @@ export default function Pedido() {
           <button className="btn btn-primary" disabled={!lista.length} onClick={() => navigate('/pagamento')}>Pagar</button>
         </div>
       </div>
+      <BottomNav />
     </AppScreen>
   )
 }

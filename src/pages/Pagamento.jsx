@@ -78,13 +78,20 @@ export default function Pagamento() {
 
   return (
     <AppScreen>
-      <TopBar titulo="Pagamento:" perfil />
+      <TopBar titulo="Pagamento" perfil />
+      <div className="page-heading">
+        <span className="eyebrow">FINALIZAR PEDIDO</span>
+        <h1>Pagamento seguro</h1>
+        <p>Nesta demonstração, nenhum dado do cartão será armazenado.</p>
+      </div>
       <form className="light-card payment-card" onSubmit={confirmar}>
-        <div className="card-brands"><span>VISA</span><span>Mastercard</span></div>
+        <div className="payment-title">
+          <div><span>💳</span><strong>Cartão de crédito</strong></div>
+          <div className="card-brands"><span>VISA</span><span>mastercard</span></div>
+        </div>
         <div className="privacy-badge">Pagamento demonstrativo. Número do cartão e CVV ficam somente na memória desta tela e não são salvos.</div>
-        <label>Total</label>
-        <input value={formatarMoeda(total)} disabled />
-        <label>Nº cartão</label>
+        <div className="payment-total"><span>Total</span><strong>{formatarMoeda(total)}</strong></div>
+        <label>Número do cartão</label>
         <input
           inputMode="numeric"
           autoComplete="cc-number"
@@ -110,7 +117,7 @@ export default function Pagamento() {
             <span>{usuario.endereco}, {usuario.numero} • {usuario.bairro}</span>
           </div>
         )}
-        {erro && <p className="form-error dark-error">{erro}</p>}
+        {erro && <p className="form-error dark-error" role="alert">{erro}</p>}
         <button className="btn btn-primary" disabled={enviando} type="submit">{enviando ? 'Confirmando...' : 'Confirmar'}</button>
         <button className="btn btn-secondary" type="button" onClick={() => navigate('/pedido')}>Cancelar</button>
       </form>
