@@ -52,10 +52,16 @@ export async function getUserProfile(uid) {
 
 export async function updateUserProfile(uid, partial) {
   requireFirebase()
-  const safe = { ...partial }
-  delete safe.senha
-  delete safe.password
-  safe.updatedAt = serverTimestamp()
+  const safe = {
+    nome: partial.nome?.trim() ?? '',
+    telefone: partial.telefone?.trim() ?? '',
+    endereco: partial.endereco?.trim() ?? '',
+    numero: partial.numero?.trim() ?? '',
+    bairro: partial.bairro?.trim() ?? '',
+    complemento: partial.complemento?.trim() ?? '',
+    aceitarMarketing: Boolean(partial.aceitarMarketing),
+    updatedAt: serverTimestamp(),
+  }
   await updateDoc(doc(db, 'users', uid), safe)
   return getUserProfile(uid)
 }

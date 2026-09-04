@@ -51,16 +51,28 @@ export default function Acompanhamento() {
   return (
     <AppScreen>
       <TopBar titulo="Acompanhamento do pedido" perfil />
+      <div className="page-heading">
+        <span className="eyebrow">ACOMPANHE EM TEMPO REAL</span>
+        <h1>Seu pedido está a caminho</h1>
+      </div>
       {order ? (
         <div className="delivery-summary">
-          <strong>Pedido #{order.id.slice(0, 8)}</strong>
-          <span>Total: {formatarMoeda(order.total)}</span>
-          <small>{order.entrega.endereco}, {order.entrega.numero} • {order.entrega.bairro}</small>
-          <small>Pagamento: {order.pagamento.metodo}</small>
+          <span className="delivery-summary__icon">✓</span>
+          <div>
+            <strong>Pedido #{order.id.slice(0, 8)}</strong>
+            <span>Total: {formatarMoeda(order.total)}</span>
+            <small>{order.entrega.endereco}, {order.entrega.numero} • {order.entrega.bairro}</small>
+          </div>
         </div>
       ) : null}
       <div className="status-badge">{status}</div>
       {erro && <p className="form-error">{erro}</p>}
+      <div className="order-progress" aria-label="Etapas do pedido">
+        <div className="is-done"><i>✓</i><span><strong>Pedido confirmado</strong><small>Recebemos seu pedido</small></span></div>
+        <div className="is-current"><i>2</i><span><strong>Preparando</strong><small>Sua pizza está no forno</small></span></div>
+        <div><i>3</i><span><strong>Saiu para entrega</strong><small>O entregador está a caminho</small></span></div>
+        <div><i>4</i><span><strong>Entregue</strong><small>Bom apetite!</small></span></div>
+      </div>
       <div className="map-card" aria-label="Mapa ilustrativo de entrega">
         <div className="road road-one" />
         <div className="road road-two" />
@@ -70,7 +82,7 @@ export default function Acompanhamento() {
         <span className="map-label restaurant-label">🍕 PratoPronto</span>
         <span className="map-label home-label">🏠 Você</span>
       </div>
-      <button className="btn btn-primary wide-button" disabled={!order} onClick={acompanhar}>Atualizar status</button>
+      <button className="btn btn-primary wide-button" disabled={!order} onClick={acompanhar}>Atualizar acompanhamento</button>
       <button className="btn ghost-button wide-button" onClick={() => navigate('/pizzas')}>Fazer novo pedido</button>
     </AppScreen>
   )
