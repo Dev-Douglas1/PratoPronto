@@ -2,7 +2,7 @@ name: Verificar PratoPronto
 
 on:
   push:
-    branches: [main, codex/auditoria-geral-pratopronto]
+    branches: [main, codex/auditoria-geral-pratopronto, codex/mobile-pwa-security]
   pull_request:
     branches: [main]
 
@@ -51,7 +51,7 @@ jobs:
       - name: Compilar aplicação
         run: npm run build
 
-      - name: Testar build e rotas SPA
+      - name: Testar build, PWA e rotas SPA
         shell: bash
         run: |
           npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/pratopronto-preview.log 2>&1 &
@@ -71,9 +71,15 @@ jobs:
             grep -q 'id="root"' /tmp/page.html
           done
 
-          curl -fsS http://127.0.0.1:4173/manifest.webmanifest >/dev/null
+          curl -fsS http://127.0.0.1:4173/manifest.webmanifest -o /tmp/manifest.json
+          grep -q '"display": "standalone"' /tmp/manifest.json
+          grep -q '"sizes": "192x192"' /tmp/manifest.json
+          grep -q '"sizes": "512x512"' /tmp/manifest.json
           curl -fsS http://127.0.0.1:4173/sw.js >/dev/null
           curl -fsS http://127.0.0.1:4173/pwa-icon.svg >/dev/null
+          curl -fsS http://127.0.0.1:4173/icons/icon-192.png >/dev/null
+          curl -fsS http://127.0.0.1:4173/icons/icon-512.png >/dev/null
+          curl -fsS http://127.0.0.1:4173/icons/apple-touch-icon.png >/dev/null
           curl -fsS http://127.0.0.1:4173/images/produtos/pizza-calabresa.webp >/dev/null
 
           cleanup

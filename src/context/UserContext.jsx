@@ -27,15 +27,20 @@ import { criarErroFirebase } from '../utils/firebaseError.js'
 
 const UserContext = createContext(null)
 
+function adminPermitido(firebaseUser, admin) {
+  if (!firebaseUser?.emailVerified) return false
+  return admin?.role === 'restaurant_admin' || firebaseUser.email?.toLowerCase() === TEST_ADMIN_EMAIL
+}
+
 async function buildUser(firebaseUser) {
   const profile = await getUserProfile(firebaseUser.uid).catch(() => null)
   let admin = await getAdminAccess(firebaseUser.uid).catch(() => null)
 
-  if (!admin && firebaseUser.email?.toLowerCase() === TEST_ADMIN_EMAIL) {
+  if (!admin && firebaseUser.emailVerified && firebaseUser.email?.toLowerCase() === TEST_ADMIN_EMAIL) {
     admin = await ensureTestAdminAccess(firebaseUser.uid, firebaseUser.email).catch(() => null)
   }
 
-  const isAdmin = admin?.role === 'restaurant_admin' || firebaseUser.email?.toLowerCase() === TEST_ADMIN_EMAIL
+  const isAdmin = adminPermitido(firebaseUser, admin)
 
   return {
     uid: firebaseUser.uid,
@@ -45,7 +50,7 @@ async function buildUser(firebaseUser) {
     ...profile,
     admin: isAdmin,
     role: isAdmin ? 'restaurant_admin' : 'customer',
-    permissions: admin?.permissions ?? [],
+    permissions: isAdmin ? (admin?.permissions ?? []) : [],
   }
 }
 
@@ -69,13 +74,15 @@ export function UserProvider({ children }) {
       try {
         setUsuario(await buildUser(firebaseUser))
       } catch {
+        const isAdmin = firebaseUser.emailVerified && firebaseUser.email?.toLowerCase() === TEST_ADMIN_EMAIL
         setUsuario({
           uid: firebaseUser.uid,
           email: firebaseUser.email,
           nome: firebaseUser.displayName || '',
           emailVerified: firebaseUser.emailVerified,
-          admin: firebaseUser.email?.toLowerCase() === TEST_ADMIN_EMAIL,
-          role: firebaseUser.email?.toLowerCase() === TEST_ADMIN_EMAIL ? 'restaurant_admin' : 'customer',
+          admin: isAdmin,
+          role: isAdmin ? 'restaurant_admin' : 'customer',
+          permissions: [],
         })
       } finally {
         setLoading(false)
@@ -124,14 +131,13 @@ export function UserProvider({ children }) {
       })
 
       await sendEmailVerification(novoUsuario).catch(() => undefined)
-      const admin = await ensureTestAdminAccess(novoUsuario.uid, credential.user.email).catch(() => null)
-      const isAdmin = admin?.role === 'restaurant_admin' || credential.user.email?.toLowerCase() === TEST_ADMIN_EMAIL
       const finalUser = {
         uid: novoUsuario.uid,
         ...profile,
         emailVerified: novoUsuario.emailVerified,
-        admin: isAdmin,
-        role: isAdmin ? 'restaurant_admin' : 'customer',
+        admin: false,
+        role: 'customer',
+        permissions: [],
       }
       setUsuario(finalUser)
       return finalUser
