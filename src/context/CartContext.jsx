@@ -28,6 +28,18 @@ function precoUnitario(item) {
   return Number(item.produto.preco || 0) + Number(item.personalizacao?.ajuste || 0)
 }
 
+function quantidadeDoProduto(itens, produtoId) {
+  return Object.values(itens).reduce(
+    (total, item) => total + (item?.produto?.id === produtoId ? Number(item.quantidade || 0) : 0),
+    0,
+  )
+}
+
+function limiteDeEstoque(produto) {
+  const stock = Number(produto?.stock)
+  return Number.isFinite(stock) && stock >= 0 ? Math.floor(stock) : Infinity
+}
+
 export function CartProvider({ children }) {
   const [itens, setItens] = useState(carregarCarrinho)
 
@@ -35,17 +47,30 @@ export function CartProvider({ children }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(itens))
   }, [itens])
 
+  function podeAdicionar(produto) {
+    if (!produto || produto.available === false) return false
+    return quantidadeDoProduto(itens, produto.id) < limiteDeEstoque(produto)
+  }
+
   function adicionar(produto, personalizacao = null) {
+    if (!produto || produto.available === false) return
     const cartId = cartIdFor(produto, personalizacao)
-    setItens((atual) => ({
-      ...atual,
-      [cartId]: {
-        cartId,
-        produto,
-        personalizacao,
-        quantidade: (atual[cartId]?.quantidade ?? 0) + 1,
-      },
-    }))
+
+    setItens((atual) => {
+      const stock = limiteDeEstoque(produto)
+      const quantidadeAtual = quantidadeDoProduto(atual, produto.id)
+      if (quantidadeAtual >= stock) return atual
+
+      return {
+        ...atual,
+        [cartId]: {
+          cartId,
+          produto,
+          personalizacao,
+          quantidade: (atual[cartId]?.quantidade ?? 0) + 1,
+        },
+      }
+    })
   }
 
   function remover(cartId) {
@@ -78,7 +103,7 @@ export function CartProvider({ children }) {
   )
 
   const valor = useMemo(
-    () => ({ itens, lista, quantidadeTotal, total, adicionar, remover, limpar, precoUnitario }),
+    () => ({ itens, lista, quantidadeTotal, total, adicionar, remover, limpar, precoUnitario, podeAdicionar }),
     [itens, lista, quantidadeTotal, total],
   )
 

@@ -21,7 +21,7 @@ export function traduzirErroFirebase(error) {
       'Digite um endereço de e-mail válido.',
 
     'auth/weak-password':
-      'A senha é muito fraca. Use pelo menos 6 caracteres.',
+      'A senha é muito fraca. Use pelo menos 8 caracteres, com letra e número.',
 
     'auth/missing-password':
       'Digite uma senha.',
@@ -51,7 +51,7 @@ export function traduzirErroFirebase(error) {
       'Esta conta foi desativada.',
 
     'permission-denied':
-      'Você não tem permissão para realizar esta operação.',
+      'Você não tem permissão para realizar esta operação. Confirme se as regras atuais do Firestore foram publicadas.',
 
     unavailable:
       'O serviço está temporariamente indisponível. Tente novamente.'
