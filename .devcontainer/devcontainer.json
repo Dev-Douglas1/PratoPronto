@@ -1,0 +1,12 @@
+{
+  "name": "PratoPronto Codespace",
+  "forwardPorts": [5173],
+  "portsAttributes": {
+    "5173": {
+      "label": "PratoPronto (Vite)",
+      "onAutoForward": "openBrowser",
+      "protocol": "http"
+    }
+  },
+  "postCreateCommand": "npm install"
+}
