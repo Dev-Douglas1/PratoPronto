@@ -16,11 +16,15 @@ export function useCatalog(baseProducts) {
   return useMemo(() => baseProducts.map((product) => {
     const override = overrides[product.id]
     if (!override) return product
+
+    const price = Number(override.price)
+    const stock = Number(override.stock)
+
     return {
       ...product,
-      preco: Number(override.price) > 0 ? Number(override.price) : product.preco,
+      preco: Number.isFinite(price) && price > 0 ? price : product.preco,
       available: override.available !== false,
-      stock: Number.isFinite(Number(override.stock)) ? Number(override.stock) : undefined,
+      stock: Number.isFinite(stock) && stock >= 0 ? Math.floor(stock) : undefined,
     }
   }), [baseProducts, overrides])
 }

@@ -8,6 +8,7 @@ import {
   getReview,
   ORDER_STATUS,
   ORDER_STATUS_LABELS,
+  REFUND_STATUS_LABELS,
   requestOrderCancellation,
   requestRefund,
   subscribeOrdersForUser,
@@ -49,7 +50,8 @@ export default function Acompanhamento() {
 
   const order = useMemo(() => orders.find((item) => item.id === selectedId) || orders[0] || null, [orders, selectedId])
   const normalizedStatus = normalizeStatus(order?.status)
-  const currentIndex = Math.max(0, STEPS.indexOf(normalizedStatus))
+  const currentIndex = STEPS.indexOf(normalizedStatus)
+  const interrupted = [ORDER_STATUS.CANCELLATION_REQUESTED, ORDER_STATUS.CANCELLED].includes(normalizedStatus)
 
   useEffect(() => {
     let active = true
@@ -107,7 +109,10 @@ export default function Acompanhamento() {
   }
 
   const canCancel = order && ![ORDER_STATUS.DELIVERED, ORDER_STATUS.CANCELLED, ORDER_STATUS.CANCELLATION_REQUESTED].includes(normalizedStatus)
-  const canRefund = order && order.refundStatus !== 'requested' && order.refundStatus !== 'refunded'
+  const refundStatus = order?.refundStatus || 'none'
+  const canRefund = order
+    && [ORDER_STATUS.DELIVERED, ORDER_STATUS.CANCELLED].includes(normalizedStatus)
+    && ['none', 'rejected'].includes(refundStatus)
 
   return (
     <AppScreen>
@@ -137,21 +142,28 @@ export default function Acompanhamento() {
             </div>
           </div>
           <div className="status-badge">{ORDER_STATUS_LABELS[order.status] || order.status}</div>
-          {order.refundStatus && order.refundStatus !== 'none' ? <div className="refund-badge">Reembolso: {order.refundStatus}</div> : null}
+          {refundStatus !== 'none' ? <div className="refund-badge">Reembolso: {REFUND_STATUS_LABELS[refundStatus] || refundStatus}</div> : null}
 
-          <div className="order-progress" aria-label="Etapas do pedido">
-            {[
-              ['Pedido recebido', 'Recebemos seu pedido'],
-              ['Preparando', 'A cozinha está preparando'],
-              ['Saiu para entrega', 'O entregador está a caminho'],
-              ['Entregue', 'Bom apetite!'],
-            ].map(([title, detail], index) => (
-              <div key={title} className={index < currentIndex ? 'is-done' : index === currentIndex ? 'is-current' : ''}>
-                <i>{index < currentIndex ? '✓' : index + 1}</i>
-                <span><strong>{title}</strong><small>{detail}</small></span>
-              </div>
-            ))}
-          </div>
+          {interrupted ? (
+            <div className="light-card support-card">
+              <h3>{normalizedStatus === ORDER_STATUS.CANCELLED ? 'Pedido cancelado' : 'Cancelamento em análise'}</h3>
+              <p>{order.cancelReason || 'A empresa está analisando a solicitação.'}</p>
+            </div>
+          ) : (
+            <div className="order-progress" aria-label="Etapas do pedido">
+              {[
+                ['Pedido recebido', 'Recebemos seu pedido'],
+                ['Preparando', 'A cozinha está preparando'],
+                ['Saiu para entrega', 'O entregador está a caminho'],
+                ['Entregue', 'Bom apetite!'],
+              ].map(([title, detail], index) => (
+                <div key={title} className={index < currentIndex ? 'is-done' : index === currentIndex ? 'is-current' : ''}>
+                  <i>{index < currentIndex ? '✓' : index + 1}</i>
+                  <span><strong>{title}</strong><small>{detail}</small></span>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="light-card support-card">
             <h3>Problema com o pedido?</h3>
@@ -160,7 +172,7 @@ export default function Acompanhamento() {
               <button className="btn btn-secondary" disabled={!canCancel} type="button" onClick={solicitarCancelamento}>Cancelar pedido</button>
               <button className="btn btn-secondary" disabled={!canRefund} type="button" onClick={solicitarReembolso}>Solicitar reembolso</button>
             </div>
-            <small>Cancelamentos e reembolsos são analisados pela empresa. O reembolso financeiro real será automatizado quando o backend do Mercado Pago estiver ativado.</small>
+            <small>O reembolso pode ser solicitado após entrega ou cancelamento e é analisado pela empresa. A devolução financeira real será automatizada quando o backend do Mercado Pago estiver ativado.</small>
           </div>
 
           {normalizedStatus === ORDER_STATUS.DELIVERED ? (

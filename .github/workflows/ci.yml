@@ -2,7 +2,7 @@ name: Verificar PratoPronto
 
 on:
   push:
-    branches: [main]
+    branches: [main, codex/auditoria-geral-pratopronto]
   pull_request:
     branches: [main]
 
@@ -22,5 +22,59 @@ jobs:
       - name: Instalar dependências
         run: npm ci
 
+      - name: Auditar dependências
+        run: npm audit --audit-level=high
+
+      - name: Testar Vite em desenvolvimento
+        shell: bash
+        run: |
+          npm run dev -- --host 127.0.0.1 --port 5173 > /tmp/pratopronto-dev.log 2>&1 &
+          DEV_PID=$!
+          cleanup() { kill "$DEV_PID" 2>/dev/null || true; }
+          trap cleanup EXIT
+
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:5173/ >/dev/null; then break; fi
+            if [ "$i" = "30" ]; then cat /tmp/pratopronto-dev.log; exit 1; fi
+            sleep 0.5
+          done
+
+          for route in / /login /cadastro /pizzas /bebidas /pedido /pagamento /acompanhamento /perfil /empresa; do
+            code=$(curl -sS -o /tmp/page.html -w '%{http_code}' "http://127.0.0.1:5173${route}")
+            test "$code" = "200"
+            grep -q 'id="root"' /tmp/page.html
+          done
+
+          cleanup
+          trap - EXIT
+
       - name: Compilar aplicação
         run: npm run build
+
+      - name: Testar build e rotas SPA
+        shell: bash
+        run: |
+          npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/pratopronto-preview.log 2>&1 &
+          PREVIEW_PID=$!
+          cleanup() { kill "$PREVIEW_PID" 2>/dev/null || true; }
+          trap cleanup EXIT
+
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then break; fi
+            if [ "$i" = "30" ]; then cat /tmp/pratopronto-preview.log; exit 1; fi
+            sleep 0.5
+          done
+
+          for route in / /login /cadastro /pizzas /bebidas /pedido /pagamento /acompanhamento /perfil /empresa; do
+            code=$(curl -sS -o /tmp/page.html -w '%{http_code}' "http://127.0.0.1:4173${route}")
+            test "$code" = "200"
+            grep -q 'id="root"' /tmp/page.html
+          done
+
+          curl -fsS http://127.0.0.1:4173/manifest.webmanifest >/dev/null
+          curl -fsS http://127.0.0.1:4173/sw.js >/dev/null
+          curl -fsS http://127.0.0.1:4173/pwa-icon.svg >/dev/null
+          curl -fsS http://127.0.0.1:4173/images/produtos/pizza-calabresa.webp >/dev/null
+
+          cleanup
+          trap - EXIT

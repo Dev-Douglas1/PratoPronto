@@ -43,11 +43,16 @@ service cloud.firestore {
                'termsVersion', 'consentTimestamp', 'updatedAt'
              ])
              && textoValido(request.resource.data.nome, 100)
+             && request.resource.data.nome.size() > 0
              && textoValido(request.resource.data.email, 254)
              && textoValido(request.resource.data.telefone, 30)
+             && request.resource.data.telefone.size() > 0
              && textoValido(request.resource.data.endereco, 180)
+             && request.resource.data.endereco.size() > 0
              && textoValido(request.resource.data.numero, 20)
+             && request.resource.data.numero.size() > 0
              && textoValido(request.resource.data.bairro, 100)
+             && request.resource.data.bairro.size() > 0
              && textoValido(request.resource.data.complemento, 180)
              && request.resource.data.aceitarMarketing is bool
              && textoValido(request.resource.data.privacyPolicyVersion, 40)
@@ -62,8 +67,10 @@ service cloud.firestore {
       return cliente is map
              && cliente.keys().hasOnly(['nome', 'email', 'telefone'])
              && textoValido(cliente.nome, 100)
+             && cliente.nome.size() > 0
              && textoValido(cliente.email, 254)
              && textoValido(cliente.telefone, 30)
+             && cliente.telefone.size() > 0
              && cliente.email == request.auth.token.email;
     }
 
@@ -71,8 +78,11 @@ service cloud.firestore {
       return entrega is map
              && entrega.keys().hasOnly(['endereco', 'numero', 'bairro', 'complemento'])
              && textoValido(entrega.endereco, 180)
+             && entrega.endereco.size() > 0
              && textoValido(entrega.numero, 20)
+             && entrega.numero.size() > 0
              && textoValido(entrega.bairro, 100)
+             && entrega.bairro.size() > 0
              && textoValido(entrega.complemento, 180);
     }
 
@@ -80,13 +90,14 @@ service cloud.firestore {
       return pagamento is map
              && pagamento.keys().hasOnly(['metodo', 'referencia'])
              && textoValido(pagamento.metodo, 80)
+             && pagamento.metodo.size() > 0
              && textoValido(pagamento.referencia, 180);
     }
 
     function statusValido(status) {
       return status in [
         'recebido', 'preparando', 'pronto', 'saiu_entrega', 'entregue',
-        'cancelamento_solicitado', 'cancelado'
+        'cancelamento_solicitado', 'cancelado', 'Pedido confirmado • preparando'
       ];
     }
 
@@ -170,6 +181,8 @@ service cloud.firestore {
 
       allow read: if estaLogado() && (resource.data.userId == request.auth.uid || ehAdmin());
 
+      // Mantém compatibilidade de atualização com pedidos antigos que ainda não
+      // possuem todos os campos administrativos adicionados na versão 2.0.
       allow update: if ehAdmin()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'status', 'paymentStatus', 'cancelReason', 'refundStatus', 'refundReason',
@@ -199,6 +212,7 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'refundStatus', 'refundReason', 'updatedAt'
         ])
+        && resource.data.status in ['entregue', 'cancelado']
         && request.resource.data.refundStatus == 'requested'
         && (!resource.data.keys().hasAny(['refundStatus']) || resource.data.refundStatus in ['none', 'rejected'])
         && textoValido(request.resource.data.refundReason, 300)
@@ -250,7 +264,7 @@ service cloud.firestore {
         && request.resource.data.stock >= 0
         && request.resource.data.stock <= 100000
         && request.resource.data.price is number
-        && request.resource.data.price >= 0
+        && request.resource.data.price > 0
         && request.resource.data.price <= 10000
         && request.resource.data.updatedAt == request.time;
       allow delete: if ehAdmin();

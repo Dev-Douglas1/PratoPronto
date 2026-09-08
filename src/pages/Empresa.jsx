@@ -8,6 +8,7 @@ import {
   getDeliveryConfig,
   ORDER_STATUS,
   ORDER_STATUS_LABELS,
+  REFUND_STATUS_LABELS,
   replyToReview,
   saveDeliveryConfig,
   subscribeCatalog,
@@ -85,8 +86,9 @@ function printOrder(order, kind) {
   popup.document.close()
 }
 
-function OrderCard({ order, courier, setCourier, onStatus, onRefund }) {
+function OrderCard({ order, courier, setCourier, onStatus, onRefund, onSaveCourier }) {
   const status = order.status === 'Pedido confirmado • preparando' ? ORDER_STATUS.PREPARING : order.status
+  const refundStatus = order.refundStatus || 'none'
   return (
     <article className="company-order-card">
       <div className="company-order-head">
@@ -122,9 +124,10 @@ function OrderCard({ order, courier, setCourier, onStatus, onRefund }) {
       <label className="courier-field">Motoboy responsável
         <input value={courier} onChange={(e) => setCourier(e.target.value)} placeholder="Nome do motoboy" />
       </label>
+      <button className="secondary" type="button" onClick={() => onSaveCourier(order, status)}>Salvar motoboy</button>
 
       {order.cancelReason ? <div className="support-alert"><strong>Motivo do cancelamento:</strong> {order.cancelReason}</div> : null}
-      {order.refundStatus && order.refundStatus !== 'none' ? <div className="support-alert"><strong>Reembolso:</strong> {order.refundStatus}{order.refundReason ? ` • ${order.refundReason}` : ''}</div> : null}
+      {refundStatus !== 'none' ? <div className="support-alert"><strong>Reembolso:</strong> {REFUND_STATUS_LABELS[refundStatus] || refundStatus}{order.refundReason ? ` • ${order.refundReason}` : ''}</div> : null}
 
       <div className="company-actions">
         {status === ORDER_STATUS.RECEIVED ? <button onClick={() => onStatus(order, ORDER_STATUS.PREPARING)}>Aceitar / preparar</button> : null}
@@ -137,11 +140,15 @@ function OrderCard({ order, courier, setCourier, onStatus, onRefund }) {
         <button className="secondary" onClick={() => printOrder(order, 'courier')}>Imprimir motoboy</button>
       </div>
 
-      {order.refundStatus === 'requested' ? (
+      {refundStatus === 'requested' ? (
         <div className="refund-actions">
           <button onClick={() => onRefund(order, 'approved')}>Aprovar reembolso</button>
           <button onClick={() => onRefund(order, 'rejected')}>Recusar</button>
-          <button onClick={() => onRefund(order, 'refunded')}>Marcar reembolsado</button>
+        </div>
+      ) : null}
+      {refundStatus === 'approved' ? (
+        <div className="refund-actions">
+          <button onClick={() => onRefund(order, 'refunded')}>Marcar como reembolsado</button>
         </div>
       ) : null}
     </article>
@@ -195,7 +202,7 @@ export default function Empresa() {
       newOrders: orders.filter((order) => order.status === ORDER_STATUS.RECEIVED).length,
       preparing: orders.filter((order) => [ORDER_STATUS.PREPARING, ORDER_STATUS.READY].includes(order.status) || order.status === 'Pedido confirmado • preparando').length,
       deliveries: orders.filter((order) => order.status === ORDER_STATUS.OUT_FOR_DELIVERY).length,
-      revenue: todayOrders.filter((order) => order.status !== ORDER_STATUS.CANCELLED).reduce((sum, order) => sum + Number(order.total || 0), 0),
+      orderValue: todayOrders.filter((order) => order.status !== ORDER_STATUS.CANCELLED).reduce((sum, order) => sum + Number(order.total || 0), 0),
       totalToday: todayOrders.length,
     }
   }, [orders])
@@ -204,7 +211,7 @@ export default function Empresa() {
     if (tab === 'process') return orders.filter((order) => [ORDER_STATUS.RECEIVED, ORDER_STATUS.PREPARING, ORDER_STATUS.READY, ORDER_STATUS.CANCELLATION_REQUESTED, 'Pedido confirmado • preparando'].includes(order.status))
     if (tab === 'deliveries') return orders.filter((order) => [ORDER_STATUS.READY, ORDER_STATUS.OUT_FOR_DELIVERY].includes(order.status))
     if (tab === 'completed') return orders.filter((order) => [ORDER_STATUS.DELIVERED, ORDER_STATUS.CANCELLED].includes(order.status))
-    if (tab === 'support') return orders.filter((order) => order.status === ORDER_STATUS.CANCELLATION_REQUESTED || order.refundStatus === 'requested')
+    if (tab === 'support') return orders.filter((order) => order.status === ORDER_STATUS.CANCELLATION_REQUESTED || ['requested', 'approved'].includes(order.refundStatus))
     return []
   }, [orders, tab])
 
@@ -218,11 +225,21 @@ export default function Empresa() {
     }
   }
 
+  async function saveCourier(order, status) {
+    try {
+      setError('')
+      await updateOrderStatus(order.id, status, { assignedCourier: couriers[order.id] ?? order.assignedCourier ?? '' })
+      setMessage(`Motoboy do pedido #${order.id.slice(0, 8)} salvo.`)
+    } catch (e) {
+      setError(e.message)
+    }
+  }
+
   async function changeRefund(order, status) {
     try {
       setError('')
       await updateRefundStatus(order.id, status)
-      setMessage(`Reembolso do pedido #${order.id.slice(0, 8)} atualizado para ${status}.`)
+      setMessage(`Reembolso do pedido #${order.id.slice(0, 8)} atualizado para ${REFUND_STATUS_LABELS[status] || status}.`)
     } catch (e) {
       setError(e.message)
     }
@@ -298,7 +315,7 @@ export default function Empresa() {
                 <article><span>Novos</span><strong>{stats.newOrders}</strong><small>aguardando aceite</small></article>
                 <article><span>Em preparo</span><strong>{stats.preparing}</strong><small>cozinha</small></article>
                 <article><span>Entregas</span><strong>{stats.deliveries}</strong><small>na rua</small></article>
-                <article><span>Pedidos hoje</span><strong>{stats.totalToday}</strong><small>{formatarMoeda(stats.revenue)}</small></article>
+                <article><span>Pedidos hoje</span><strong>{stats.totalToday}</strong><small>Valor {formatarMoeda(stats.orderValue)}</small></article>
               </section>
               <section className="company-panel">
                 <div className="company-panel-head"><h2>Pedidos mais recentes</h2><button onClick={() => setTab('process')}>Abrir pedidos</button></div>
@@ -318,6 +335,7 @@ export default function Empresa() {
                   setCourier={(value) => setCouriers((current) => ({ ...current, [order.id]: value }))}
                   onStatus={changeStatus}
                   onRefund={changeRefund}
+                  onSaveCourier={saveCourier}
                 />
               ))}
               {!visibleOrders.length ? <div className="company-empty"><span>✓</span><h3>Nada por aqui</h3><p>Os pedidos aparecerão automaticamente.</p></div> : null}
@@ -348,7 +366,7 @@ export default function Empresa() {
                   <article className="company-panel catalog-admin-card" key={product.id}>
                     <img src={product.imagem} alt="" />
                     <div><strong>{product.nome}</strong><small>{product.descricao}</small></div>
-                    <label>Preço<input type="number" min="0" step="0.01" value={draft.price} onChange={(e) => setCatalogDraft((current) => ({ ...current, [product.id]: { ...draft, price: e.target.value } }))} /></label>
+                    <label>Preço<input type="number" min="0.01" step="0.01" value={draft.price} onChange={(e) => setCatalogDraft((current) => ({ ...current, [product.id]: { ...draft, price: e.target.value } }))} /></label>
                     <label>Estoque<input type="number" min="0" step="1" value={draft.stock} onChange={(e) => setCatalogDraft((current) => ({ ...current, [product.id]: { ...draft, stock: e.target.value } }))} /></label>
                     <label className="switch-row"><input type="checkbox" checked={draft.available} onChange={(e) => setCatalogDraft((current) => ({ ...current, [product.id]: { ...draft, available: e.target.checked } }))} />Disponível no app</label>
                     <button className="company-primary" onClick={() => saveProduct(product)}>Salvar</button>

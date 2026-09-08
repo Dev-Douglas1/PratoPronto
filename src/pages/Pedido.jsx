@@ -10,24 +10,35 @@ import { calculateDeliveryFee } from '../services/storage.js'
 
 export default function Pedido() {
   const navigate = useNavigate()
-  const { lista, total, adicionar, remover, precoUnitario } = useCart()
+  const { lista, total, adicionar, remover, precoUnitario, podeAdicionar } = useCart()
   const { usuario } = useUser()
-  const [deliveryFee, setDeliveryFee] = useState(0)
+  const [deliveryFee, setDeliveryFee] = useState(null)
   const [loadingFee, setLoadingFee] = useState(false)
+  const [feeError, setFeeError] = useState('')
 
   useEffect(() => {
     let active = true
     async function loadFee() {
-      if (!usuario?.bairro || total <= 0) {
+      setFeeError('')
+      if (total <= 0) {
         setDeliveryFee(0)
         return
       }
+      if (!usuario?.bairro) {
+        setDeliveryFee(null)
+        setFeeError('Informe seu bairro no perfil para calcular a entrega.')
+        return
+      }
+
       try {
         setLoadingFee(true)
         const value = await calculateDeliveryFee(usuario.bairro, total)
         if (active) setDeliveryFee(value)
-      } catch {
-        if (active) setDeliveryFee(0)
+      } catch (error) {
+        if (active) {
+          setDeliveryFee(null)
+          setFeeError(error.message || 'Não foi possível calcular a taxa de entrega.')
+        }
       } finally {
         if (active) setLoadingFee(false)
       }
@@ -36,7 +47,7 @@ export default function Pedido() {
     return () => { active = false }
   }, [usuario?.bairro, total])
 
-  const finalTotal = total + deliveryFee
+  const finalTotal = total + (deliveryFee ?? 0)
 
   return (
     <AppScreen className="screen-with-nav menu-screen">
@@ -78,9 +89,9 @@ export default function Pedido() {
                     <small>{formatarMoeda(precoUnitario(item) * quantidade)}</small>
                   </div>
                   <div className="qty-control">
-                    <button onClick={() => remover(cartId)}>−</button>
+                    <button onClick={() => remover(cartId)} aria-label={`Remover uma unidade de ${produto.nome}`}>−</button>
                     <strong>{quantidade}</strong>
-                    <button onClick={() => adicionar(produto, personalizacao)}>+</button>
+                    <button disabled={!podeAdicionar(produto)} onClick={() => adicionar(produto, personalizacao)} aria-label={`Adicionar uma unidade de ${produto.nome}`}>+</button>
                   </div>
                 </div>
               )
@@ -89,13 +100,14 @@ export default function Pedido() {
 
           <div className="price-lines">
             <div><span>Subtotal</span><strong>{formatarMoeda(total)}</strong></div>
-            <div><span>Entrega</span><strong>{loadingFee ? 'Calculando...' : deliveryFee === 0 && total > 0 ? 'Grátis' : formatarMoeda(deliveryFee)}</strong></div>
+            <div><span>Entrega</span><strong>{loadingFee ? 'Calculando...' : deliveryFee === null ? '—' : deliveryFee === 0 && total > 0 ? 'Grátis' : formatarMoeda(deliveryFee)}</strong></div>
           </div>
           <div className="order-total"><span>Total</span><strong>{formatarMoeda(finalTotal)}</strong></div>
+          {feeError ? <p className="form-error dark-error" role="alert">{feeError}</p> : null}
 
           <div className="two-actions">
             <button className="btn btn-secondary" onClick={() => navigate('/pizzas')}>Ver mais</button>
-            <button className="btn btn-primary" disabled={!lista.length || loadingFee} onClick={() => navigate('/pagamento', { state: { deliveryFee } })}>Pagar</button>
+            <button className="btn btn-primary" disabled={!lista.length || loadingFee || deliveryFee === null || Boolean(feeError)} onClick={() => navigate('/pagamento')}>Pagar</button>
           </div>
         </div>
       </section>

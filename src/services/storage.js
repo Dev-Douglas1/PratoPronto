@@ -40,6 +40,14 @@ export const ORDER_STATUS_LABELS = {
   'Pedido confirmado • preparando': 'Preparando',
 }
 
+export const REFUND_STATUS_LABELS = {
+  none: 'Sem solicitação',
+  requested: 'Solicitado',
+  approved: 'Aprovado',
+  rejected: 'Recusado',
+  refunded: 'Reembolsado',
+}
+
 function requireFirebase() {
   if (!firebaseConfigured || !db) {
     throw new Error('Firebase não configurado. Preencha as variáveis VITE_FIREBASE_* no arquivo .env.')
@@ -52,6 +60,44 @@ function timestampValue(value) {
 
 function sortNewestFirst(items) {
   return [...items].sort((a, b) => timestampValue(b.createdAt) - timestampValue(a.createdAt))
+}
+
+function requireText(value, label) {
+  const text = String(value ?? '').trim()
+  if (!text) throw new Error(`${label} é obrigatório.`)
+  return text
+}
+
+function requirePositiveMoney(value, label) {
+  const number = Number(value)
+  if (!Number.isFinite(number) || number <= 0) throw new Error(`${label} inválido.`)
+  return number
+}
+
+function safeMoney(value, fallback = 0) {
+  const number = Number(value)
+  return Number.isFinite(number) && number >= 0 ? number : fallback
+}
+
+async function validateCatalogAvailability(itens) {
+  const quantities = new Map()
+  itens.forEach((item) => {
+    const id = String(item.id || '').trim()
+    const quantity = Math.max(0, Math.floor(Number(item.quantidade || 0)))
+    if (!id || quantity <= 0) throw new Error('Há um item inválido no carrinho.')
+    quantities.set(id, (quantities.get(id) || 0) + quantity)
+  })
+
+  await Promise.all([...quantities.entries()].map(async ([productId, quantity]) => {
+    const snapshot = await getDoc(doc(db, 'catalog', productId))
+    if (!snapshot.exists()) return
+    const data = snapshot.data()
+    if (data.available === false) throw new Error('Um produto do carrinho ficou indisponível. Revise o pedido.')
+    const stock = Number(data.stock)
+    if (Number.isFinite(stock) && stock >= 0 && quantity > Math.floor(stock)) {
+      throw new Error('A quantidade de um produto ultrapassa o estoque disponível. Revise o pedido.')
+    }
+  }))
 }
 
 export async function saveUserProfile(uid, data) {
@@ -84,12 +130,12 @@ export async function getUserProfile(uid) {
 export async function updateUserProfile(uid, partial) {
   requireFirebase()
   const safe = {
-    nome: partial.nome?.trim() ?? '',
-    telefone: partial.telefone?.trim() ?? '',
-    endereco: partial.endereco?.trim() ?? '',
-    numero: partial.numero?.trim() ?? '',
-    bairro: partial.bairro?.trim() ?? '',
-    complemento: partial.complemento?.trim() ?? '',
+    nome: requireText(partial.nome, 'Nome').slice(0, 100),
+    telefone: requireText(partial.telefone, 'Telefone').slice(0, 30),
+    endereco: requireText(partial.endereco, 'Endereço').slice(0, 180),
+    numero: requireText(partial.numero, 'Número').slice(0, 20),
+    bairro: requireText(partial.bairro, 'Bairro').slice(0, 100),
+    complemento: partial.complemento?.trim().slice(0, 180) ?? '',
     aceitarMarketing: Boolean(partial.aceitarMarketing),
     updatedAt: serverTimestamp(),
   }
@@ -124,35 +170,51 @@ export async function ensureTestAdminAccess(uid, email) {
 
 export async function createOrder({ userId, cliente, entrega, itens, subtotal, deliveryFee, total, pagamento, observacao = '' }) {
   requireFirebase()
+  if (!userId) throw new Error('Usuário não autenticado.')
+  if (!Array.isArray(itens) || !itens.length) throw new Error('Seu carrinho está vazio.')
+
+  const safeSubtotal = requirePositiveMoney(subtotal, 'Subtotal')
+  const safeDeliveryFee = safeMoney(deliveryFee)
+  const safeTotal = requirePositiveMoney(total, 'Total')
+  const expectedTotal = safeSubtotal + safeDeliveryFee
+  if (Math.abs(safeTotal - expectedTotal) > 0.011) throw new Error('O total do pedido está inconsistente. Revise o carrinho.')
+
+  const safeCliente = {
+    nome: requireText(cliente?.nome, 'Nome').slice(0, 100),
+    email: requireText(cliente?.email, 'E-mail').toLowerCase().slice(0, 254),
+    telefone: requireText(cliente?.telefone, 'Telefone').slice(0, 30),
+  }
+  const safeEntrega = {
+    endereco: requireText(entrega?.endereco, 'Endereço').slice(0, 180),
+    numero: requireText(entrega?.numero, 'Número').slice(0, 20),
+    bairro: requireText(entrega?.bairro, 'Bairro').slice(0, 100),
+    complemento: entrega?.complemento?.trim().slice(0, 180) ?? '',
+  }
+
+  await validateCatalogAvailability(itens)
+
+  const safeItems = itens.map((item) => ({
+    id: requireText(item.id, 'Produto').slice(0, 100),
+    nome: requireText(item.nome, 'Produto').slice(0, 160),
+    quantidade: Math.max(1, Math.floor(Number(item.quantidade || 1))),
+    precoUnitario: requirePositiveMoney(item.precoUnitario, 'Preço do produto'),
+    personalizacao: item.personalizacao ?? null,
+  }))
+
   const payload = {
     userId,
-    cliente: {
-      nome: cliente.nome?.trim() ?? '',
-      email: cliente.email?.trim().toLowerCase() ?? '',
-      telefone: cliente.telefone?.trim() ?? '',
-    },
-    entrega: {
-      endereco: entrega.endereco?.trim() ?? '',
-      numero: entrega.numero?.trim() ?? '',
-      bairro: entrega.bairro?.trim() ?? '',
-      complemento: entrega.complemento?.trim() ?? '',
-    },
-    itens: itens.map((item) => ({
-      id: item.id,
-      nome: item.nome,
-      quantidade: item.quantidade,
-      precoUnitario: item.precoUnitario,
-      personalizacao: item.personalizacao ?? null,
-    })),
-    subtotal,
-    deliveryFee,
-    total,
-    observacao: observacao.trim().slice(0, 500),
+    cliente: safeCliente,
+    entrega: safeEntrega,
+    itens: safeItems,
+    subtotal: safeSubtotal,
+    deliveryFee: safeDeliveryFee,
+    total: safeTotal,
+    observacao: String(observacao || '').trim().slice(0, 500),
     pagamento: {
-      metodo: pagamento.metodo,
-      referencia: pagamento.referencia ?? 'pagamento-demo',
+      metodo: requireText(pagamento?.metodo, 'Forma de pagamento').slice(0, 80),
+      referencia: String(pagamento?.referencia ?? 'pagamento-demo').trim().slice(0, 180),
     },
-    paymentStatus: pagamento.status ?? 'demo_approved',
+    paymentStatus: pagamento?.status ?? 'demo_approved',
     status: ORDER_STATUS.RECEIVED,
     cancelReason: '',
     refundStatus: 'none',
@@ -207,7 +269,7 @@ export async function updateOrderStatus(orderId, status, extra = {}) {
   const safeExtra = {}
   if (typeof extra.assignedCourier === 'string') safeExtra.assignedCourier = extra.assignedCourier.trim().slice(0, 100)
   if (typeof extra.restaurantNotes === 'string') safeExtra.restaurantNotes = extra.restaurantNotes.trim().slice(0, 500)
-  if (typeof extra.paymentStatus === 'string') safeExtra.paymentStatus = extra.paymentStatus
+  if (typeof extra.paymentStatus === 'string') safeExtra.paymentStatus = extra.paymentStatus.trim().slice(0, 80)
   if (typeof extra.refundStatus === 'string') safeExtra.refundStatus = extra.refundStatus
 
   await updateDoc(doc(db, 'orders', orderId), {
@@ -248,13 +310,19 @@ export async function updateRefundStatus(orderId, refundStatus) {
 
 export async function createReview({ orderId, userId, displayName, foodRating, deliveryRating, comment }) {
   requireFirebase()
+  const food = Number(foodRating)
+  const delivery = Number(deliveryRating)
+  if (!Number.isInteger(food) || food < 1 || food > 5 || !Number.isInteger(delivery) || delivery < 1 || delivery > 5) {
+    throw new Error('As notas da avaliação devem estar entre 1 e 5.')
+  }
+
   const ref = doc(db, 'reviews', orderId)
   await setDoc(ref, {
     orderId,
     userId,
     displayName: displayName?.trim().slice(0, 80) || 'Cliente',
-    foodRating: Number(foodRating),
-    deliveryRating: Number(deliveryRating),
+    foodRating: food,
+    deliveryRating: delivery,
     comment: comment?.trim().slice(0, 800) || '',
     restaurantReply: '',
     createdAt: serverTimestamp(),
@@ -296,10 +364,15 @@ export function subscribeCatalog(onChange, onError = () => undefined) {
 
 export async function updateCatalogItem(productId, partial) {
   requireFirebase()
+  const price = Number(partial.price)
+  const stock = Number(partial.stock)
+  if (!Number.isFinite(price) || price <= 0) throw new Error('O preço deve ser maior que zero.')
+  if (!Number.isFinite(stock) || stock < 0) throw new Error('O estoque deve ser zero ou maior.')
+
   const safe = {
     available: partial.available !== false,
-    stock: Math.max(0, Math.floor(Number(partial.stock ?? 0))),
-    price: Math.max(0, Number(partial.price ?? 0)),
+    stock: Math.floor(stock),
+    price,
     updatedAt: serverTimestamp(),
   }
   await setDoc(doc(db, 'catalog', productId), safe, { merge: true })
@@ -319,21 +392,39 @@ export const DEFAULT_DELIVERY_CONFIG = {
 export async function getDeliveryConfig() {
   requireFirebase()
   const snapshot = await getDoc(doc(db, 'settings', 'delivery'))
-  return snapshot.exists() ? { ...DEFAULT_DELIVERY_CONFIG, ...snapshot.data() } : DEFAULT_DELIVERY_CONFIG
+  if (!snapshot.exists()) return DEFAULT_DELIVERY_CONFIG
+
+  const data = snapshot.data()
+  return {
+    ...DEFAULT_DELIVERY_CONFIG,
+    ...data,
+    defaultFee: safeMoney(data.defaultFee, DEFAULT_DELIVERY_CONFIG.defaultFee),
+    freeOver: safeMoney(data.freeOver, DEFAULT_DELIVERY_CONFIG.freeOver),
+    areas: Array.isArray(data.areas) ? data.areas : DEFAULT_DELIVERY_CONFIG.areas,
+  }
 }
 
 export async function saveDeliveryConfig(config) {
   requireFirebase()
+  const defaultFee = Number(config.defaultFee)
+  const freeOver = Number(config.freeOver)
+  if (!Number.isFinite(defaultFee) || defaultFee < 0) throw new Error('Taxa padrão inválida.')
+  if (!Number.isFinite(freeOver) || freeOver < 0) throw new Error('Valor de entrega grátis inválido.')
+
   const areas = Array.isArray(config.areas)
     ? config.areas
       .filter((area) => area?.bairro?.trim())
       .slice(0, 100)
-      .map((area) => ({ bairro: area.bairro.trim().slice(0, 100), fee: Math.max(0, Number(area.fee ?? 0)) }))
+      .map((area) => {
+        const fee = Number(area.fee)
+        if (!Number.isFinite(fee) || fee < 0) throw new Error(`Taxa inválida para ${area.bairro}.`)
+        return { bairro: area.bairro.trim().slice(0, 100), fee }
+      })
     : []
 
   await setDoc(doc(db, 'settings', 'delivery'), {
-    defaultFee: Math.max(0, Number(config.defaultFee ?? DEFAULT_DELIVERY_CONFIG.defaultFee)),
-    freeOver: Math.max(0, Number(config.freeOver ?? DEFAULT_DELIVERY_CONFIG.freeOver)),
+    defaultFee,
+    freeOver,
     areas,
     updatedAt: serverTimestamp(),
   }, { merge: true })
@@ -341,20 +432,31 @@ export async function saveDeliveryConfig(config) {
 
 export async function calculateDeliveryFee(bairro, subtotal) {
   const config = await getDeliveryConfig()
-  if (Number(subtotal) >= Number(config.freeOver || Infinity)) return 0
+  const subtotalNumber = safeMoney(subtotal)
+  if (config.freeOver > 0 && subtotalNumber >= config.freeOver) return 0
+
   const normalized = bairro?.trim().toLocaleLowerCase('pt-BR') || ''
   const found = (config.areas || []).find((area) => area.bairro?.trim().toLocaleLowerCase('pt-BR') === normalized)
-  return Number(found?.fee ?? config.defaultFee ?? 0)
+  const fee = Number(found?.fee ?? config.defaultFee)
+  if (!Number.isFinite(fee) || fee < 0) throw new Error('Não foi possível calcular a taxa de entrega.')
+  return fee
 }
 
 export async function deleteUserData(uid) {
   requireFirebase()
   const ordersQuery = query(collection(db, 'orders'), where('userId', '==', uid))
   const reviewsQuery = query(collection(db, 'reviews'), where('userId', '==', uid))
-  const [orders, reviews] = await Promise.all([getDocs(ordersQuery), getDocs(reviewsQuery)])
+  const [orders, reviews, admin] = await Promise.all([
+    getDocs(ordersQuery),
+    getDocs(reviewsQuery),
+    getAdminAccess(uid).catch(() => null),
+  ])
+
   await Promise.all([
     ...reviews.docs.map((reviewDoc) => deleteDoc(reviewDoc.ref)),
     ...orders.docs.map((orderDoc) => deleteDoc(orderDoc.ref)),
   ])
+
+  if (admin) await deleteDoc(doc(db, 'admins', uid))
   await deleteDoc(doc(db, 'users', uid))
 }
