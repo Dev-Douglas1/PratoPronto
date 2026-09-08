@@ -115,7 +115,7 @@ textarea {
     z-index: 1500;
     left: calc(10px + env(safe-area-inset-left));
     right: calc(10px + env(safe-area-inset-right));
-    bottom: calc(10px + env(safe-area-inset-bottom));
+    bottom: calc(92px + env(safe-area-inset-bottom));
     display: grid;
     grid-template-columns: 46px minmax(0, 1fr) auto 34px;
     align-items: center;
