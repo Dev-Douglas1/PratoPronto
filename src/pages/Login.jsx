@@ -31,7 +31,7 @@ export default function Login() {
     try {
       setEnviando(true)
       const conta = await entrar(usuario, senha)
-      navigate(conta?.admin ? '/empresa' : '/pizzas', { replace: true })
+      navigate(conta?.adminCandidate ? '/empresa' : '/pizzas', { replace: true })
     } catch (error) {
       setErro(error.message)
     } finally {

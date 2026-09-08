@@ -89,7 +89,11 @@ export default function Perfil() {
         {mensagem && <p className="success-note" role="status">{mensagem}</p>}
         {erro && <p className="form-error dark-error" role="alert">{erro}</p>}
         <button className="btn btn-primary" type="submit">Salvar dados</button>
-        {usuario?.admin ? <button className="btn btn-primary" type="button" onClick={() => navigate('/empresa')}>Área da empresa</button> : null}
+        {usuario?.adminCandidate ? (
+          <button className="btn btn-primary" type="button" onClick={() => navigate('/empresa')}>
+            {usuario.emailVerified ? 'Área da empresa' : 'Área da empresa — verificar e-mail'}
+          </button>
+        ) : null}
         <button className="btn ghost-button" type="button" onClick={() => navigate('/privacidade')}>Privacidade e meus dados</button>
         <button className="btn btn-secondary" type="button" onClick={async () => { await sair(); navigate('/login') }}>Sair</button>
       </form>
