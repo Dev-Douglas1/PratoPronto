@@ -176,19 +176,6 @@ textarea {
 }
 
 @media (display-mode: standalone) and (max-width: 699px) {
-  body {
-    user-select: none;
-  }
-
-  input,
-  textarea,
-  select,
-  .legal-card,
-  .review-card,
-  .support-card {
-    user-select: text;
-  }
-
   .app-shell,
   .app-screen,
   .company-shell {
