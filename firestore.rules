@@ -181,18 +181,20 @@ service cloud.firestore {
 
       allow read: if estaLogado() && (resource.data.userId == request.auth.uid || ehAdmin());
 
+      // Mantém compatibilidade de atualização com pedidos antigos que ainda não
+      // possuem todos os campos administrativos adicionados na versão 2.0.
       allow update: if ehAdmin()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'status', 'paymentStatus', 'cancelReason', 'refundStatus', 'refundReason',
           'assignedCourier', 'restaurantNotes', 'updatedAt'
         ])
         && statusValido(request.resource.data.status)
-        && refundStatusValido(request.resource.data.refundStatus)
-        && textoValido(request.resource.data.cancelReason, 300)
-        && textoValido(request.resource.data.refundReason, 300)
-        && textoValido(request.resource.data.assignedCourier, 100)
-        && textoValido(request.resource.data.restaurantNotes, 500)
-        && textoValido(request.resource.data.paymentStatus, 80)
+        && (!request.resource.data.keys().hasAny(['refundStatus']) || refundStatusValido(request.resource.data.refundStatus))
+        && (!request.resource.data.keys().hasAny(['cancelReason']) || textoValido(request.resource.data.cancelReason, 300))
+        && (!request.resource.data.keys().hasAny(['refundReason']) || textoValido(request.resource.data.refundReason, 300))
+        && (!request.resource.data.keys().hasAny(['assignedCourier']) || textoValido(request.resource.data.assignedCourier, 100))
+        && (!request.resource.data.keys().hasAny(['restaurantNotes']) || textoValido(request.resource.data.restaurantNotes, 500))
+        && (!request.resource.data.keys().hasAny(['paymentStatus']) || textoValido(request.resource.data.paymentStatus, 80))
         && request.resource.data.updatedAt == request.time;
 
       allow update: if estaLogado()
@@ -212,7 +214,7 @@ service cloud.firestore {
         ])
         && resource.data.status in ['entregue', 'cancelado']
         && request.resource.data.refundStatus == 'requested'
-        && resource.data.refundStatus in ['none', 'rejected']
+        && (!resource.data.keys().hasAny(['refundStatus']) || resource.data.refundStatus in ['none', 'rejected'])
         && textoValido(request.resource.data.refundReason, 300)
         && request.resource.data.updatedAt == request.time;
 
