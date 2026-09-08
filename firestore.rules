@@ -7,18 +7,22 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function emailVerificado() {
+      return estaLogado() && request.auth.token.email_verified == true;
+    }
+
     function ehDono(userId) {
       return estaLogado() && request.auth.uid == userId;
     }
 
     function emailEhAdminDeTeste() {
-      return estaLogado()
+      return emailVerificado()
         && request.auth.token.email is string
         && request.auth.token.email == 'douglas.souza.santos@escola.pr.gov.br';
     }
 
     function ehAdmin() {
-      return estaLogado() && (
+      return emailVerificado() && (
         emailEhAdminDeTeste()
         || (
           exists(/databases/$(database)/documents/admins/$(request.auth.uid))
@@ -107,7 +111,9 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow create: if ehDono(userId) && perfilValido();
-      allow read: if ehDono(userId) || ehAdmin();
+      // O administrador recebe os dados necessários dentro do pedido; não precisa
+      // listar ou abrir perfis completos de clientes.
+      allow read: if ehDono(userId);
       allow update: if ehDono(userId)
         && perfilValido()
         && request.resource.data.email == resource.data.email
@@ -118,10 +124,10 @@ service cloud.firestore {
     }
 
     match /admins/{userId} {
-      allow read: if ehDono(userId) || ehAdmin();
+      allow read: if ehAdmin();
 
-      // Bootstrap temporário do administrador de teste. Em produção, substitua
-      // por Custom Claims/Admin SDK e remova o e-mail de teste destas regras.
+      // Bootstrap temporário do administrador de teste. Exige e-mail verificado.
+      // Em produção, substitua por Custom Claims/Admin SDK.
       allow create: if ehDono(userId)
         && emailEhAdminDeTeste()
         && request.resource.data.keys().hasOnly([
@@ -134,7 +140,19 @@ service cloud.firestore {
         && request.resource.data.createdAt == request.time
         && request.resource.data.updatedAt == request.time;
 
-      allow update, delete: if ehAdmin();
+      allow update: if ehAdmin()
+        && request.resource.data.keys().hasOnly([
+          'email', 'role', 'permissions', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.role == 'restaurant_admin'
+        && request.resource.data.permissions is list
+        && request.resource.data.permissions.size() <= 20
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time;
+
+      // Remoção de administradores deve ser feita por backend/Admin SDK.
+      allow delete: if false;
     }
 
     match /orders/{orderId} {
@@ -181,8 +199,6 @@ service cloud.firestore {
 
       allow read: if estaLogado() && (resource.data.userId == request.auth.uid || ehAdmin());
 
-      // Mantém compatibilidade de atualização com pedidos antigos que ainda não
-      // possuem todos os campos administrativos adicionados na versão 2.0.
       allow update: if ehAdmin()
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'status', 'paymentStatus', 'cancelReason', 'refundStatus', 'refundReason',

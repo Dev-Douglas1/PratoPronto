@@ -14,6 +14,7 @@ import TermosUso from './pages/TermosUso.jsx'
 import PrivacidadeDados from './pages/PrivacidadeDados.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import AdminRoute from './components/AdminRoute.jsx'
+import PwaInstallPrompt from './components/PwaInstallPrompt.jsx'
 import './App.css'
 import './upgrade.css'
 
@@ -27,22 +28,25 @@ function adminPage(element) {
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/cadastro" element={<Cadastro />} />
-      <Route path="/pizzas" element={protectedPage(<Pizzas />)} />
-      <Route path="/bebidas" element={protectedPage(<Bebidas />)} />
-      <Route path="/pedido" element={protectedPage(<Pedido />)} />
-      <Route path="/pagamento" element={protectedPage(<Pagamento />)} />
-      <Route path="/acompanhamento" element={protectedPage(<Acompanhamento />)} />
-      <Route path="/perfil" element={protectedPage(<Perfil />)} />
-      <Route path="/privacidade" element={protectedPage(<PrivacidadeDados />)} />
-      <Route path="/empresa" element={adminPage(<Empresa />)} />
-      <Route path="/admin" element={<Navigate to="/empresa" replace />} />
-      <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
-      <Route path="/termos-de-uso" element={<TermosUso />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/cadastro" element={<Cadastro />} />
+        <Route path="/pizzas" element={protectedPage(<Pizzas />)} />
+        <Route path="/bebidas" element={protectedPage(<Bebidas />)} />
+        <Route path="/pedido" element={protectedPage(<Pedido />)} />
+        <Route path="/pagamento" element={protectedPage(<Pagamento />)} />
+        <Route path="/acompanhamento" element={protectedPage(<Acompanhamento />)} />
+        <Route path="/perfil" element={protectedPage(<Perfil />)} />
+        <Route path="/privacidade" element={protectedPage(<PrivacidadeDados />)} />
+        <Route path="/empresa" element={adminPage(<Empresa />)} />
+        <Route path="/admin" element={<Navigate to="/empresa" replace />} />
+        <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
+        <Route path="/termos-de-uso" element={<TermosUso />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      <PwaInstallPrompt />
+    </>
   )
 }
