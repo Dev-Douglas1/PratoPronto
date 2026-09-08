@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
 import TopBar from '../components/TopBar.jsx'
 import { useUser } from '../context/UserContext.jsx'
-import { traduzirErroFirebase } from '../utils/firebaseError'
+import { traduzirErroFirebase } from '../utils/firebaseError.js'
 
 const initialState = {
   nome: '',
@@ -30,16 +30,8 @@ export default function Cadastro() {
 
   function alterar(event) {
     const { name, value, type, checked } = event.target
-
-    setDados((atual) => ({
-      ...atual,
-      [name]: type === 'checkbox' ? checked : value,
-    }))
-
-    // Apaga o erro quando o usuário começa a corrigir os dados
-    if (erro) {
-      setErro('')
-    }
+    setDados((atual) => ({ ...atual, [name]: type === 'checkbox' ? checked : value }))
+    if (erro) setErro('')
   }
 
   async function handleSubmit(event) {
@@ -47,9 +39,7 @@ export default function Cadastro() {
     setErro('')
 
     if (!firebaseConfigured) {
-      setErro(
-        'O Firebase não está configurado. Verifique os dados no arquivo .env e reinicie o servidor.'
-      )
+      setErro('O Firebase não está configurado. Verifique os dados no arquivo .env e reinicie o servidor.')
       return
     }
 
@@ -61,82 +51,26 @@ export default function Cadastro() {
     const bairro = dados.bairro.trim()
     const complemento = dados.complemento.trim()
 
-    if (!nome) {
-      setErro('Digite seu nome.')
-      return
+    if (!nome) return setErro('Digite seu nome.')
+    if (!email) return setErro('Digite seu e-mail.')
+    if (!email.includes('@') || !email.includes('.')) return setErro('Digite um endereço de e-mail válido.')
+    if (!telefone) return setErro('Digite seu telefone.')
+    if (dados.senha.length < 8 || !/[A-Za-zÀ-ÿ]/.test(dados.senha) || !/\d/.test(dados.senha)) {
+      return setErro('A senha deve ter pelo menos 8 caracteres, incluindo uma letra e um número.')
     }
+    if (dados.senha !== dados.confirmarSenha) return setErro('As duas senhas precisam ser iguais.')
+    if (!endereco) return setErro('Digite a rua ou avenida do endereço de entrega.')
+    if (!numero) return setErro('Digite o número do endereço.')
+    if (!bairro) return setErro('Digite o bairro do endereço de entrega.')
+    if (!dados.aceitarPolitica) return setErro('É necessário aceitar a Política de Privacidade.')
+    if (!dados.aceitarTermos) return setErro('É necessário aceitar os Termos de Uso.')
 
-    if (!email) {
-      setErro('Digite seu e-mail.')
-      return
-    }
-
-    if (!email.includes('@') || !email.includes('.')) {
-      setErro('Digite um endereço de e-mail válido.')
-      return
-    }
-
-    if (!telefone) {
-      setErro('Digite seu telefone.')
-      return
-    }
-
-    if (
-      dados.senha.length < 8 ||
-      !/[A-Za-zÀ-ÿ]/.test(dados.senha) ||
-      !/\d/.test(dados.senha)
-    ) {
-      setErro('A senha deve ter pelo menos 8 caracteres, incluindo uma letra e um número.')
-      return
-    }
-
-    if (dados.senha !== dados.confirmarSenha) {
-      setErro('As duas senhas precisam ser iguais.')
-      return
-    }
-
-    if (!endereco) {
-      setErro('Digite a rua ou avenida do endereço de entrega.')
-      return
-    }
-
-    if (!numero) {
-      setErro('Digite o número do endereço.')
-      return
-    }
-
-    if (!bairro) {
-      setErro('Digite o bairro do endereço de entrega.')
-      return
-    }
-
-    if (!dados.aceitarPolitica) {
-      setErro('É necessário aceitar a Política de Privacidade.')
-      return
-    }
-
-    if (!dados.aceitarTermos) {
-      setErro('É necessário aceitar os Termos de Uso.')
-      return
-    }
-
-    const dadosCorrigidos = {
-      ...dados,
-      nome,
-      email,
-      telefone,
-      endereco,
-      numero,
-      bairro,
-      complemento,
-    }
+    const dadosCorrigidos = { ...dados, nome, email, telefone, endereco, numero, bairro, complemento }
 
     try {
       setEnviando(true)
-
-      await cadastrar(dadosCorrigidos)
-
-      navigate('/pizzas')
+      const conta = await cadastrar(dadosCorrigidos)
+      navigate(conta?.admin ? '/empresa' : '/pizzas', { replace: true })
     } catch (error) {
       console.error('Erro ao cadastrar usuário:', error)
       setErro(traduzirErroFirebase(error))
@@ -148,215 +82,63 @@ export default function Cadastro() {
   return (
     <AppScreen className="auth-page">
       <TopBar titulo="Cadastro" />
-
       <div className="page-heading">
         <span className="eyebrow">NOVO CLIENTE</span>
         <h1>Crie sua conta</h1>
         <p>Preencha seus dados para receber o pedido no endereço certo.</p>
       </div>
 
-      <form
-        className="light-card form-card"
-        onSubmit={handleSubmit}
-        noValidate
-      >
-        <div className="privacy-badge">
-          LGPD • Dados usados para criação da conta, entrega e histórico de
-          pedidos. Marketing é opcional.
-        </div>
+      <form className="light-card form-card" onSubmit={handleSubmit} noValidate>
+        <div className="privacy-badge">LGPD • Dados usados para criação da conta, entrega e histórico de pedidos. Marketing é opcional.</div>
 
         <label htmlFor="nome">Nome</label>
-        <input
-          id="nome"
-          name="nome"
-          type="text"
-          value={dados.nome}
-          onChange={alterar}
-          placeholder="Seu nome"
-          autoComplete="name"
-          maxLength={100}
-          disabled={enviando}
-        />
+        <input id="nome" name="nome" type="text" value={dados.nome} onChange={alterar} placeholder="Seu nome" autoComplete="name" maxLength={100} disabled={enviando} />
 
         <label htmlFor="email">E-mail</label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          value={dados.email}
-          onChange={alterar}
-          placeholder="voce@email.com"
-          autoComplete="email"
-          maxLength={254}
-          disabled={enviando}
-        />
+        <input id="email" name="email" type="email" value={dados.email} onChange={alterar} placeholder="voce@email.com" autoComplete="email" maxLength={254} disabled={enviando} />
 
         <label htmlFor="telefone">Telefone</label>
-        <input
-          id="telefone"
-          name="telefone"
-          type="tel"
-          value={dados.telefone}
-          onChange={alterar}
-          placeholder="(41) 99999-9999"
-          autoComplete="tel"
-          maxLength={30}
-          disabled={enviando}
-        />
+        <input id="telefone" name="telefone" type="tel" value={dados.telefone} onChange={alterar} placeholder="(41) 99999-9999" autoComplete="tel" maxLength={30} disabled={enviando} />
 
         <label htmlFor="senha">Senha</label>
-        <input
-          id="senha"
-          name="senha"
-          type="password"
-          value={dados.senha}
-          onChange={alterar}
-          placeholder="Mínimo de 8 caracteres"
-          autoComplete="new-password"
-          minLength={8}
-          disabled={enviando}
-        />
+        <input id="senha" name="senha" type="password" value={dados.senha} onChange={alterar} placeholder="Mínimo de 8 caracteres" autoComplete="new-password" minLength={8} disabled={enviando} />
 
         <label htmlFor="confirmarSenha">Confirmar senha</label>
-        <input
-          id="confirmarSenha"
-          name="confirmarSenha"
-          type="password"
-          value={dados.confirmarSenha}
-          onChange={alterar}
-          placeholder="Digite a senha novamente"
-          autoComplete="new-password"
-          minLength={8}
-          disabled={enviando}
-        />
+        <input id="confirmarSenha" name="confirmarSenha" type="password" value={dados.confirmarSenha} onChange={alterar} placeholder="Digite a senha novamente" autoComplete="new-password" minLength={8} disabled={enviando} />
 
         <label htmlFor="endereco">Endereço</label>
-        <input
-          id="endereco"
-          name="endereco"
-          type="text"
-          value={dados.endereco}
-          onChange={alterar}
-          placeholder="Rua ou avenida"
-          autoComplete="street-address"
-          maxLength={180}
-          disabled={enviando}
-        />
+        <input id="endereco" name="endereco" type="text" value={dados.endereco} onChange={alterar} placeholder="Rua ou avenida" autoComplete="street-address" maxLength={180} disabled={enviando} />
 
         <div className="payment-grid">
           <div>
             <label htmlFor="numero">Número</label>
-            <input
-              id="numero"
-              name="numero"
-              type="text"
-              value={dados.numero}
-              onChange={alterar}
-              placeholder="123"
-              autoComplete="address-line2"
-              maxLength={20}
-              disabled={enviando}
-            />
+            <input id="numero" name="numero" type="text" value={dados.numero} onChange={alterar} placeholder="123" autoComplete="address-line2" maxLength={20} disabled={enviando} />
           </div>
-
           <div>
             <label htmlFor="bairro">Bairro</label>
-            <input
-              id="bairro"
-              name="bairro"
-              type="text"
-              value={dados.bairro}
-              onChange={alterar}
-              placeholder="Bairro"
-              autoComplete="address-level3"
-              maxLength={100}
-              disabled={enviando}
-            />
+            <input id="bairro" name="bairro" type="text" value={dados.bairro} onChange={alterar} placeholder="Bairro" autoComplete="address-level3" maxLength={100} disabled={enviando} />
           </div>
         </div>
 
         <label htmlFor="complemento">Complemento</label>
-        <input
-          id="complemento"
-          name="complemento"
-          type="text"
-          value={dados.complemento}
-          onChange={alterar}
-          placeholder="Apto, bloco, referência (opcional)"
-          autoComplete="address-line3"
-          maxLength={180}
-          disabled={enviando}
-        />
+        <input id="complemento" name="complemento" type="text" value={dados.complemento} onChange={alterar} placeholder="Apto, bloco, referência (opcional)" autoComplete="address-line3" maxLength={180} disabled={enviando} />
 
         <label className="checkbox-line">
-          <input
-            type="checkbox"
-            name="aceitarPolitica"
-            checked={dados.aceitarPolitica}
-            onChange={alterar}
-            disabled={enviando}
-          />
-
-          <span>
-            Li e concordo com a{' '}
-            <Link to="/politica-de-privacidade">
-              Política de Privacidade
-            </Link>
-          </span>
+          <input type="checkbox" name="aceitarPolitica" checked={dados.aceitarPolitica} onChange={alterar} disabled={enviando} />
+          <span>Li e concordo com a <Link to="/politica-de-privacidade">Política de Privacidade</Link></span>
         </label>
-
         <label className="checkbox-line">
-          <input
-            type="checkbox"
-            name="aceitarTermos"
-            checked={dados.aceitarTermos}
-            onChange={alterar}
-            disabled={enviando}
-          />
-
-          <span>
-            Li e concordo com os{' '}
-            <Link to="/termos-de-uso">
-              Termos de Uso
-            </Link>
-          </span>
+          <input type="checkbox" name="aceitarTermos" checked={dados.aceitarTermos} onChange={alterar} disabled={enviando} />
+          <span>Li e concordo com os <Link to="/termos-de-uso">Termos de Uso</Link></span>
         </label>
-
         <label className="checkbox-line">
-          <input
-            type="checkbox"
-            name="aceitarMarketing"
-            checked={dados.aceitarMarketing}
-            onChange={alterar}
-            disabled={enviando}
-          />
-
-          <span>
-            Quero receber promoções por e-mail (opcional)
-          </span>
+          <input type="checkbox" name="aceitarMarketing" checked={dados.aceitarMarketing} onChange={alterar} disabled={enviando} />
+          <span>Quero receber promoções por e-mail (opcional)</span>
         </label>
 
-        {erro && (
-          <p
-            className="form-error dark-error"
-            role="alert"
-            aria-live="polite"
-          >
-            {erro}
-          </p>
-        )}
-
-        <button
-          className="btn btn-primary"
-          type="submit"
-          disabled={enviando}
-        >
-          {enviando ? 'Cadastrando...' : 'Cadastrar'}
-        </button>
-
-        <Link className="text-link dark-link" to="/login">
-          Já tenho uma conta
-        </Link>
+        {erro && <p className="form-error dark-error" role="alert" aria-live="polite">{erro}</p>}
+        <button className="btn btn-primary" type="submit" disabled={enviando}>{enviando ? 'Cadastrando...' : 'Cadastrar'}</button>
+        <Link className="text-link dark-link" to="/login">Já tenho uma conta</Link>
       </form>
     </AppScreen>
   )

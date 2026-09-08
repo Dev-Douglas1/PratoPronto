@@ -1,24 +1,57 @@
-import { useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
 import TopBar from '../components/TopBar.jsx'
 import { useCart } from '../context/CartContext.jsx'
 import { formatarMoeda } from '../utils/moeda.js'
 import { formatarNumeroCartao, formatarValidade } from '../utils/cartao.js'
 import { useUser } from '../context/UserContext.jsx'
-import { createOrder } from '../services/storage.js'
+import { calculateDeliveryFee, createOrder } from '../services/storage.js'
 
 export default function Pagamento() {
   const navigate = useNavigate()
-  const location = useLocation()
   const { lista, total, limpar, precoUnitario } = useCart()
   const { usuario } = useUser()
-  const deliveryFee = Math.max(0, Number(location.state?.deliveryFee || 0))
-  const finalTotal = total + deliveryFee
+  const [deliveryFee, setDeliveryFee] = useState(null)
+  const [loadingFee, setLoadingFee] = useState(false)
+  const [feeError, setFeeError] = useState('')
   const [method, setMethod] = useState('card-demo')
   const [form, setForm] = useState({ numero: '', validade: '', cvv: '', nome: '' })
   const [erro, setErro] = useState('')
   const [enviando, setEnviando] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    async function loadFee() {
+      setFeeError('')
+      if (!lista.length || total <= 0) {
+        setDeliveryFee(0)
+        return
+      }
+      if (!usuario?.bairro) {
+        setDeliveryFee(null)
+        setFeeError('Informe seu bairro no perfil antes de finalizar o pedido.')
+        return
+      }
+
+      try {
+        setLoadingFee(true)
+        const value = await calculateDeliveryFee(usuario.bairro, total)
+        if (active) setDeliveryFee(value)
+      } catch (error) {
+        if (active) {
+          setDeliveryFee(null)
+          setFeeError(error.message || 'Não foi possível calcular a taxa de entrega.')
+        }
+      } finally {
+        if (active) setLoadingFee(false)
+      }
+    }
+    loadFee()
+    return () => { active = false }
+  }, [usuario?.bairro, total, lista.length])
+
+  const finalTotal = total + (deliveryFee ?? 0)
 
   async function confirmar(event) {
     event.preventDefault()
@@ -32,6 +65,10 @@ export default function Pagamento() {
       setErro('Seu carrinho está vazio.')
       return
     }
+    if (!usuario.endereco?.trim() || !usuario.numero?.trim() || !usuario.bairro?.trim() || !usuario.telefone?.trim()) {
+      setErro('Complete telefone e endereço no perfil antes de finalizar o pedido.')
+      return
+    }
     if (method === 'card-demo' && (form.numero.replace(/\D/g, '').length < 13 || !form.validade || form.cvv.length < 3 || !form.nome.trim())) {
       setErro('Preencha corretamente os dados do cartão.')
       return
@@ -39,6 +76,12 @@ export default function Pagamento() {
 
     try {
       setEnviando(true)
+
+      // Recalcula na confirmação para não depender de state da navegação nem de uma taxa antiga.
+      const currentDeliveryFee = await calculateDeliveryFee(usuario.bairro, total)
+      const currentFinalTotal = total + currentDeliveryFee
+      setDeliveryFee(currentDeliveryFee)
+
       const pagamento = method === 'cash-on-delivery'
         ? { metodo: 'Pagamento na entrega', referencia: `entrega-${Date.now()}`, status: 'pending_delivery' }
         : { metodo: 'Cartão (demonstração)', referencia: `demo-${Date.now()}`, status: 'demo_approved' }
@@ -46,8 +89,8 @@ export default function Pagamento() {
       const pedido = await createOrder({
         userId: usuario.uid,
         subtotal: total,
-        deliveryFee,
-        total: finalTotal,
+        deliveryFee: currentDeliveryFee,
+        total: currentFinalTotal,
         itens: lista.map((item) => ({
           id: item.produto.id,
           nome: item.produto.nome,
@@ -101,9 +144,10 @@ export default function Pagamento() {
 
         <div className="payment-total payment-total--stacked">
           <div><span>Subtotal</span><strong>{formatarMoeda(total)}</strong></div>
-          <div><span>Entrega</span><strong>{deliveryFee ? formatarMoeda(deliveryFee) : 'Grátis'}</strong></div>
+          <div><span>Entrega</span><strong>{loadingFee ? 'Calculando...' : deliveryFee === null ? '—' : deliveryFee ? formatarMoeda(deliveryFee) : 'Grátis'}</strong></div>
           <div className="payment-grand-total"><span>Total</span><strong>{formatarMoeda(finalTotal)}</strong></div>
         </div>
+        {feeError ? <p className="form-error dark-error" role="alert">{feeError}</p> : null}
 
         {method === 'card-demo' ? (
           <>
@@ -138,7 +182,7 @@ export default function Pagamento() {
           </div>
         )}
         {erro && <p className="form-error dark-error" role="alert">{erro}</p>}
-        <button className="btn btn-primary" disabled={enviando} type="submit">{enviando ? 'Confirmando...' : 'Confirmar pedido'}</button>
+        <button className="btn btn-primary" disabled={enviando || loadingFee || deliveryFee === null || Boolean(feeError)} type="submit">{enviando ? 'Confirmando...' : 'Confirmar pedido'}</button>
         <button className="btn btn-secondary" type="button" onClick={() => navigate('/pedido')}>Voltar</button>
       </form>
     </AppScreen>

@@ -7,10 +7,11 @@ import BottomNav from '../components/BottomNav.jsx'
 
 export default function Perfil() {
   const navigate = useNavigate()
-  const { usuario, loading, atualizar, sair } = useUser()
+  const { usuario, loading, atualizar, reenviarVerificacao, sair } = useUser()
   const [form, setForm] = useState({})
   const [mensagem, setMensagem] = useState('')
   const [erro, setErro] = useState('')
+  const [enviandoVerificacao, setEnviandoVerificacao] = useState(false)
 
   useEffect(() => {
     if (usuario) setForm(usuario)
@@ -33,6 +34,20 @@ export default function Perfil() {
     }
   }
 
+  async function reenviarEmail() {
+    try {
+      setErro('')
+      setMensagem('')
+      setEnviandoVerificacao(true)
+      await reenviarVerificacao()
+      setMensagem('Novo e-mail de verificação enviado. Confira também a pasta de spam.')
+    } catch (error) {
+      setErro(error.message)
+    } finally {
+      setEnviandoVerificacao(false)
+    }
+  }
+
   if (loading) return <AppScreen><div className="light-card">Carregando...</div></AppScreen>
   if (!usuario) return <Navigate to="/login" replace />
 
@@ -44,30 +59,37 @@ export default function Perfil() {
         <div><span className="eyebrow">MINHA CONTA</span><h1>{usuario.nome || 'Cliente PratoPronto'}</h1><p>{usuario.email}</p></div>
       </div>
       <form className="light-card form-card" onSubmit={salvar}>
+        {!usuario.emailVerified ? (
+          <div className="privacy-badge">
+            Seu e-mail ainda não foi verificado.
+            <button className="text-action" type="button" disabled={enviandoVerificacao} onClick={reenviarEmail}>{enviandoVerificacao ? 'Enviando...' : 'Reenviar verificação'}</button>
+          </div>
+        ) : null}
         <label>Nome</label>
-        <input name="nome" value={form.nome ?? ''} onChange={handleChange} />
+        <input name="nome" maxLength={100} value={form.nome ?? ''} onChange={handleChange} />
         <label>E-mail</label>
         <input value={form.email ?? ''} disabled />
         <label>Telefone</label>
-        <input name="telefone" value={form.telefone ?? ''} onChange={handleChange} />
+        <input name="telefone" maxLength={30} value={form.telefone ?? ''} onChange={handleChange} />
         <label>Endereço</label>
-        <input name="endereco" value={form.endereco ?? ''} onChange={handleChange} />
+        <input name="endereco" maxLength={180} value={form.endereco ?? ''} onChange={handleChange} />
         <div className="payment-grid">
           <div>
             <label>Número</label>
-            <input name="numero" value={form.numero ?? ''} onChange={handleChange} />
+            <input name="numero" maxLength={20} value={form.numero ?? ''} onChange={handleChange} />
           </div>
           <div>
             <label>Bairro</label>
-            <input name="bairro" value={form.bairro ?? ''} onChange={handleChange} />
+            <input name="bairro" maxLength={100} value={form.bairro ?? ''} onChange={handleChange} />
           </div>
         </div>
         <label>Complemento</label>
-        <input name="complemento" value={form.complemento ?? ''} onChange={handleChange} />
+        <input name="complemento" maxLength={180} value={form.complemento ?? ''} onChange={handleChange} />
         <label className="checkbox-line"><input type="checkbox" name="aceitarMarketing" checked={Boolean(form.aceitarMarketing)} onChange={handleChange} /> Receber promoções por e-mail</label>
-        {mensagem && <p className="success-note">{mensagem}</p>}
-        {erro && <p className="form-error dark-error">{erro}</p>}
+        {mensagem && <p className="success-note" role="status">{mensagem}</p>}
+        {erro && <p className="form-error dark-error" role="alert">{erro}</p>}
         <button className="btn btn-primary" type="submit">Salvar dados</button>
+        {usuario?.admin ? <button className="btn btn-primary" type="button" onClick={() => navigate('/empresa')}>Área da empresa</button> : null}
         <button className="btn ghost-button" type="button" onClick={() => navigate('/privacidade')}>Privacidade e meus dados</button>
         <button className="btn btn-secondary" type="button" onClick={async () => { await sair(); navigate('/login') }}>Sair</button>
       </form>

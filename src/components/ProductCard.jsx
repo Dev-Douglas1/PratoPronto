@@ -21,7 +21,7 @@ const ADICIONAIS = [
 ]
 
 export default function ProductCard({ produto }) {
-  const { adicionar } = useCart()
+  const { adicionar, podeAdicionar } = useCart()
   const [adicionado, setAdicionado] = useState(false)
   const [modal, setModal] = useState(false)
   const [tamanho, setTamanho] = useState('G')
@@ -43,7 +43,7 @@ export default function ProductCard({ produto }) {
   }
 
   function handleAdd() {
-    if (produto.available === false || Number(produto.stock) === 0) return
+    if (!podeAdicionar(produto)) return
     if (isPizza) {
       setModal(true)
       return
@@ -57,6 +57,11 @@ export default function ProductCard({ produto }) {
   }
 
   function confirmarPizza() {
+    if (!podeAdicionar(produto)) {
+      setModal(false)
+      return
+    }
+
     const tamanhoLabel = TAMANHOS.find((item) => item.id === tamanho)?.label || tamanho
     const bordaLabel = BORDAS.find((item) => item.id === borda)?.label || borda
     const extrasLabels = adicionais.map((id) => ADICIONAIS.find((item) => item.id === id)?.label || id)
@@ -74,14 +79,17 @@ export default function ProductCard({ produto }) {
     feedback()
   }
 
-  const indisponivel = produto.available === false || Number(produto.stock) === 0
+  const semEstoque = produto.available === false || Number(produto.stock) === 0
+  const limiteCarrinho = !semEstoque && !podeAdicionar(produto)
+  const bloqueado = semEstoque || limiteCarrinho
+  const tag = semEstoque ? 'Indisponível' : limiteCarrinho ? 'Limite no carrinho' : 'Feito na hora'
 
   return (
     <>
-      <article className={`product-card ${indisponivel ? 'is-unavailable' : ''}`}>
+      <article className={`product-card ${bloqueado ? 'is-unavailable' : ''}`}>
         <div className="product-card__image">
           <img src={produto.imagem} alt={produto.nome} loading="lazy" />
-          <span className="product-card__tag">{indisponivel ? 'Indisponível' : 'Feito na hora'}</span>
+          <span className="product-card__tag">{tag}</span>
         </div>
         <div className="product-card-content">
           <h3>{produto.nome}</h3>
@@ -92,8 +100,8 @@ export default function ProductCard({ produto }) {
               <small>A partir de</small>
               <strong>{formatarMoeda(produto.preco)}</strong>
             </div>
-            <button type="button" disabled={indisponivel} className={`add-button ${adicionado ? 'is-added' : ''}`} onClick={handleAdd} aria-label={`Adicionar ${produto.nome}`}>
-              {indisponivel ? '×' : adicionado ? '✓' : '+'}
+            <button type="button" disabled={bloqueado} className={`add-button ${adicionado ? 'is-added' : ''}`} onClick={handleAdd} aria-label={`Adicionar ${produto.nome}`}>
+              {bloqueado ? '×' : adicionado ? '✓' : '+'}
             </button>
           </div>
         </div>
@@ -140,8 +148,8 @@ export default function ProductCard({ produto }) {
             <label className="custom-note">Observação
               <textarea value={observacao} onChange={(e) => setObservacao(e.target.value)} maxLength={300} placeholder="Ex.: sem cebola, cortar em 8 pedaços..." />
             </label>
-            <button className="btn btn-primary wide-button" type="button" onClick={confirmarPizza}>
-              Adicionar • {formatarMoeda(produto.preco + ajuste)}
+            <button className="btn btn-primary wide-button" type="button" disabled={!podeAdicionar(produto)} onClick={confirmarPizza}>
+              {podeAdicionar(produto) ? `Adicionar • ${formatarMoeda(produto.preco + ajuste)}` : 'Estoque atingido'}
             </button>
           </section>
         </div>
