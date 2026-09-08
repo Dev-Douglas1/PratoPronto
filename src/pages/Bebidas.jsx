@@ -6,13 +6,15 @@ import ProductGrid from '../components/ProductGrid.jsx'
 import BottomActions from '../components/BottomActions.jsx'
 import BottomNav from '../components/BottomNav.jsx'
 import { bebidas } from '../data/produtos.js'
+import { useCatalog } from '../hooks/useCatalog.js'
 
 export default function Bebidas() {
   const navigate = useNavigate()
   const [busca, setBusca] = useState('')
+  const catalog = useCatalog(bebidas)
   const filtradas = useMemo(
-    () => bebidas.filter((bebida) => bebida.nome.toLowerCase().includes(busca.toLowerCase())),
-    [busca],
+    () => catalog.filter((bebida) => bebida.nome.toLowerCase().includes(busca.toLowerCase())),
+    [catalog, busca],
   )
 
   return (

@@ -4,23 +4,50 @@ import {
   deleteUser,
   EmailAuthProvider,
   onAuthStateChanged,
+  reauthenticateWithCredential,
+  sendEmailVerification,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
-  reauthenticateWithCredential,
 } from 'firebase/auth'
 import { auth, firebaseConfigured } from '../firebase.js'
 import {
   deleteUserData,
+  ensureTestAdminAccess,
+  getAdminAccess,
   getUserProfile,
   PRIVACY_POLICY_VERSION,
   saveUserProfile,
   TERMS_VERSION,
+  TEST_ADMIN_EMAIL,
   updateUserProfile,
 } from '../services/storage.js'
 import { criarErroFirebase } from '../utils/firebaseError.js'
 
 const UserContext = createContext(null)
+
+async function buildUser(firebaseUser) {
+  const profile = await getUserProfile(firebaseUser.uid).catch(() => null)
+  let admin = await getAdminAccess(firebaseUser.uid).catch(() => null)
+
+  if (!admin && firebaseUser.email?.toLowerCase() === TEST_ADMIN_EMAIL) {
+    admin = await ensureTestAdminAccess(firebaseUser.uid, firebaseUser.email).catch(() => null)
+  }
+
+  const isAdmin = admin?.role === 'restaurant_admin' || firebaseUser.email?.toLowerCase() === TEST_ADMIN_EMAIL
+
+  return {
+    uid: firebaseUser.uid,
+    email: firebaseUser.email,
+    nome: profile?.nome || firebaseUser.displayName || '',
+    emailVerified: firebaseUser.emailVerified,
+    ...profile,
+    admin: isAdmin,
+    role: isAdmin ? 'restaurant_admin' : 'customer',
+    permissions: admin?.permissions ?? [],
+  }
+}
 
 export function UserProvider({ children }) {
   const [usuario, setUsuario] = useState(null)
@@ -40,15 +67,16 @@ export function UserProvider({ children }) {
       }
 
       try {
-        const profile = await getUserProfile(firebaseUser.uid)
+        setUsuario(await buildUser(firebaseUser))
+      } catch {
         setUsuario({
           uid: firebaseUser.uid,
           email: firebaseUser.email,
-          nome: profile?.nome || firebaseUser.displayName || '',
-          ...profile,
+          nome: firebaseUser.displayName || '',
+          emailVerified: firebaseUser.emailVerified,
+          admin: firebaseUser.email?.toLowerCase() === TEST_ADMIN_EMAIL,
+          role: firebaseUser.email?.toLowerCase() === TEST_ADMIN_EMAIL ? 'restaurant_admin' : 'customer',
         })
-      } catch {
-        setUsuario({ uid: firebaseUser.uid, email: firebaseUser.email, nome: firebaseUser.displayName || '' })
       } finally {
         setLoading(false)
       }
@@ -59,13 +87,7 @@ export function UserProvider({ children }) {
     if (!firebaseConfigured || !auth) throw new Error('Firebase não configurado.')
     try {
       const credential = await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), senha)
-      const profile = await getUserProfile(credential.user.uid)
-      const finalUser = {
-        uid: credential.user.uid,
-        email: credential.user.email,
-        nome: profile?.nome || credential.user.displayName || '',
-        ...profile,
-      }
+      const finalUser = await buildUser(credential.user)
       setUsuario(finalUser)
       return finalUser
     } catch (error) {
@@ -87,8 +109,6 @@ export function UserProvider({ children }) {
 
       await updateProfile(novoUsuario, { displayName: dados.nome.trim() })
 
-      // A senha nunca é enviada ao Firestore. Ela é processada apenas pelo
-      // Firebase Authentication, que mantém a credencial protegida.
       const profile = await saveUserProfile(novoUsuario.uid, {
         nome: dados.nome,
         email: credential.user.email,
@@ -102,12 +122,20 @@ export function UserProvider({ children }) {
         termsVersion: TERMS_VERSION,
         consentTimestamp: new Date().toISOString(),
       })
-      const finalUser = { uid: novoUsuario.uid, ...profile }
+
+      await sendEmailVerification(novoUsuario).catch(() => undefined)
+      const admin = await ensureTestAdminAccess(novoUsuario.uid, credential.user.email).catch(() => null)
+      const isAdmin = admin?.role === 'restaurant_admin' || credential.user.email?.toLowerCase() === TEST_ADMIN_EMAIL
+      const finalUser = {
+        uid: novoUsuario.uid,
+        ...profile,
+        emailVerified: novoUsuario.emailVerified,
+        admin: isAdmin,
+        role: isAdmin ? 'restaurant_admin' : 'customer',
+      }
       setUsuario(finalUser)
       return finalUser
     } catch (error) {
-      // Evita conta incompleta caso a gravação do perfil falhe depois que o
-      // usuário foi criado no Authentication.
       if (novoUsuario && auth.currentUser?.uid === novoUsuario.uid) {
         try {
           await deleteUser(novoUsuario)
@@ -134,6 +162,25 @@ export function UserProvider({ children }) {
       const finalUser = { ...usuario, ...profile }
       setUsuario(finalUser)
       return finalUser
+    } catch (error) {
+      throw criarErroFirebase(error)
+    }
+  }
+
+  async function recuperarSenha(email) {
+    if (!firebaseConfigured || !auth) throw new Error('Firebase não configurado.')
+    if (!email?.trim()) throw new Error('Digite seu e-mail primeiro.')
+    try {
+      await sendPasswordResetEmail(auth, email.trim().toLowerCase())
+    } catch (error) {
+      throw criarErroFirebase(error)
+    }
+  }
+
+  async function reenviarVerificacao() {
+    if (!auth?.currentUser) throw new Error('Usuário não autenticado.')
+    try {
+      await sendEmailVerification(auth.currentUser)
     } catch (error) {
       throw criarErroFirebase(error)
     }
@@ -168,6 +215,8 @@ export function UserProvider({ children }) {
       entrar,
       cadastrar,
       atualizar,
+      recuperarSenha,
+      reenviarVerificacao,
       sair,
       excluirConta,
     }),
