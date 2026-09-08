@@ -8,14 +8,21 @@ import Pedido from './pages/Pedido.jsx'
 import Pagamento from './pages/Pagamento.jsx'
 import Acompanhamento from './pages/Acompanhamento.jsx'
 import Perfil from './pages/Perfil.jsx'
+import Empresa from './pages/Empresa.jsx'
 import PoliticaPrivacidade from './pages/PoliticaPrivacidade.jsx'
 import TermosUso from './pages/TermosUso.jsx'
 import PrivacidadeDados from './pages/PrivacidadeDados.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
+import AdminRoute from './components/AdminRoute.jsx'
 import './App.css'
+import './upgrade.css'
 
 function protectedPage(element) {
   return <ProtectedRoute>{element}</ProtectedRoute>
+}
+
+function adminPage(element) {
+  return <AdminRoute>{element}</AdminRoute>
 }
 
 export default function App() {
@@ -31,6 +38,8 @@ export default function App() {
       <Route path="/acompanhamento" element={protectedPage(<Acompanhamento />)} />
       <Route path="/perfil" element={protectedPage(<Perfil />)} />
       <Route path="/privacidade" element={protectedPage(<PrivacidadeDados />)} />
+      <Route path="/empresa" element={adminPage(<Empresa />)} />
+      <Route path="/admin" element={<Navigate to="/empresa" replace />} />
       <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
       <Route path="/termos-de-uso" element={<TermosUso />} />
       <Route path="*" element={<Navigate to="/" replace />} />

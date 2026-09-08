@@ -73,6 +73,10 @@ cp .env.example .env
 
 Não coloque senhas, chaves privadas ou credenciais de servidor no `.env`. As chaves Web do Firebase identificam o projeto; a proteção do banco depende principalmente de Authentication + Security Rules.
 
+Se aparecer `auth/configuration-not-found`, o SDK está conectado ao projeto, mas o provedor ainda não foi ativado. Abra **Authentication → Método de login → E-mail/senha**, ative a primeira opção e clique em **Salvar**.
+
+No Codespaces, adicione também o domínio exibido na barra do navegador em **Authentication → Configurações → Domínios autorizados**. Informe apenas o domínio, sem `https://` e sem o caminho `/login`.
+
 ## 2. Aplicar as regras do Firestore
 
 O arquivo `firestore.rules` já está no projeto.
@@ -112,6 +116,8 @@ No Codespaces, abra a porta `5173`.
 - versão da Política de Privacidade
 - versão dos Termos
 - data/hora do aceite
+
+A credencial de acesso fica no **Firebase Authentication**. O Firestore recebe somente os dados do perfil permitidos pelas regras e nunca recebe a senha.
 
 ### `orders/{orderId}`
 

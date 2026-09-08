@@ -10,6 +10,7 @@ const initialState = {
   email: '',
   telefone: '',
   senha: '',
+  confirmarSenha: '',
   endereco: '',
   numero: '',
   bairro: '',
@@ -80,8 +81,17 @@ export default function Cadastro() {
       return
     }
 
-    if (dados.senha.length < 8) {
-      setErro('A senha deve ter pelo menos 8 caracteres.')
+    if (
+      dados.senha.length < 8 ||
+      !/[A-Za-zÀ-ÿ]/.test(dados.senha) ||
+      !/\d/.test(dados.senha)
+    ) {
+      setErro('A senha deve ter pelo menos 8 caracteres, incluindo uma letra e um número.')
+      return
+    }
+
+    if (dados.senha !== dados.confirmarSenha) {
+      setErro('As duas senhas precisam ser iguais.')
       return
     }
 
@@ -136,8 +146,14 @@ export default function Cadastro() {
   }
 
   return (
-    <AppScreen>
+    <AppScreen className="auth-page">
       <TopBar titulo="Cadastro" />
+
+      <div className="page-heading">
+        <span className="eyebrow">NOVO CLIENTE</span>
+        <h1>Crie sua conta</h1>
+        <p>Preencha seus dados para receber o pedido no endereço certo.</p>
+      </div>
 
       <form
         className="light-card form-card"
@@ -158,6 +174,7 @@ export default function Cadastro() {
           onChange={alterar}
           placeholder="Seu nome"
           autoComplete="name"
+          maxLength={100}
           disabled={enviando}
         />
 
@@ -170,6 +187,7 @@ export default function Cadastro() {
           onChange={alterar}
           placeholder="voce@email.com"
           autoComplete="email"
+          maxLength={254}
           disabled={enviando}
         />
 
@@ -182,6 +200,7 @@ export default function Cadastro() {
           onChange={alterar}
           placeholder="(41) 99999-9999"
           autoComplete="tel"
+          maxLength={30}
           disabled={enviando}
         />
 
@@ -198,6 +217,19 @@ export default function Cadastro() {
           disabled={enviando}
         />
 
+        <label htmlFor="confirmarSenha">Confirmar senha</label>
+        <input
+          id="confirmarSenha"
+          name="confirmarSenha"
+          type="password"
+          value={dados.confirmarSenha}
+          onChange={alterar}
+          placeholder="Digite a senha novamente"
+          autoComplete="new-password"
+          minLength={8}
+          disabled={enviando}
+        />
+
         <label htmlFor="endereco">Endereço</label>
         <input
           id="endereco"
@@ -207,6 +239,7 @@ export default function Cadastro() {
           onChange={alterar}
           placeholder="Rua ou avenida"
           autoComplete="street-address"
+          maxLength={180}
           disabled={enviando}
         />
 
@@ -221,6 +254,7 @@ export default function Cadastro() {
               onChange={alterar}
               placeholder="123"
               autoComplete="address-line2"
+              maxLength={20}
               disabled={enviando}
             />
           </div>
@@ -235,6 +269,7 @@ export default function Cadastro() {
               onChange={alterar}
               placeholder="Bairro"
               autoComplete="address-level3"
+              maxLength={100}
               disabled={enviando}
             />
           </div>
@@ -249,6 +284,7 @@ export default function Cadastro() {
           onChange={alterar}
           placeholder="Apto, bloco, referência (opcional)"
           autoComplete="address-line3"
+          maxLength={180}
           disabled={enviando}
         />
 
