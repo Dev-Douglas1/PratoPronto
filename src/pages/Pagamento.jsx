@@ -8,6 +8,8 @@ import { formatarNumeroCartao, formatarValidade } from '../utils/cartao.js'
 import { useUser } from '../context/UserContext.jsx'
 import { calculateDeliveryFee, createOrder } from '../services/storage.js'
 
+const cardDemoEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_CARD_DEMO === 'true'
+
 export default function Pagamento() {
   const navigate = useNavigate()
   const { lista, total, limpar, precoUnitario } = useCart()
@@ -15,7 +17,7 @@ export default function Pagamento() {
   const [deliveryFee, setDeliveryFee] = useState(null)
   const [loadingFee, setLoadingFee] = useState(false)
   const [feeError, setFeeError] = useState('')
-  const [method, setMethod] = useState('card-demo')
+  const [method, setMethod] = useState(cardDemoEnabled ? 'card-demo' : 'cash-on-delivery')
   const [form, setForm] = useState({ numero: '', validade: '', cvv: '', nome: '' })
   const [erro, setErro] = useState('')
   const [enviando, setEnviando] = useState(false)
@@ -69,6 +71,10 @@ export default function Pagamento() {
       setErro('Complete telefone e endereço no perfil antes de finalizar o pedido.')
       return
     }
+    if (method === 'card-demo' && !cardDemoEnabled) {
+      setErro('Pagamento por cartão demonstrativo está desativado nesta versão.')
+      return
+    }
     if (method === 'card-demo' && (form.numero.replace(/\D/g, '').length < 13 || !form.validade || form.cvv.length < 3 || !form.nome.trim())) {
       setErro('Preencha corretamente os dados do cartão.')
       return
@@ -77,7 +83,6 @@ export default function Pagamento() {
     try {
       setEnviando(true)
 
-      // Recalcula na confirmação para não depender de state da navegação nem de uma taxa antiga.
       const currentDeliveryFee = await calculateDeliveryFee(usuario.bairro, total)
       const currentFinalTotal = total + currentDeliveryFee
       setDeliveryFee(currentDeliveryFee)
@@ -128,14 +133,16 @@ export default function Pagamento() {
       <div className="page-heading">
         <span className="eyebrow">FINALIZAR PEDIDO</span>
         <h1>Pagamento seguro</h1>
-        <p>O cartão online ainda está em modo de demonstração. Dados sensíveis não são salvos.</p>
+        <p>{cardDemoEnabled ? 'O cartão online está em modo de demonstração. Dados sensíveis não são salvos.' : 'Nesta versão pública, o pagamento é feito na entrega. O cartão online só será liberado após integração com um gateway seguro.'}</p>
       </div>
       <form className="light-card payment-card" onSubmit={confirmar}>
         <div className="payment-methods" role="radiogroup" aria-label="Forma de pagamento">
-          <label className={method === 'card-demo' ? 'is-selected' : ''}>
-            <input type="radio" name="payment-method" value="card-demo" checked={method === 'card-demo'} onChange={(e) => setMethod(e.target.value)} />
-            <span>💳 Cartão online</span><small>Demonstração</small>
-          </label>
+          {cardDemoEnabled ? (
+            <label className={method === 'card-demo' ? 'is-selected' : ''}>
+              <input type="radio" name="payment-method" value="card-demo" checked={method === 'card-demo'} onChange={(e) => setMethod(e.target.value)} />
+              <span>💳 Cartão online</span><small>Demonstração</small>
+            </label>
+          ) : null}
           <label className={method === 'cash-on-delivery' ? 'is-selected' : ''}>
             <input type="radio" name="payment-method" value="cash-on-delivery" checked={method === 'cash-on-delivery'} onChange={(e) => setMethod(e.target.value)} />
             <span>🏍️ Pagar na entrega</span><small>Máquina/dinheiro</small>
@@ -149,7 +156,7 @@ export default function Pagamento() {
         </div>
         {feeError ? <p className="form-error dark-error" role="alert">{feeError}</p> : null}
 
-        {method === 'card-demo' ? (
+        {method === 'card-demo' && cardDemoEnabled ? (
           <>
             <div className="payment-title">
               <div><span>💳</span><strong>Cartão de crédito</strong></div>
