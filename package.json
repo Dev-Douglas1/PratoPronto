@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
-    "preview": "vite preview --host 0.0.0.0"
+    "preview": "vite preview --host 0.0.0.0",
+    "check:production": "node scripts/check-production-env.mjs"
   },
   "dependencies": {
     "firebase": "^12.2.1",
