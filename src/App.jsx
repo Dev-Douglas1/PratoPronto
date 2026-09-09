@@ -15,6 +15,7 @@ import PrivacidadeDados from './pages/PrivacidadeDados.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import AdminRoute from './components/AdminRoute.jsx'
 import PwaInstallPrompt from './components/PwaInstallPrompt.jsx'
+import { firebaseConfigured } from './firebase.js'
 import './App.css'
 import './upgrade.css'
 
@@ -26,7 +27,28 @@ function adminPage(element) {
   return <AdminRoute>{element}</AdminRoute>
 }
 
+function ProductionConfigError() {
+  return (
+    <main className="app-shell">
+      <div className="app-screen centered-screen">
+        <section className="light-card login-card" style={{ width: 'min(100%, 520px)' }} role="alert">
+          <span className="eyebrow">CONFIGURAÇÃO DE PRODUÇÃO</span>
+          <h1>PratoPronto ainda não está conectado ao Firebase</h1>
+          <p>
+            Esta implantação foi aberta sem as variáveis `VITE_FIREBASE_*`. O build precisa ser gerado com a configuração do Firebase antes de ser publicado.
+          </p>
+          <p className="privacy-badge">
+            Use o workflow “Publicar PratoPronto em produção” ou gere novamente a pasta `dist` com o arquivo `.env.production` configurado.
+          </p>
+        </section>
+      </div>
+    </main>
+  )
+}
+
 export default function App() {
+  if (import.meta.env.PROD && !firebaseConfigured) return <ProductionConfigError />
+
   return (
     <>
       <Routes>
