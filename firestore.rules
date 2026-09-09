@@ -15,20 +15,19 @@ service cloud.firestore {
       return estaLogado() && request.auth.uid == userId;
     }
 
-    function emailEhAdminDeTeste() {
+    function temClaimAdmin() {
       return emailVerificado()
-        && request.auth.token.email is string
-        && request.auth.token.email == 'douglas.souza.santos@escola.pr.gov.br';
+        && request.auth.token.restaurant_admin == true;
+    }
+
+    function temDocumentoAdmin() {
+      return emailVerificado()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'restaurant_admin';
     }
 
     function ehAdmin() {
-      return emailVerificado() && (
-        emailEhAdminDeTeste()
-        || (
-          exists(/databases/$(database)/documents/admins/$(request.auth.uid))
-          && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'restaurant_admin'
-        )
-      );
+      return temClaimAdmin() || temDocumentoAdmin();
     }
 
     function textoValido(valor, maximo) {
@@ -111,8 +110,6 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow create: if ehDono(userId) && perfilValido();
-      // O administrador recebe os dados necessários dentro do pedido; não precisa
-      // listar ou abrir perfis completos de clientes.
       allow read: if ehDono(userId);
       allow update: if ehDono(userId)
         && perfilValido()
@@ -124,21 +121,13 @@ service cloud.firestore {
     }
 
     match /admins/{userId} {
-      allow read: if ehAdmin();
+      // O próprio usuário pode saber se possui perfil empresarial; ações
+      // administrativas continuam exigindo e-mail verificado por ehAdmin().
+      allow read: if ehDono(userId) || ehAdmin();
 
-      // Bootstrap temporário do administrador de teste. Exige e-mail verificado.
-      // Em produção, substitua por Custom Claims/Admin SDK.
-      allow create: if ehDono(userId)
-        && emailEhAdminDeTeste()
-        && request.resource.data.keys().hasOnly([
-          'email', 'role', 'permissions', 'createdAt', 'updatedAt'
-        ])
-        && request.resource.data.email == request.auth.token.email
-        && request.resource.data.role == 'restaurant_admin'
-        && request.resource.data.permissions is list
-        && request.resource.data.permissions.size() <= 20
-        && request.resource.data.createdAt == request.time
-        && request.resource.data.updatedAt == request.time;
+      // A criação e remoção de administradores é reservada ao Console Firebase,
+      // Admin SDK ou outro backend confiável. Nunca é feita pelo navegador.
+      allow create, delete: if false;
 
       allow update: if ehAdmin()
         && request.resource.data.keys().hasOnly([
@@ -150,9 +139,6 @@ service cloud.firestore {
         && request.resource.data.permissions.size() <= 20
         && request.resource.data.createdAt == resource.data.createdAt
         && request.resource.data.updatedAt == request.time;
-
-      // Remoção de administradores deve ser feita por backend/Admin SDK.
-      allow delete: if false;
     }
 
     match /orders/{orderId} {
