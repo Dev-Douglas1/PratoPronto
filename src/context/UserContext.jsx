@@ -3,6 +3,7 @@ import {
   createUserWithEmailAndPassword,
   deleteUser,
   EmailAuthProvider,
+  getIdTokenResult,
   onAuthStateChanged,
   reauthenticateWithCredential,
   reload,
@@ -15,37 +16,36 @@ import {
 import { auth, firebaseConfigured } from '../firebase.js'
 import {
   deleteUserData,
-  ensureTestAdminAccess,
   getAdminAccess,
   getUserProfile,
   PRIVACY_POLICY_VERSION,
   saveUserProfile,
   TERMS_VERSION,
-  TEST_ADMIN_EMAIL,
   updateUserProfile,
 } from '../services/storage.js'
 import { criarErroFirebase } from '../utils/firebaseError.js'
 
 const UserContext = createContext(null)
 
-function candidatoAdmin(firebaseUser, admin) {
-  return admin?.role === 'restaurant_admin' || firebaseUser?.email?.toLowerCase() === TEST_ADMIN_EMAIL
-}
+async function getAdminIdentity(firebaseUser) {
+  const [admin, tokenResult] = await Promise.all([
+    getAdminAccess(firebaseUser.uid).catch(() => null),
+    getIdTokenResult(firebaseUser).catch(() => null),
+  ])
 
-function adminPermitido(firebaseUser, admin) {
-  return Boolean(firebaseUser?.emailVerified && candidatoAdmin(firebaseUser, admin))
+  const claimAdmin = tokenResult?.claims?.restaurant_admin === true
+  const documentAdmin = admin?.role === 'restaurant_admin'
+
+  return {
+    admin,
+    adminCandidate: claimAdmin || documentAdmin,
+  }
 }
 
 async function buildUser(firebaseUser) {
   const profile = await getUserProfile(firebaseUser.uid).catch(() => null)
-  let admin = await getAdminAccess(firebaseUser.uid).catch(() => null)
-
-  if (!admin && firebaseUser.emailVerified && firebaseUser.email?.toLowerCase() === TEST_ADMIN_EMAIL) {
-    admin = await ensureTestAdminAccess(firebaseUser.uid, firebaseUser.email).catch(() => null)
-  }
-
-  const adminCandidate = candidatoAdmin(firebaseUser, admin)
-  const isAdmin = adminPermitido(firebaseUser, admin)
+  const { admin, adminCandidate } = await getAdminIdentity(firebaseUser)
+  const isAdmin = Boolean(firebaseUser.emailVerified && adminCandidate)
 
   return {
     uid: firebaseUser.uid,
@@ -79,17 +79,16 @@ export function UserProvider({ children }) {
 
       try {
         setUsuario(await buildUser(firebaseUser))
-      } catch {
-        const adminCandidate = firebaseUser.email?.toLowerCase() === TEST_ADMIN_EMAIL
-        const isAdmin = Boolean(firebaseUser.emailVerified && adminCandidate)
+      } catch (error) {
+        console.error('[PratoPronto] Não foi possível carregar completamente a sessão.', error)
         setUsuario({
           uid: firebaseUser.uid,
           email: firebaseUser.email,
           nome: firebaseUser.displayName || '',
           emailVerified: firebaseUser.emailVerified,
-          adminCandidate,
-          admin: isAdmin,
-          role: isAdmin ? 'restaurant_admin' : 'customer',
+          adminCandidate: false,
+          admin: false,
+          role: 'customer',
           permissions: [],
         })
       } finally {
@@ -139,12 +138,11 @@ export function UserProvider({ children }) {
       })
 
       await sendEmailVerification(novoUsuario).catch(() => undefined)
-      const adminCandidate = novoUsuario.email?.toLowerCase() === TEST_ADMIN_EMAIL
       const finalUser = {
         uid: novoUsuario.uid,
         ...profile,
         emailVerified: novoUsuario.emailVerified,
-        adminCandidate,
+        adminCandidate: false,
         admin: false,
         role: 'customer',
         permissions: [],
@@ -206,6 +204,7 @@ export function UserProvider({ children }) {
     if (!auth?.currentUser) throw new Error('Usuário não autenticado.')
     try {
       await reload(auth.currentUser)
+      await auth.currentUser.getIdToken(true)
       const finalUser = await buildUser(auth.currentUser)
       setUsuario(finalUser)
       return finalUser
