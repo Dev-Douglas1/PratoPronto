@@ -16,7 +16,7 @@ jobs:
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - name: Instalar dependências
@@ -39,7 +39,7 @@ jobs:
             sleep 0.5
           done
 
-          for route in / /login /cadastro /pizzas /bebidas /pedido /pagamento /acompanhamento /perfil /empresa; do
+          for route in / /login /cadastro /verificar-email /pizzas /bebidas /pedido /pagamento /acompanhamento /perfil /empresa; do
             code=$(curl -sS -o /tmp/page.html -w '%{http_code}' "http://127.0.0.1:5173${route}")
             test "$code" = "200"
             grep -q 'id="root"' /tmp/page.html
@@ -65,7 +65,7 @@ jobs:
             sleep 0.5
           done
 
-          for route in / /login /cadastro /pizzas /bebidas /pedido /pagamento /acompanhamento /perfil /empresa; do
+          for route in / /login /cadastro /verificar-email /pizzas /bebidas /pedido /pagamento /acompanhamento /perfil /empresa; do
             code=$(curl -sS -o /tmp/page.html -w '%{http_code}' "http://127.0.0.1:4173${route}")
             test "$code" = "200"
             grep -q 'id="root"' /tmp/page.html
