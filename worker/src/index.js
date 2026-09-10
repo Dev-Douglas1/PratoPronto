@@ -18,13 +18,51 @@ import {
 } from './firestore.js'
 import { verifyAppCheck, verifyFirebaseUser } from './security.js'
 
+const MAX_BODY_BYTES = 32 * 1024
+const IDEMPOTENCY_HEADER = 'Idempotency-Key'
+
 async function parseJsonBody(request) {
-  const length = Number(request.headers.get('Content-Length') || 0)
-  if (length > 64 * 1024) throw new ApiError(413, 'payload-too-large', 'Pedido grande demais.')
+  const contentType = String(request.headers.get('Content-Type') || '').toLowerCase()
+  if (!contentType.includes('application/json')) {
+    throw new ApiError(415, 'content-type-required', 'Envie o pedido como JSON.')
+  }
+
+  const declaredLength = Number(request.headers.get('Content-Length') || 0)
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) {
+    throw new ApiError(413, 'payload-too-large', 'Pedido grande demais.')
+  }
+
+  const raw = await request.text()
+  if (new TextEncoder().encode(raw).byteLength > MAX_BODY_BYTES) {
+    throw new ApiError(413, 'payload-too-large', 'Pedido grande demais.')
+  }
+  if (!raw.trim()) throw new ApiError(400, 'invalid-json', 'Dados do pedido inválidos.')
+
   try {
-    return await request.json()
+    return JSON.parse(raw)
   } catch {
     throw new ApiError(400, 'invalid-json', 'Dados do pedido inválidos.')
+  }
+}
+
+function requireIdempotencyKey(request) {
+  const value = cleanText(request.headers.get(IDEMPOTENCY_HEADER), 128)
+  if (value.length < 20 || !/^[A-Za-z0-9._:-]+$/.test(value)) {
+    throw new ApiError(400, 'invalid-idempotency-key', 'Identificador seguro da tentativa de compra inválido.')
+  }
+  return value
+}
+
+async function sha256Hex(value) {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value))
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('')
+}
+
+async function orderIdentity(uid, idempotencyKey) {
+  const requestKeyHash = await sha256Hex(`${uid}:${idempotencyKey}`)
+  return {
+    requestKeyHash,
+    orderId: requestKeyHash.slice(0, 32),
   }
 }
 
@@ -81,18 +119,49 @@ async function enforceUserRateLimit(user, env) {
   }
 }
 
-async function createOrderOnce(body, env, user) {
+function replayResponse(existing, user, requestKeyHash) {
+  if (!existing?.exists) return null
+  const data = existing.data || {}
+  if (
+    data.userId !== user.uid
+    || data.serverValidated !== true
+    || data.requestKeyHash !== requestKeyHash
+  ) {
+    throw new ApiError(409, 'idempotency-conflict', 'Esta tentativa de compra entrou em conflito. Atualize a tela e tente novamente.')
+  }
+
+  return {
+    id: existing.id,
+    subtotal: Number(data.subtotal || 0),
+    deliveryFee: Number(data.deliveryFee || 0),
+    total: Number(data.total || 0),
+    currency: 'BRL',
+    status: data.status,
+    paymentStatus: data.paymentStatus,
+    serverValidated: true,
+    replayed: true,
+  }
+}
+
+async function createOrderOnce(body, env, user, idempotencyKey) {
   const parsedItems = parseItems(body.itens)
   if (String(body.paymentMethod || 'cash-on-delivery') !== 'cash-on-delivery') {
     throw new ApiError(409, 'payment-not-supported', 'Somente pagamento na entrega está disponível nesta versão.')
   }
 
+  const { orderId, requestKeyHash } = await orderIdentity(user.uid, idempotencyKey)
   const transaction = await beginTransaction(env)
   try {
+    const existing = await getDocument(env, `orders/${orderId}`, transaction)
+    const replay = replayResponse(existing, user, requestKeyHash)
+    if (replay) {
+      await rollbackTransaction(env, transaction)
+      return replay
+    }
+
     const context = await loadOrderContext(env, user.uid, parsedItems, transaction)
     const canonical = buildCanonicalOrder(parsedItems, context.catalog, context.profile, context.deliveryConfig)
     const customer = canonicalCustomer(user, context.profile)
-    const orderId = crypto.randomUUID().replace(/-/g, '')
     const now = timestampNow()
     const writes = []
 
@@ -137,8 +206,9 @@ async function createOrderOnce(body, env, user) {
       assignedCourier: '',
       restaurantNotes: '',
       serverValidated: true,
-      orderSchemaVersion: 3,
+      orderSchemaVersion: 4,
       backendProvider: 'cloudflare-workers',
+      requestKeyHash,
       createdAt: now,
       updatedAt: now,
     }
@@ -158,6 +228,7 @@ async function createOrderOnce(body, env, user) {
       status: payload.status,
       paymentStatus: payload.paymentStatus,
       serverValidated: true,
+      replayed: false,
     }
   } catch (error) {
     await rollbackTransaction(env, transaction)
@@ -165,19 +236,22 @@ async function createOrderOnce(body, env, user) {
   }
 }
 
-async function createOrder(request, env, user) {
+async function createOrder(request, env, user, idempotencyKey) {
   const body = await parseJsonBody(request)
   try {
-    return await createOrderOnce(body, env, user)
+    return await createOrderOnce(body, env, user, idempotencyKey)
   } catch (error) {
-    if (error?.code === 'order-conflict') return createOrderOnce(body, env, user)
+    if (error?.code === 'order-conflict') {
+      return createOrderOnce(body, env, user, idempotencyKey)
+    }
     throw error
   }
 }
 
 function originAllowed(request, env) {
   const origin = request.headers.get('Origin')
-  if (!origin) return true
+  if (!origin) return String(env.REQUIRE_BROWSER_ORIGIN || 'false').toLowerCase() !== 'true'
+
   const allowed = String(env.ALLOWED_ORIGINS || '')
     .split(',')
     .map((item) => item.trim())
@@ -195,11 +269,12 @@ function originAllowed(request, env) {
 function corsHeaders(request, env) {
   const origin = request.headers.get('Origin')
   const headers = {
-    'Access-Control-Allow-Headers': 'Authorization, Content-Type, X-Firebase-AppCheck',
+    'Access-Control-Allow-Headers': `Authorization, Content-Type, X-Firebase-AppCheck, ${IDEMPOTENCY_HEADER}`,
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Max-Age': '600',
     'Cache-Control': 'no-store',
     'Content-Type': 'application/json; charset=utf-8',
+    'X-Content-Type-Options': 'nosniff',
     Vary: 'Origin',
   }
   if (origin && originAllowed(request, env)) headers['Access-Control-Allow-Origin'] = origin
@@ -214,17 +289,22 @@ function jsonResponse(request, env, body, status = 200) {
 
 async function handleRequest(request, env) {
   if (!env.FIREBASE_PROJECT_ID) throw new ApiError(500, 'project-config', 'FIREBASE_PROJECT_ID não configurado no Worker.')
-  if (!originAllowed(request, env)) throw new ApiError(403, 'origin-not-allowed', 'Origem não autorizada.')
-
-  if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(request, env) })
 
   const url = new URL(request.url)
+  if (request.method === 'OPTIONS') {
+    if (!originAllowed(request, env)) throw new ApiError(403, 'origin-not-allowed', 'Origem não autorizada.')
+    return new Response(null, { status: 204, headers: corsHeaders(request, env) })
+  }
+
   if (request.method === 'GET' && url.pathname === '/health') {
     return jsonResponse(request, env, {
       ok: true,
       service: 'pratopronto-api',
       backend: 'cloudflare-workers-free',
       appCheckRequired: String(env.REQUIRE_APP_CHECK || 'false').toLowerCase() === 'true',
+      browserOriginRequired: String(env.REQUIRE_BROWSER_ORIGIN || 'false').toLowerCase() === 'true',
+      idempotencyRequired: true,
+      maxBodyBytes: MAX_BODY_BYTES,
       checkoutRateLimit: {
         perIpPerMinute: 10,
         perUserPerMinute: 3,
@@ -232,15 +312,20 @@ async function handleRequest(request, env) {
     })
   }
 
+  if (!originAllowed(request, env)) throw new ApiError(403, 'origin-not-allowed', 'Origem não autorizada.')
   if (request.method !== 'POST') throw new ApiError(405, 'method-not-allowed', 'Método não permitido.')
   if (url.pathname !== '/orders') throw new ApiError(404, 'not-found', 'Endpoint não encontrado.')
 
   await enforceIpRateLimit(request, env)
-  const user = await verifyFirebaseUser(request, env)
+  const idempotencyKey = requireIdempotencyKey(request)
+
+  // App Check vem antes do acesso autenticado/Firestore para rejeitar cedo clientes
+  // que não pertencem ao aplicativo quando o modo estrito está habilitado.
   await verifyAppCheck(request, env)
+  const user = await verifyFirebaseUser(request, env)
   await enforceUserRateLimit(user, env)
 
-  return jsonResponse(request, env, await createOrder(request, env, user), 201)
+  return jsonResponse(request, env, await createOrder(request, env, user, idempotencyKey), 201)
 }
 
 export default {
