@@ -2,3 +2,5 @@ node_modules
 dist
 .env
 .env.local
+firestore.secure.rules
+functions/node_modules
