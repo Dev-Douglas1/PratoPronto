@@ -34,11 +34,32 @@ async function usarSessaoDoNavegador() {
   await setPersistence(auth, browserSessionPersistence)
 }
 
+function adminErrorMessage(error) {
+  const code = String(error?.code || '')
+  if (code.includes('permission-denied')) {
+    return 'Não foi possível consultar sua permissão de empresa. Verifique App Check e as regras do Firestore.'
+  }
+  if (code.includes('unavailable') || code.includes('network')) {
+    return 'Não foi possível consultar sua permissão de empresa por falha de conexão.'
+  }
+  return error?.message || 'Não foi possível consultar sua permissão de empresa.'
+}
+
 async function getAdminIdentity(firebaseUser) {
-  const [admin, tokenResult] = await Promise.all([
-    getAdminAccess(firebaseUser.uid).catch(() => null),
-    getIdTokenResult(firebaseUser).catch(() => null),
-  ])
+  let admin = null
+  let adminAccessError = ''
+
+  try {
+    admin = await getAdminAccess(firebaseUser.uid)
+  } catch (error) {
+    adminAccessError = adminErrorMessage(error)
+    console.error('[PratoPronto] Falha ao consultar admins/{uid}.', error)
+  }
+
+  const tokenResult = await getIdTokenResult(firebaseUser).catch((error) => {
+    console.error('[PratoPronto] Falha ao consultar claims administrativas.', error)
+    return null
+  })
 
   const claimAdmin = tokenResult?.claims?.restaurant_admin === true
   const documentAdmin = admin?.role === 'restaurant_admin'
@@ -46,12 +67,13 @@ async function getAdminIdentity(firebaseUser) {
   return {
     admin,
     adminCandidate: claimAdmin || documentAdmin,
+    adminAccessError,
   }
 }
 
 async function buildUser(firebaseUser) {
   const profile = await getUserProfile(firebaseUser.uid).catch(() => null)
-  const { admin, adminCandidate } = await getAdminIdentity(firebaseUser)
+  const { admin, adminCandidate, adminAccessError } = await getAdminIdentity(firebaseUser)
   const isAdmin = Boolean(firebaseUser.emailVerified && adminCandidate)
 
   return {
@@ -61,6 +83,7 @@ async function buildUser(firebaseUser) {
     emailVerified: firebaseUser.emailVerified,
     ...profile,
     adminCandidate,
+    adminAccessError,
     admin: isAdmin,
     role: isAdmin ? 'restaurant_admin' : 'customer',
     permissions: isAdmin ? (admin?.permissions ?? []) : [],
@@ -94,6 +117,7 @@ export function UserProvider({ children }) {
           nome: firebaseUser.displayName || '',
           emailVerified: firebaseUser.emailVerified,
           adminCandidate: false,
+          adminAccessError: 'Não foi possível carregar completamente sua sessão. Atualize a página e tente novamente.',
           admin: false,
           role: 'customer',
           permissions: [],
@@ -152,6 +176,7 @@ export function UserProvider({ children }) {
         ...profile,
         emailVerified: novoUsuario.emailVerified,
         adminCandidate: false,
+        adminAccessError: '',
         admin: false,
         role: 'customer',
         permissions: [],
