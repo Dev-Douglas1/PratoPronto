@@ -254,6 +254,9 @@ export function UserProvider({ children }) {
 
   async function excluirConta(senha) {
     if (!auth?.currentUser) throw new Error('Usuário não autenticado.')
+    if (usuario?.adminCandidate) {
+      throw new Error('Contas empresariais não podem ser excluídas pelo aplicativo. Revogue primeiro o acesso administrativo em ambiente seguro.')
+    }
     if (!senha) throw new Error('Digite sua senha para confirmar a exclusão.')
     try {
       const credential = EmailAuthProvider.credential(auth.currentUser.email, senha)
