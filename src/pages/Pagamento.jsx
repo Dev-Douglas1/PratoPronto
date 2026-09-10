@@ -9,7 +9,7 @@ import { useUser } from '../context/UserContext.jsx'
 import { calculateDeliveryFee, createOrder } from '../services/storage.js'
 import {
   createSecureOrder,
-  quoteSecureOrder,
+  getPurchaseQuotaBlock,
   secureOrderBackendEnabled,
 } from '../services/secureOrders.js'
 
@@ -21,13 +21,17 @@ export default function Pagamento() {
   const { lista, total, limpar, precoUnitario } = useCart()
   const { usuario } = useUser()
   const [deliveryFee, setDeliveryFee] = useState(null)
-  const [serverQuote, setServerQuote] = useState(null)
   const [loadingFee, setLoadingFee] = useState(false)
   const [feeError, setFeeError] = useState('')
   const [method, setMethod] = useState(cardDemoEnabled ? 'card-demo' : 'cash-on-delivery')
   const [form, setForm] = useState({ numero: '', validade: '', cvv: '', nome: '' })
   const [erro, setErro] = useState('')
   const [enviando, setEnviando] = useState(false)
+  const [purchaseBlock, setPurchaseBlock] = useState(() => (
+    secureOrderBackendEnabled
+      ? getPurchaseQuotaBlock()
+      : { blocked: false, until: null, message: '' }
+  ))
 
   const backendItems = useMemo(() => lista.map((item) => ({
     id: item.produto.id,
@@ -35,14 +39,11 @@ export default function Pagamento() {
     personalizacao: item.personalizacao,
   })), [lista])
 
-  const backendItemsKey = useMemo(() => JSON.stringify(backendItems), [backendItems])
-
   useEffect(() => {
     let active = true
 
     async function loadFee() {
       setFeeError('')
-      setServerQuote(null)
 
       if (!lista.length || total <= 0) {
         setDeliveryFee(0)
@@ -56,21 +57,11 @@ export default function Pagamento() {
 
       try {
         setLoadingFee(true)
-        if (secureOrderBackendEnabled) {
-          const quote = await quoteSecureOrder(JSON.parse(backendItemsKey))
-          if (active) {
-            setServerQuote(quote)
-            setDeliveryFee(Number(quote.deliveryFee || 0))
-          }
-          return
-        }
-
         const value = await calculateDeliveryFee(usuario.bairro, total)
         if (active) setDeliveryFee(value)
       } catch (error) {
         if (active) {
           setDeliveryFee(null)
-          setServerQuote(null)
           setFeeError(error.message || 'Não foi possível calcular a taxa de entrega.')
         }
       } finally {
@@ -80,17 +71,24 @@ export default function Pagamento() {
 
     loadFee()
     return () => { active = false }
-  }, [usuario?.bairro, total, lista.length, backendItemsKey])
+  }, [usuario?.bairro, total, lista.length])
 
-  const displaySubtotal = secureOrderBackendEnabled && serverQuote
-    ? Number(serverQuote.subtotal || 0)
-    : total
-  const displayDeliveryFee = secureOrderBackendEnabled && serverQuote
-    ? Number(serverQuote.deliveryFee || 0)
-    : deliveryFee
-  const finalTotal = secureOrderBackendEnabled && serverQuote
-    ? Number(serverQuote.total || 0)
-    : total + (deliveryFee ?? 0)
+  useEffect(() => {
+    if (!purchaseBlock.blocked || !purchaseBlock.until) return undefined
+    const remaining = purchaseBlock.until.getTime() - Date.now()
+    if (remaining <= 0) {
+      setPurchaseBlock(getPurchaseQuotaBlock())
+      return undefined
+    }
+
+    const timer = window.setTimeout(() => {
+      setPurchaseBlock(getPurchaseQuotaBlock())
+    }, Math.min(remaining + 1000, 2_147_000_000))
+
+    return () => window.clearTimeout(timer)
+  }, [purchaseBlock])
+
+  const finalTotal = total + (deliveryFee ?? 0)
 
   async function confirmar(event) {
     event.preventDefault()
@@ -121,6 +119,15 @@ export default function Pagamento() {
       return
     }
 
+    if (secureOrderBackendEnabled) {
+      const currentBlock = getPurchaseQuotaBlock()
+      setPurchaseBlock(currentBlock)
+      if (currentBlock.blocked) {
+        setErro(currentBlock.message)
+        return
+      }
+    }
+
     try {
       setEnviando(true)
 
@@ -134,8 +141,7 @@ export default function Pagamento() {
           paymentMethod: 'cash-on-delivery',
         })
 
-        setDeliveryFee(Number(pedido.deliveryFee || 0))
-        setServerQuote(pedido)
+        setDeliveryFee(Number(pedido.deliveryFee || deliveryFee || 0))
         limpar()
         navigate('/acompanhamento', { state: { pedidoId: pedido.id }, replace: true })
         return
@@ -179,6 +185,9 @@ export default function Pagamento() {
       limpar()
       navigate('/acompanhamento', { state: { pedidoId: pedido.id }, replace: true })
     } catch (error) {
+      if (error?.code === 'quota-exhausted') {
+        setPurchaseBlock(getPurchaseQuotaBlock())
+      }
       setErro(error.message)
     } finally {
       setEnviando(false)
@@ -192,7 +201,7 @@ export default function Pagamento() {
         <span className="eyebrow">FINALIZAR PEDIDO</span>
         <h1>Pagamento seguro</h1>
         <p>{secureOrderBackendEnabled
-          ? 'Preço, estoque e entrega são conferidos novamente pelo servidor antes de criar o pedido.'
+          ? 'O valor mostrado é uma estimativa. Preço, estoque e entrega serão conferidos pelo servidor em uma única chamada quando você confirmar o pedido.'
           : cardDemoEnabled
             ? 'O cartão online está em modo de demonstração. Dados sensíveis não são salvos.'
             : 'Nesta versão pública, o pagamento é feito na entrega. O cartão online só será liberado após integração com um gateway seguro.'}</p>
@@ -212,11 +221,12 @@ export default function Pagamento() {
         </div>
 
         <div className="payment-total payment-total--stacked">
-          <div><span>Subtotal</span><strong>{formatarMoeda(displaySubtotal)}</strong></div>
-          <div><span>Entrega</span><strong>{loadingFee ? 'Calculando...' : displayDeliveryFee === null ? '—' : displayDeliveryFee ? formatarMoeda(displayDeliveryFee) : 'Grátis'}</strong></div>
-          <div className="payment-grand-total"><span>Total</span><strong>{formatarMoeda(finalTotal)}</strong></div>
+          <div><span>Subtotal</span><strong>{formatarMoeda(total)}</strong></div>
+          <div><span>Entrega</span><strong>{loadingFee ? 'Calculando...' : deliveryFee === null ? '—' : deliveryFee ? formatarMoeda(deliveryFee) : 'Grátis'}</strong></div>
+          <div className="payment-grand-total"><span>Total estimado</span><strong>{formatarMoeda(finalTotal)}</strong></div>
         </div>
-        {secureOrderBackendEnabled && serverQuote ? <p className="privacy-badge">Valores confirmados pelo servidor • BRL</p> : null}
+        {secureOrderBackendEnabled ? <p className="privacy-badge">A confirmação final usa uma única chamada segura ao backend. O servidor recalcula os valores antes de gravar o pedido.</p> : null}
+        {purchaseBlock.blocked ? <p className="form-error dark-error" role="alert">{purchaseBlock.message}</p> : null}
         {feeError ? <p className="form-error dark-error" role="alert">{feeError}</p> : null}
 
         {method === 'card-demo' && cardDemoEnabled ? (
@@ -251,8 +261,14 @@ export default function Pagamento() {
             <span>{usuario.endereco}, {usuario.numero} • {usuario.bairro}</span>
           </div>
         )}
-        {erro && <p className="form-error dark-error" role="alert">{erro}</p>}
-        <button className="btn btn-primary" disabled={enviando || loadingFee || displayDeliveryFee === null || Boolean(feeError) || (secureOrderBackendEnabled && !serverQuote)} type="submit">{enviando ? 'Confirmando...' : 'Confirmar pedido'}</button>
+        {erro && !purchaseBlock.blocked && <p className="form-error dark-error" role="alert">{erro}</p>}
+        <button
+          className="btn btn-primary"
+          disabled={enviando || loadingFee || deliveryFee === null || Boolean(feeError) || purchaseBlock.blocked}
+          type="submit"
+        >
+          {purchaseBlock.blocked ? 'Compras temporariamente bloqueadas' : enviando ? 'Confirmando...' : 'Confirmar pedido'}
+        </button>
         <button className="btn btn-secondary" type="button" onClick={() => navigate('/pedido')}>Voltar</button>
       </form>
     </AppScreen>
