@@ -69,8 +69,8 @@ export default function Cadastro() {
 
     try {
       setEnviando(true)
-      const conta = await cadastrar(dadosCorrigidos)
-      navigate(conta?.admin ? '/empresa' : '/pizzas', { replace: true })
+      await cadastrar(dadosCorrigidos)
+      navigate('/verificar-email', { replace: true })
     } catch (error) {
       console.error('Erro ao cadastrar usuário:', error)
       setErro(traduzirErroFirebase(error))
@@ -137,7 +137,7 @@ export default function Cadastro() {
         </label>
 
         {erro && <p className="form-error dark-error" role="alert" aria-live="polite">{erro}</p>}
-        <button className="btn btn-primary" type="submit" disabled={enviando}>{enviando ? 'Cadastrando...' : 'Cadastrar'}</button>
+        <button className="btn btn-primary" type="submit" disabled={enviando}>{enviando ? 'Cadastrando...' : 'Cadastrar e verificar e-mail'}</button>
         <Link className="text-link dark-link" to="/login">Já tenho uma conta</Link>
       </form>
     </AppScreen>

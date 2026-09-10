@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import Home from './pages/Home.jsx'
 import Login from './pages/Login.jsx'
 import Cadastro from './pages/Cadastro.jsx'
+import VerificarEmail from './pages/VerificarEmail.jsx'
 import Pizzas from './pages/Pizzas.jsx'
 import Bebidas from './pages/Bebidas.jsx'
 import Pedido from './pages/Pedido.jsx'
@@ -55,6 +56,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/cadastro" element={<Cadastro />} />
+        <Route path="/verificar-email" element={<VerificarEmail />} />
         <Route path="/pizzas" element={protectedPage(<Pizzas />)} />
         <Route path="/bebidas" element={protectedPage(<Bebidas />)} />
         <Route path="/pedido" element={protectedPage(<Pedido />)} />

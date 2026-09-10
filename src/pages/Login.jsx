@@ -31,6 +31,10 @@ export default function Login() {
     try {
       setEnviando(true)
       const conta = await entrar(usuario, senha)
+      if (!conta?.emailVerified) {
+        navigate('/verificar-email', { replace: true })
+        return
+      }
       navigate(conta?.adminCandidate ? '/empresa' : '/pizzas', { replace: true })
     } catch (error) {
       setErro(error.message)

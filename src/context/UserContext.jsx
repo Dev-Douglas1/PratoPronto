@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import {
+  browserSessionPersistence,
   createUserWithEmailAndPassword,
   deleteUser,
   EmailAuthProvider,
@@ -9,6 +10,7 @@ import {
   reload,
   sendEmailVerification,
   sendPasswordResetEmail,
+  setPersistence,
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
@@ -26,6 +28,11 @@ import {
 import { criarErroFirebase } from '../utils/firebaseError.js'
 
 const UserContext = createContext(null)
+
+async function usarSessaoDoNavegador() {
+  if (!auth) return
+  await setPersistence(auth, browserSessionPersistence)
+}
 
 async function getAdminIdentity(firebaseUser) {
   const [admin, tokenResult] = await Promise.all([
@@ -100,6 +107,7 @@ export function UserProvider({ children }) {
   async function entrar(email, senha) {
     if (!firebaseConfigured || !auth) throw new Error('Firebase não configurado.')
     try {
+      await usarSessaoDoNavegador()
       const credential = await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), senha)
       const finalUser = await buildUser(credential.user)
       setUsuario(finalUser)
@@ -114,6 +122,7 @@ export function UserProvider({ children }) {
     let novoUsuario = null
 
     try {
+      await usarSessaoDoNavegador()
       const credential = await createUserWithEmailAndPassword(
         auth,
         dados.email.trim().toLowerCase(),
@@ -122,6 +131,7 @@ export function UserProvider({ children }) {
       novoUsuario = credential.user
 
       await updateProfile(novoUsuario, { displayName: dados.nome.trim() })
+      await sendEmailVerification(novoUsuario)
 
       const profile = await saveUserProfile(novoUsuario.uid, {
         nome: dados.nome,
@@ -137,7 +147,6 @@ export function UserProvider({ children }) {
         consentTimestamp: new Date().toISOString(),
       })
 
-      await sendEmailVerification(novoUsuario).catch(() => undefined)
       const finalUser = {
         uid: novoUsuario.uid,
         ...profile,
