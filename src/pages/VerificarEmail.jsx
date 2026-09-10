@@ -17,6 +17,7 @@ export default function VerificarEmail() {
   const [mensagem, setMensagem] = useState('')
   const [erro, setErro] = useState('')
   const [processando, setProcessando] = useState(false)
+  const isAdmin = Boolean(usuario?.adminCandidate)
 
   if (loading) {
     return <div className="app-shell"><div className="app-screen"><div className="light-card">Carregando...</div></div></div>
@@ -69,10 +70,13 @@ export default function VerificarEmail() {
       <div className="login-wrapper">
         <BrandMark compact />
         <section className="login-card" aria-labelledby="verify-email-title">
-          <span className="eyebrow">PROTEÇÃO DA CONTA</span>
-          <h2 id="verify-email-title">Verifique seu e-mail</h2>
+          <span className="eyebrow">{isAdmin ? 'ÁREA DA EMPRESA' : 'PROTEÇÃO DA CONTA'}</span>
+          <h2 id="verify-email-title">{isAdmin ? 'Verifique o e-mail da empresa' : 'Verifique seu e-mail'}</h2>
           <p>
-            Enviamos um link de confirmação para <strong>{usuario?.email}</strong>. O cardápio, pedidos e dados da conta ficam bloqueados até a confirmação.
+            Enviamos um link de confirmação para <strong>{usuario?.email}</strong>.{' '}
+            {isAdmin
+              ? 'O painel administrativo, pedidos, cardápio, avaliações e configurações da empresa ficam bloqueados até a confirmação.'
+              : 'O cardápio, pedidos e dados da conta ficam bloqueados até a confirmação.'}
           </p>
           <p className="privacy-badge">Depois de clicar no link recebido, volte aqui e confirme a verificação.</p>
 
