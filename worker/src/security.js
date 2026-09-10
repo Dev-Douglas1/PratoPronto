@@ -55,7 +55,7 @@ async function getJwks(url, type) {
 
 async function verifyJwt(token, jwksUrl, type) {
   const decoded = decodeJwt(token)
-  if (decoded.header.alg !== 'RS256' || !decoded.header.kid) {
+  if (decoded.header.alg !== 'RS256' || decoded.header.typ !== 'JWT' || !decoded.header.kid) {
     throw new ApiError(401, 'invalid-token', 'Token de segurança inválido.')
   }
 
