@@ -44,12 +44,41 @@ async function loadOrderContext(env, uid, parsedItems, transaction = '') {
   }
 }
 
-async function quoteOrder(request, env, user) {
-  const body = await parseJsonBody(request)
-  const parsedItems = parseItems(body.itens)
-  const context = await loadOrderContext(env, user.uid, parsedItems)
-  const canonical = buildCanonicalOrder(parsedItems, context.catalog, context.profile, context.deliveryConfig)
-  return orderQuote(canonical)
+function requestIp(request) {
+  const raw = request.headers.get('CF-Connecting-IP')
+    || request.headers.get('X-Forwarded-For')
+    || 'unknown'
+  return cleanText(String(raw).split(',')[0], 80) || 'unknown'
+}
+
+async function enforceIpRateLimit(request, env) {
+  if (!env.IP_RATE_LIMITER) {
+    throw new ApiError(503, 'rate-limit-config', 'A proteção contra excesso de requisições não está configurada.')
+  }
+
+  const result = await env.IP_RATE_LIMITER.limit({ key: `checkout:${requestIp(request)}` })
+  if (!result.success) {
+    throw new ApiError(
+      429,
+      'rate-limited',
+      'Muitas tentativas de compra foram feitas desta conexão. Aguarde um minuto e tente novamente.',
+    )
+  }
+}
+
+async function enforceUserRateLimit(user, env) {
+  if (!env.USER_ORDER_RATE_LIMITER) {
+    throw new ApiError(503, 'rate-limit-config', 'A proteção de pedidos por usuário não está configurada.')
+  }
+
+  const result = await env.USER_ORDER_RATE_LIMITER.limit({ key: `checkout:${user.uid}` })
+  if (!result.success) {
+    throw new ApiError(
+      429,
+      'rate-limited',
+      'Sua conta fez muitas tentativas de compra em pouco tempo. Aguarde um minuto e tente novamente.',
+    )
+  }
 }
 
 async function createOrderOnce(body, env, user) {
@@ -88,12 +117,13 @@ async function createOrderOnce(body, env, user) {
       })
     }
 
+    const quote = orderQuote(canonical)
     const payload = {
       ...customer,
       itens: canonical.itens,
-      subtotal: orderQuote(canonical).subtotal,
-      deliveryFee: orderQuote(canonical).deliveryFee,
-      total: orderQuote(canonical).total,
+      subtotal: quote.subtotal,
+      deliveryFee: quote.deliveryFee,
+      total: quote.total,
       observacao: cleanText(body.observacao, 500),
       pagamento: {
         metodo: 'Pagamento na entrega',
@@ -124,7 +154,7 @@ async function createOrderOnce(body, env, user) {
     await commitTransaction(env, transaction, writes)
     return {
       id: orderId,
-      ...orderQuote(canonical),
+      ...quote,
       status: payload.status,
       paymentStatus: payload.paymentStatus,
       serverValidated: true,
@@ -177,7 +207,9 @@ function corsHeaders(request, env) {
 }
 
 function jsonResponse(request, env, body, status = 200) {
-  return new Response(JSON.stringify(body), { status, headers: corsHeaders(request, env) })
+  const headers = corsHeaders(request, env)
+  if (status === 429) headers['Retry-After'] = '60'
+  return new Response(JSON.stringify(body), { status, headers })
 }
 
 async function handleRequest(request, env) {
@@ -193,17 +225,22 @@ async function handleRequest(request, env) {
       service: 'pratopronto-api',
       backend: 'cloudflare-workers-free',
       appCheckRequired: String(env.REQUIRE_APP_CHECK || 'false').toLowerCase() === 'true',
+      checkoutRateLimit: {
+        perIpPerMinute: 10,
+        perUserPerMinute: 3,
+      },
     })
   }
 
   if (request.method !== 'POST') throw new ApiError(405, 'method-not-allowed', 'Método não permitido.')
+  if (url.pathname !== '/orders') throw new ApiError(404, 'not-found', 'Endpoint não encontrado.')
 
+  await enforceIpRateLimit(request, env)
   const user = await verifyFirebaseUser(request, env)
   await verifyAppCheck(request, env)
+  await enforceUserRateLimit(user, env)
 
-  if (url.pathname === '/quote') return jsonResponse(request, env, await quoteOrder(request, env, user))
-  if (url.pathname === '/orders') return jsonResponse(request, env, await createOrder(request, env, user), 201)
-  throw new ApiError(404, 'not-found', 'Endpoint não encontrado.')
+  return jsonResponse(request, env, await createOrder(request, env, user), 201)
 }
 
 export default {
