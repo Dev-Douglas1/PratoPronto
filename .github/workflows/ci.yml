@@ -25,6 +25,15 @@ jobs:
       - name: Auditar dependências
         run: npm audit --audit-level=high
 
+      - name: Instalar dependências do backend
+        run: npm install --prefix functions --ignore-scripts
+
+      - name: Auditar dependências do backend
+        run: npm audit --prefix functions --audit-level=high
+
+      - name: Validar backend seguro
+        run: npm --prefix functions run check
+
       - name: Testar Vite em desenvolvimento
         shell: bash
         run: |
