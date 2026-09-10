@@ -4,8 +4,8 @@ compatibility_date = "2026-09-10"
 
 [vars]
 FIREBASE_PROJECT_ID = "pratopronto-d861d"
-# Use o mesmo número de VITE_FIREBASE_MESSAGING_SENDER_ID antes do deploy.
-FIREBASE_PROJECT_NUMBER = "COLOQUE_SEU_MESSAGING_SENDER_ID"
+# Project Number / Messaging Sender ID do app Firebase Web.
+FIREBASE_PROJECT_NUMBER = "409807022049"
 # Produção deve falhar fechado: sem App Check válido, não cria pedido.
 REQUIRE_APP_CHECK = "true"
 # POST /orders precisa vir de uma origem Web autorizada. Não substitui Auth/App Check;
