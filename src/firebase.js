@@ -5,7 +5,6 @@ import {
 } from 'firebase/app-check'
 import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
-import { getFunctions } from 'firebase/functions'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -44,17 +43,13 @@ function configureAppCheck() {
   } catch (error) {
     if (error?.code === 'appCheck/already-initialized') return null
 
-    // App Check é uma camada adicional. Uma configuração incorreta não deve
-    // impedir a interface inteira de abrir e produzir uma tela preta.
     console.error('[PratoPronto] Não foi possível iniciar o Firebase App Check.', error)
     return null
   }
 }
 
 export const appCheck = configureAppCheck()
-
 export const auth = app ? getAuth(app) : null
 export const db = app ? getFirestore(app) : null
-export const functions = app ? getFunctions(app) : null
 
 export default app
