@@ -5,6 +5,7 @@ import {
 } from 'firebase/app-check'
 import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
+import { getFunctions } from 'firebase/functions'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -54,5 +55,6 @@ export const appCheck = configureAppCheck()
 
 export const auth = app ? getAuth(app) : null
 export const db = app ? getFirestore(app) : null
+export const functions = app ? getFunctions(app) : null
 
 export default app
