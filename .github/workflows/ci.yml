@@ -25,6 +25,22 @@ jobs:
       - name: Auditar dependências
         run: npm audit --audit-level=high
 
+      - name: Instalar dependências do backend
+        run: npm install --prefix functions --ignore-scripts
+
+      - name: Auditar dependências do backend
+        run: npm audit --prefix functions --audit-level=high
+
+      - name: Validar backend seguro
+        run: npm --prefix functions run check
+
+      - name: Validar geração das regras seguras
+        shell: bash
+        run: |
+          node scripts/build-secure-rules.mjs
+          grep -q 'Modo backend seguro' firestore.secure.rules
+          grep -q 'allow create: if false;' firestore.secure.rules
+
       - name: Testar Vite em desenvolvimento
         shell: bash
         run: |

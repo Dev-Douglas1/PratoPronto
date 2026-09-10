@@ -21,8 +21,22 @@ if (process.env.VITE_ENABLE_CARD_DEMO === 'true') {
   process.exit(1)
 }
 
+const secureBackendValue = process.env.VITE_SECURE_ORDER_BACKEND?.trim() || 'false'
+if (!['true', 'false'].includes(secureBackendValue)) {
+  console.error('VITE_SECURE_ORDER_BACKEND deve ser true ou false.')
+  process.exit(1)
+}
+
 if (!process.env.VITE_FIREBASE_APPCHECK_SITE_KEY?.trim()) {
+  if (secureBackendValue === 'true') {
+    console.error('App Check é obrigatório antes de ativar o backend seguro de pedidos.')
+    process.exit(1)
+  }
   console.warn('AVISO: Firebase App Check ainda não foi configurado. Configure antes de ativar enforcement.')
+}
+
+if (secureBackendValue === 'true') {
+  console.log('Backend seguro de pedidos marcado para uso. Confirme que quoteOrder e createSecureOrder já foram publicados no Firebase Functions.')
 }
 
 if (!/^https?:\/\//i.test(process.env.VITE_FIREBASE_AUTH_DOMAIN || 'https://placeholder.invalid')) {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
 import TopBar from '../components/TopBar.jsx'
@@ -7,14 +7,21 @@ import { formatarMoeda } from '../utils/moeda.js'
 import { formatarNumeroCartao, formatarValidade } from '../utils/cartao.js'
 import { useUser } from '../context/UserContext.jsx'
 import { calculateDeliveryFee, createOrder } from '../services/storage.js'
+import {
+  createSecureOrder,
+  quoteSecureOrder,
+  secureOrderBackendEnabled,
+} from '../services/secureOrders.js'
 
-const cardDemoEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_CARD_DEMO === 'true'
+const cardDemoEnabled = !secureOrderBackendEnabled
+  && (import.meta.env.DEV || import.meta.env.VITE_ENABLE_CARD_DEMO === 'true')
 
 export default function Pagamento() {
   const navigate = useNavigate()
   const { lista, total, limpar, precoUnitario } = useCart()
   const { usuario } = useUser()
   const [deliveryFee, setDeliveryFee] = useState(null)
+  const [serverQuote, setServerQuote] = useState(null)
   const [loadingFee, setLoadingFee] = useState(false)
   const [feeError, setFeeError] = useState('')
   const [method, setMethod] = useState(cardDemoEnabled ? 'card-demo' : 'cash-on-delivery')
@@ -22,10 +29,21 @@ export default function Pagamento() {
   const [erro, setErro] = useState('')
   const [enviando, setEnviando] = useState(false)
 
+  const backendItems = useMemo(() => lista.map((item) => ({
+    id: item.produto.id,
+    quantidade: item.quantidade,
+    personalizacao: item.personalizacao,
+  })), [lista])
+
+  const backendItemsKey = useMemo(() => JSON.stringify(backendItems), [backendItems])
+
   useEffect(() => {
     let active = true
+
     async function loadFee() {
       setFeeError('')
+      setServerQuote(null)
+
       if (!lista.length || total <= 0) {
         setDeliveryFee(0)
         return
@@ -38,22 +56,41 @@ export default function Pagamento() {
 
       try {
         setLoadingFee(true)
+        if (secureOrderBackendEnabled) {
+          const quote = await quoteSecureOrder(JSON.parse(backendItemsKey))
+          if (active) {
+            setServerQuote(quote)
+            setDeliveryFee(Number(quote.deliveryFee || 0))
+          }
+          return
+        }
+
         const value = await calculateDeliveryFee(usuario.bairro, total)
         if (active) setDeliveryFee(value)
       } catch (error) {
         if (active) {
           setDeliveryFee(null)
+          setServerQuote(null)
           setFeeError(error.message || 'Não foi possível calcular a taxa de entrega.')
         }
       } finally {
         if (active) setLoadingFee(false)
       }
     }
+
     loadFee()
     return () => { active = false }
-  }, [usuario?.bairro, total, lista.length])
+  }, [usuario?.bairro, total, lista.length, backendItemsKey])
 
-  const finalTotal = total + (deliveryFee ?? 0)
+  const displaySubtotal = secureOrderBackendEnabled && serverQuote
+    ? Number(serverQuote.subtotal || 0)
+    : total
+  const displayDeliveryFee = secureOrderBackendEnabled && serverQuote
+    ? Number(serverQuote.deliveryFee || 0)
+    : deliveryFee
+  const finalTotal = secureOrderBackendEnabled && serverQuote
+    ? Number(serverQuote.total || 0)
+    : total + (deliveryFee ?? 0)
 
   async function confirmar(event) {
     event.preventDefault()
@@ -61,6 +98,10 @@ export default function Pagamento() {
 
     if (!usuario) {
       setErro('Faça login para finalizar o pedido.')
+      return
+    }
+    if (!usuario.emailVerified) {
+      setErro('Verifique seu e-mail antes de finalizar o pedido.')
       return
     }
     if (!lista.length) {
@@ -82,6 +123,23 @@ export default function Pagamento() {
 
     try {
       setEnviando(true)
+
+      if (secureOrderBackendEnabled) {
+        if (method !== 'cash-on-delivery') {
+          throw new Error('O backend seguro aceita somente pagamento na entrega nesta etapa.')
+        }
+
+        const pedido = await createSecureOrder({
+          items: backendItems,
+          paymentMethod: 'cash-on-delivery',
+        })
+
+        setDeliveryFee(Number(pedido.deliveryFee || 0))
+        setServerQuote(pedido)
+        limpar()
+        navigate('/acompanhamento', { state: { pedidoId: pedido.id }, replace: true })
+        return
+      }
 
       const currentDeliveryFee = await calculateDeliveryFee(usuario.bairro, total)
       const currentFinalTotal = total + currentDeliveryFee
@@ -133,7 +191,11 @@ export default function Pagamento() {
       <div className="page-heading">
         <span className="eyebrow">FINALIZAR PEDIDO</span>
         <h1>Pagamento seguro</h1>
-        <p>{cardDemoEnabled ? 'O cartão online está em modo de demonstração. Dados sensíveis não são salvos.' : 'Nesta versão pública, o pagamento é feito na entrega. O cartão online só será liberado após integração com um gateway seguro.'}</p>
+        <p>{secureOrderBackendEnabled
+          ? 'Preço, estoque e entrega são conferidos novamente pelo servidor antes de criar o pedido.'
+          : cardDemoEnabled
+            ? 'O cartão online está em modo de demonstração. Dados sensíveis não são salvos.'
+            : 'Nesta versão pública, o pagamento é feito na entrega. O cartão online só será liberado após integração com um gateway seguro.'}</p>
       </div>
       <form className="light-card payment-card" onSubmit={confirmar}>
         <div className="payment-methods" role="radiogroup" aria-label="Forma de pagamento">
@@ -150,10 +212,11 @@ export default function Pagamento() {
         </div>
 
         <div className="payment-total payment-total--stacked">
-          <div><span>Subtotal</span><strong>{formatarMoeda(total)}</strong></div>
-          <div><span>Entrega</span><strong>{loadingFee ? 'Calculando...' : deliveryFee === null ? '—' : deliveryFee ? formatarMoeda(deliveryFee) : 'Grátis'}</strong></div>
+          <div><span>Subtotal</span><strong>{formatarMoeda(displaySubtotal)}</strong></div>
+          <div><span>Entrega</span><strong>{loadingFee ? 'Calculando...' : displayDeliveryFee === null ? '—' : displayDeliveryFee ? formatarMoeda(displayDeliveryFee) : 'Grátis'}</strong></div>
           <div className="payment-grand-total"><span>Total</span><strong>{formatarMoeda(finalTotal)}</strong></div>
         </div>
+        {secureOrderBackendEnabled && serverQuote ? <p className="privacy-badge">Valores confirmados pelo servidor • BRL</p> : null}
         {feeError ? <p className="form-error dark-error" role="alert">{feeError}</p> : null}
 
         {method === 'card-demo' && cardDemoEnabled ? (
@@ -189,7 +252,7 @@ export default function Pagamento() {
           </div>
         )}
         {erro && <p className="form-error dark-error" role="alert">{erro}</p>}
-        <button className="btn btn-primary" disabled={enviando || loadingFee || deliveryFee === null || Boolean(feeError)} type="submit">{enviando ? 'Confirmando...' : 'Confirmar pedido'}</button>
+        <button className="btn btn-primary" disabled={enviando || loadingFee || displayDeliveryFee === null || Boolean(feeError) || (secureOrderBackendEnabled && !serverQuote)} type="submit">{enviando ? 'Confirmando...' : 'Confirmar pedido'}</button>
         <button className="btn btn-secondary" type="button" onClick={() => navigate('/pedido')}>Voltar</button>
       </form>
     </AppScreen>

@@ -17,7 +17,6 @@ import { db, firebaseConfigured } from '../firebase.js'
 
 export const PRIVACY_POLICY_VERSION = '2026-09-08'
 export const TERMS_VERSION = '2026-09-08'
-export const TEST_ADMIN_EMAIL = 'douglas.souza.santos@escola.pr.gov.br'
 
 export const ORDER_STATUS = {
   RECEIVED: 'recebido',
@@ -147,25 +146,6 @@ export async function getAdminAccess(uid) {
   requireFirebase()
   const snapshot = await getDoc(doc(db, 'admins', uid))
   return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null
-}
-
-export async function ensureTestAdminAccess(uid, email) {
-  requireFirebase()
-  const normalizedEmail = email?.trim().toLowerCase()
-  if (normalizedEmail !== TEST_ADMIN_EMAIL) return null
-
-  const ref = doc(db, 'admins', uid)
-  const snapshot = await getDoc(ref)
-  if (!snapshot.exists()) {
-    await setDoc(ref, {
-      email: normalizedEmail,
-      role: 'restaurant_admin',
-      permissions: ['orders', 'catalog', 'reviews', 'delivery', 'refunds'],
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    })
-  }
-  return getAdminAccess(uid)
 }
 
 export async function createOrder({ userId, cliente, entrega, itens, subtotal, deliveryFee, total, pagamento, observacao = '' }) {
@@ -446,10 +426,9 @@ export async function deleteUserData(uid) {
   requireFirebase()
   const ordersQuery = query(collection(db, 'orders'), where('userId', '==', uid))
   const reviewsQuery = query(collection(db, 'reviews'), where('userId', '==', uid))
-  const [orders, reviews, admin] = await Promise.all([
+  const [orders, reviews] = await Promise.all([
     getDocs(ordersQuery),
     getDocs(reviewsQuery),
-    getAdminAccess(uid).catch(() => null),
   ])
 
   await Promise.all([
@@ -457,6 +436,5 @@ export async function deleteUserData(uid) {
     ...orders.docs.map((orderDoc) => deleteDoc(orderDoc.ref)),
   ])
 
-  if (admin) await deleteDoc(doc(db, 'admins', uid))
   await deleteDoc(doc(db, 'users', uid))
 }
