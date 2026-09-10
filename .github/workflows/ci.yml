@@ -29,6 +29,12 @@ jobs:
         run: |
           for file in worker/src/*.js; do node --check "$file"; done
           node -e "import('./worker/src/index.js')"
+          grep -q 'REQUIRE_APP_CHECK = "true"' worker/wrangler.toml
+          grep -q 'REQUIRE_BROWSER_ORIGIN = "true"' worker/wrangler.toml
+          grep -q 'Idempotency-Key' worker/src/index.js
+          grep -q 'MAX_BODY_BYTES' worker/src/index.js
+          grep -q 'IP_RATE_LIMITER' worker/wrangler.toml
+          grep -q 'USER_ORDER_RATE_LIMITER' worker/wrangler.toml
 
       - name: Validar geração das regras seguras
         shell: bash

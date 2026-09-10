@@ -4,6 +4,8 @@ import { appCheck, auth } from '../firebase.js'
 export const secureOrderBackendEnabled = import.meta.env.VITE_SECURE_ORDER_BACKEND === 'true'
 const apiBaseUrl = String(import.meta.env.VITE_SECURE_ORDER_API_URL || '').replace(/\/+$/, '')
 const QUOTA_BLOCK_KEY = 'pratopronto_worker_quota_block_until'
+const CHECKOUT_ATTEMPT_KEY = 'pratopronto_checkout_attempt'
+const REQUEST_TIMEOUT_MS = 20_000
 
 function nextCloudflareReset() {
   const now = new Date()
@@ -75,12 +77,70 @@ function requireApi() {
   }
 }
 
-async function requestHeaders() {
+function randomAttemptKey() {
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID()
+
+  const bytes = new Uint8Array(24)
+  globalThis.crypto?.getRandomValues?.(bytes)
+  const fallback = Array.from(bytes, (value) => value.toString(16).padStart(2, '0')).join('')
+  if (fallback && !/^0+$/.test(fallback)) return fallback
+
+  throw new Error('Seu navegador não oferece geração segura para confirmar a compra.')
+}
+
+function checkoutFingerprint(payload) {
+  return JSON.stringify(payload)
+}
+
+function getOrCreateAttemptKey(payload) {
+  const fingerprint = checkoutFingerprint(payload)
+  if (typeof window !== 'undefined') {
+    try {
+      const saved = JSON.parse(window.sessionStorage.getItem(CHECKOUT_ATTEMPT_KEY) || 'null')
+      if (
+        saved?.fingerprint === fingerprint
+        && typeof saved?.key === 'string'
+        && saved.key.length >= 20
+        && Number(saved?.createdAt || 0) > Date.now() - 30 * 60 * 1000
+      ) {
+        return saved.key
+      }
+    } catch {
+      // Uma sessão sem storage ainda pode comprar; apenas perde a recuperação de retry.
+    }
+  }
+
+  const key = randomAttemptKey()
+  if (typeof window !== 'undefined') {
+    try {
+      window.sessionStorage.setItem(CHECKOUT_ATTEMPT_KEY, JSON.stringify({
+        fingerprint,
+        key,
+        createdAt: Date.now(),
+      }))
+    } catch {
+      // O backend ainda garante idempotência dentro desta tentativa.
+    }
+  }
+  return key
+}
+
+function clearAttemptKey() {
+  if (typeof window === 'undefined') return
+  try {
+    window.sessionStorage.removeItem(CHECKOUT_ATTEMPT_KEY)
+  } catch {
+    // Sem efeito na segurança do servidor.
+  }
+}
+
+async function requestHeaders(idempotencyKey) {
   requireApi()
   const idToken = await auth.currentUser.getIdToken()
   const headers = {
     Authorization: `Bearer ${idToken}`,
     'Content-Type': 'application/json',
+    'Idempotency-Key': idempotencyKey,
   }
 
   if (appCheck) {
@@ -99,22 +159,33 @@ function looksLikeCloudflareQuota(response, rawBody) {
     || body.includes('exceeded free tier daily request limit')
 }
 
-async function callApi(path, payload) {
+async function callApi(path, payload, idempotencyKey) {
   requireApi()
 
+  const controller = new AbortController()
+  const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
   let response
   try {
     response = await fetch(`${apiBaseUrl}${path}`, {
       method: 'POST',
-      headers: await requestHeaders(),
+      headers: await requestHeaders(idempotencyKey),
       body: JSON.stringify(payload),
+      cache: 'no-store',
+      credentials: 'omit',
+      referrerPolicy: 'no-referrer',
+      signal: controller.signal,
     })
-  } catch {
+  } catch (error) {
+    const timedOut = error?.name === 'AbortError'
     throw apiError(
-      'O serviço seguro de pedidos está indisponível no momento. A compra não foi enviada. Tente novamente em alguns instantes.',
-      'backend-unavailable',
+      timedOut
+        ? 'A confirmação segura demorou demais. A compra não será repetida automaticamente. Tente confirmar novamente; o servidor reconhecerá a mesma tentativa para evitar pedido duplicado.'
+        : 'O serviço seguro de pedidos está indisponível no momento. A compra não foi enviada. Tente novamente em alguns instantes.',
+      timedOut ? 'backend-timeout' : 'backend-unavailable',
       503,
     )
+  } finally {
+    window.clearTimeout(timeout)
   }
 
   const rawBody = await response.text().catch(() => '')
@@ -134,7 +205,7 @@ async function callApi(path, payload) {
 
     if (response.status === 429) {
       throw apiError(
-        'Muitas tentativas de compra foram feitas em pouco tempo. Aguarde alguns minutos e tente novamente.',
+        'Muitas tentativas de compra foram feitas em pouco tempo. Aguarde um minuto e tente novamente.',
         'rate-limited',
         429,
       )
@@ -150,9 +221,13 @@ async function callApi(path, payload) {
 }
 
 export async function createSecureOrder({ items, observacao = '', paymentMethod = 'cash-on-delivery' }) {
-  return callApi('/orders', {
+  const payload = {
     itens: items,
     observacao,
     paymentMethod,
-  })
+  }
+  const idempotencyKey = getOrCreateAttemptKey(payload)
+  const result = await callApi('/orders', payload, idempotencyKey)
+  clearAttemptKey()
+  return result
 }
