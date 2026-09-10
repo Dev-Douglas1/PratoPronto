@@ -7,7 +7,10 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "check:production": "node scripts/check-production-env.mjs"
+    "check:production": "node scripts/check-production-env.mjs",
+    "check:worker": "node --check worker/src/domain.js && node --check worker/src/security.js && node --check worker/src/firestore.js && node --check worker/src/index.js",
+    "worker:dev": "npx wrangler@latest dev --config worker/wrangler.toml",
+    "worker:deploy": "npx wrangler@latest deploy --config worker/wrangler.toml"
   },
   "dependencies": {
     "firebase": "^12.2.1",

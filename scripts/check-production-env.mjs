@@ -29,19 +29,19 @@ if (!['true', 'false'].includes(secureBackendValue)) {
 
 if (!process.env.VITE_FIREBASE_APPCHECK_SITE_KEY?.trim()) {
   if (secureBackendValue === 'true') {
-    console.error('App Check é obrigatório antes de ativar o backend seguro de pedidos.')
+    console.error('App Check deve estar configurado antes de ativar o backend seguro de pedidos.')
     process.exit(1)
   }
   console.warn('AVISO: Firebase App Check ainda não foi configurado. Configure antes de ativar enforcement.')
 }
 
 if (secureBackendValue === 'true') {
-  console.log('Backend seguro de pedidos marcado para uso. Confirme que quoteOrder e createSecureOrder já foram publicados no Firebase Functions.')
-}
-
-if (!/^https?:\/\//i.test(process.env.VITE_FIREBASE_AUTH_DOMAIN || 'https://placeholder.invalid')) {
-  // authDomain normalmente é um host, não uma URL; este bloco existe apenas
-  // para impedir validações equivocadas no futuro sem rejeitar o formato atual.
+  const apiUrl = process.env.VITE_SECURE_ORDER_API_URL?.trim() || ''
+  if (!/^https:\/\//i.test(apiUrl)) {
+    console.error('VITE_SECURE_ORDER_API_URL deve conter a URL HTTPS do Cloudflare Worker antes de ativar o backend seguro.')
+    process.exit(1)
+  }
+  console.log(`Backend seguro gratuito habilitado em ${apiUrl}`)
 }
 
 console.log('Configuração de produção validada.')

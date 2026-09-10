@@ -1,0 +1,12 @@
+name = "pratopronto-api"
+main = "src/index.js"
+compatibility_date = "2026-09-10"
+
+[vars]
+FIREBASE_PROJECT_ID = "pratopronto-d861d"
+# Use o mesmo número de VITE_FIREBASE_MESSAGING_SENDER_ID.
+FIREBASE_PROJECT_NUMBER = "COLOQUE_SEU_MESSAGING_SENDER_ID"
+# Comece false. Depois dos testes com App Check, troque para true.
+REQUIRE_APP_CHECK = "false"
+ALLOW_CODESPACES = "true"
+ALLOWED_ORIGINS = "https://pratopronto-d861d.web.app,https://pratopronto-d861d.firebaseapp.com,http://localhost:5173"

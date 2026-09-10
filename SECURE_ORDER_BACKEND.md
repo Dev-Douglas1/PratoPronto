@@ -1,118 +1,193 @@
-# PratoPronto — ativação do backend seguro de pedidos
+# PratoPronto — backend seguro sem plano Blaze
 
-Este arquivo descreve como ativar o fluxo em que preço, estoque e frete deixam de ser definidos pelo navegador.
+O PratoPronto mantém o Firebase no plano Spark e usa um Cloudflare Worker como backend autoritativo de pedidos. Assim, não é necessário ativar faturamento no projeto Firebase para publicar Cloud Functions.
 
-## O que já está preparado
+## Arquitetura
 
-O diretório `functions/` contém duas callable functions:
+- Firebase Spark: Authentication, Firestore, Hosting e App Check.
+- Cloudflare Workers Free: validação server-side de preço, estoque, frete e criação do pedido.
+- `worker/`: código do backend gratuito.
+- `VITE_SECURE_ORDER_BACKEND`: liga/desliga o uso da API segura no frontend.
+- `VITE_SECURE_ORDER_API_URL`: URL HTTPS do Worker publicado.
 
-- `quoteOrder`: calcula itens, preços, personalização, frete e total no servidor.
-- `createSecureOrder`: valida novamente o pedido, reduz estoque em transação e cria o pedido pelo Firebase Admin SDK.
+O Worker expõe:
 
-As duas funções exigem usuário autenticado, e-mail verificado e Firebase App Check válido.
+- `GET /health`: teste de disponibilidade.
+- `POST /quote`: recalcula o pedido no servidor.
+- `POST /orders`: recalcula novamente, reduz estoque em transação e cria o pedido.
 
-O frontend possui a flag:
+O navegador envia o Firebase ID Token e, quando App Check estiver configurado, o token `X-Firebase-AppCheck`. O Worker valida o usuário, exige e-mail verificado e usa uma credencial privada guardada como secret do Cloudflare para acessar o Firestore.
 
-```text
-VITE_SECURE_ORDER_BACKEND=false
-```
+## 1. Criar conta Cloudflare gratuita
 
-Enquanto ela estiver `false`, o fluxo atual continua funcionando. Não altere para `true` antes de publicar as Functions.
+Crie uma conta Cloudflare e permaneça no plano Workers Free. Não é necessário migrar o Firebase para Blaze.
 
-## Pré-requisito: Cloud Functions
-
-Cloud Functions em produção exige um projeto Firebase no plano Blaze. Faça o upgrade no Firebase Console antes do primeiro deploy das funções.
-
-## Publicar as Functions
-
-No Codespace atualizado:
+## 2. Atualizar o projeto no Codespace
 
 ```bash
 cd /workspaces/PratoPronto
 git checkout main
 git pull origin main
-npm install --prefix functions
-npx firebase-tools@latest login --no-localhost
-npx firebase-tools@latest deploy --only functions --project pratopronto-d861d
 ```
 
-Se o Firebase CLI já estiver autenticado, o login pode ser pulado.
+## 3. Preencher o número do projeto no Worker
 
-O deploy precisa terminar sem erro e listar `quoteOrder` e `createSecureOrder`.
+Abra `worker/wrangler.toml`.
 
-## Ativar o frontend seguro
+Em:
 
-Somente depois do deploy das Functions:
+```toml
+FIREBASE_PROJECT_NUMBER = "COLOQUE_SEU_MESSAGING_SENDER_ID"
+```
 
-1. GitHub > PratoPronto > Settings > Environments > `production`.
-2. Crie/edite a variável `VITE_SECURE_ORDER_BACKEND` com valor `true`.
-3. Execute `Actions > Publicar PratoPronto em produção > Run workflow`.
+coloque exatamente o mesmo valor usado em `VITE_FIREBASE_MESSAGING_SENDER_ID`.
 
-O workflow compila o frontend usando as Functions. Quando a flag está `true`, ele também gera regras seguras que bloqueiam criação direta de documentos em `/orders` pelo navegador.
+Não coloque chaves privadas nesse arquivo.
 
-A ordem é importante: Functions primeiro, frontend depois, bloqueio de criação direta por último.
+## 4. Entrar no Cloudflare pelo Codespace
 
-## O que o servidor passa a decidir
+```bash
+npx wrangler@latest login
+```
 
-O cliente envia apenas:
+O terminal fornecerá o fluxo de autorização do Cloudflare.
 
-- ID do produto;
-- quantidade;
-- tamanho, borda e adicionais selecionados.
+## 5. Guardar a credencial Firebase como secret
 
-O servidor decide novamente:
+O Worker precisa de uma conta de serviço para escrever no Firestore sem confiar nos valores enviados pelo navegador.
 
-- nome do produto;
-- preço base;
-- preço dos tamanhos, bordas e adicionais;
+Use o JSON da conta de serviço somente no prompt seguro do Wrangler:
+
+```bash
+cd /workspaces/PratoPronto/worker
+npx wrangler@latest secret put FIREBASE_SERVICE_ACCOUNT_JSON
+```
+
+Quando o Wrangler solicitar o valor, cole o JSON completo da conta de serviço e confirme.
+
+Nunca salve esse JSON em `wrangler.toml`, `.env`, GitHub commit, mensagem ou código-fonte.
+
+## 6. Publicar o Worker
+
+```bash
+cd /workspaces/PratoPronto/worker
+npx wrangler@latest deploy
+```
+
+Ao final, o Cloudflare mostrará uma URL parecida com:
+
+```text
+https://pratopronto-api.SEUSUBDOMINIO.workers.dev
+```
+
+Teste:
+
+```text
+https://pratopronto-api.SEUSUBDOMINIO.workers.dev/health
+```
+
+A resposta deve conter `"ok": true`.
+
+## 7. Conectar o frontend ao Worker
+
+No GitHub:
+
+**Settings > Environments > production > Environment variables**
+
+Crie:
+
+```text
+VITE_SECURE_ORDER_API_URL=https://pratopronto-api.SEUSUBDOMINIO.workers.dev
+```
+
+Mantenha inicialmente:
+
+```text
+VITE_SECURE_ORDER_BACKEND=false
+```
+
+## 8. Testar App Check sem bloquear tudo
+
+O arquivo `worker/wrangler.toml` começa com:
+
+```toml
+REQUIRE_APP_CHECK = "false"
+```
+
+Isso permite testar primeiro o Worker, o login e o pedido. O frontend já envia o token App Check quando ele está disponível.
+
+Depois que `/quote` e `/orders` estiverem funcionando com o site real, troque para:
+
+```toml
+REQUIRE_APP_CHECK = "true"
+```
+
+publique novamente:
+
+```bash
+npx wrangler@latest deploy
+```
+
+O Worker passa a validar assinatura, emissor, validade e projeto do token App Check.
+
+## 9. Ativar o modo seguro no PratoPronto
+
+Depois do Worker estar publicado e testado, altere no Environment `production`:
+
+```text
+VITE_SECURE_ORDER_BACKEND=true
+```
+
+Depois execute:
+
+**Actions > Publicar PratoPronto em produção > Run workflow**
+
+Quando a flag fica `true`, o frontend usa o Worker e o workflow publica a versão das regras do Firestore que bloqueia criação direta de pedidos pelo navegador.
+
+A ordem é importante:
+
+1. publicar Worker;
+2. testar `/health`;
+3. configurar `VITE_SECURE_ORDER_API_URL`;
+4. testar cotação e pedido;
+5. ativar App Check no Worker;
+6. colocar `VITE_SECURE_ORDER_BACKEND=true`;
+7. publicar o site e as regras seguras.
+
+## O que o Worker decide
+
+O cliente envia somente o ID, quantidade e escolhas de personalização. O Worker recalcula:
+
+- nome e preço base;
+- tamanho, borda e adicionais;
 - disponibilidade;
 - estoque;
 - taxa de entrega;
-- gratuidade de entrega;
+- entrega grátis;
 - subtotal e total;
-- dados de entrega vindos do perfil autenticado;
-- forma de pagamento permitida nesta etapa.
+- endereço e telefone a partir do perfil autenticado;
+- forma de pagamento permitida.
 
-Nesta versão do backend seguro, apenas `cash-on-delivery` / pagamento na entrega é aceito.
+Nesta etapa, o backend seguro aceita somente pagamento na entrega.
 
 ## Estoque e concorrência
 
-`createSecureOrder` usa transação do Firestore. Se dois clientes tentarem comprar o último item ao mesmo tempo, a transação é reavaliada e um pedido não deve conseguir deixar o estoque negativo.
+`POST /orders` abre uma transação REST do Firestore. O estoque é lido dentro da transação e a criação do pedido é confirmada junto com as reduções de estoque. Em conflito, o Worker tenta novamente uma vez e pode pedir ao cliente para repetir a confirmação.
 
-A baixa automática ocorre somente quando o documento `catalog/{produtoId}` possui um campo numérico `stock`. Produtos sem documento de catálogo continuam usando o catálogo base e não possuem controle quantitativo de estoque no backend.
+A baixa automática só ocorre quando `catalog/{produtoId}` possui um campo numérico `stock`. Produtos sem estoque configurado continuam sem controle quantitativo.
 
-## App Check
+## Segurança da conta de serviço
 
-As callable functions já usam enforcement individual com `enforceAppCheck: true`.
+A conta de serviço é uma credencial de servidor e ignora as Firestore Security Rules. Por isso:
 
-Antes de habilitar enforcement global do Firestore:
+- mantenha-a exclusivamente em secrets do Cloudflare;
+- não coloque o JSON no frontend;
+- não coloque o JSON no GitHub;
+- se uma chave vazar, revogue-a no Google Cloud imediatamente;
+- prefira uma conta de serviço dedicada com somente as permissões necessárias ao Firestore.
 
-1. publique o site com App Check configurado;
-2. teste login, cliente, pedido e área da empresa no domínio real;
-3. abra Firebase Console > App Check e observe as métricas;
-4. confirme que requisições legítimas aparecem como verificadas;
-5. então habilite enforcement para Firestore.
+## Verificação de e-mail
 
-Não habilite enforcement global antes dessa observação para evitar bloquear usuários legítimos por uma configuração de chave/domínio incorreta.
+O Worker valida o Firebase ID Token e rejeita pedidos quando `email_verified` não é verdadeiro. Isso vale para clientes; a Área da Empresa também continua exigindo e-mail verificado e perfil `restaurant_admin`.
 
-## IAM para deploy automatizado de Functions
-
-O deploy manual pelo Codespace pode ser feito com a conta proprietária do projeto. Se futuramente o GitHub Actions também for publicar Functions usando uma conta de serviço, essa identidade deverá ter as permissões específicas de deploy de Cloud Functions, incluindo `Cloud Functions Admin` e `Service Account User`, além das permissões Firebase necessárias.
-
-## Testes obrigatórios depois da ativação
-
-- Cliente sem e-mail verificado não consegue chamar o backend.
-- Cliente verificado recebe cotação do servidor.
-- Alterar preço no JavaScript/localStorage não altera o preço criado pelo servidor.
-- Alterar frete no navegador não altera o frete criado pelo servidor.
-- Produto indisponível é recusado.
-- Quantidade acima do estoque é recusada.
-- Dois pedidos concorrentes não deixam estoque negativo.
-- Pedido chega em `/empresa` com `serverValidated: true`.
-- Área da empresa continua exigindo `restaurant_admin` e e-mail verificado.
-
-## Verificação de e-mail por 24 horas
-
-A proteção atual usa `emailVerified` do Firebase. O SDK Web não permite definir exatamente 24 horas para o código enviado por `sendEmailVerification()`.
-
-Se a regra de negócio exigir expiração exata em 24 horas, será necessário criar um fluxo de verificação personalizado, com token próprio armazenado/validado no backend e envio de e-mail transacional. Isso deve ser implementado separadamente para clientes e contas empresariais, preservando a exigência final de e-mail confirmado.
+A expiração exata de 24 horas do link de verificação ainda é uma etapa separada. O `sendEmailVerification()` padrão do Firebase não permite escolher esse TTL exato.
