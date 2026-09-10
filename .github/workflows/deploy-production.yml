@@ -40,6 +40,7 @@ jobs:
           VITE_FIREBASE_APPCHECK_SITE_KEY: ${{ vars.VITE_FIREBASE_APPCHECK_SITE_KEY }}
           VITE_CONTROLLER_NAME: ${{ vars.VITE_CONTROLLER_NAME }}
           VITE_PRIVACY_EMAIL: ${{ vars.VITE_PRIVACY_EMAIL }}
+          VITE_SECURE_ORDER_BACKEND: ${{ vars.VITE_SECURE_ORDER_BACKEND }}
         run: |
           {
             echo "VITE_FIREBASE_API_KEY=$VITE_FIREBASE_API_KEY"
@@ -52,6 +53,7 @@ jobs:
             echo "VITE_CONTROLLER_NAME=$VITE_CONTROLLER_NAME"
             echo "VITE_PRIVACY_EMAIL=$VITE_PRIVACY_EMAIL"
             echo "VITE_ENABLE_CARD_DEMO=false"
+            echo "VITE_SECURE_ORDER_BACKEND=${VITE_SECURE_ORDER_BACKEND:-false}"
           } > .env.production
 
       - name: Validar configuração de produção
@@ -67,6 +69,7 @@ jobs:
           VITE_CONTROLLER_NAME: ${{ vars.VITE_CONTROLLER_NAME }}
           VITE_PRIVACY_EMAIL: ${{ vars.VITE_PRIVACY_EMAIL }}
           VITE_ENABLE_CARD_DEMO: 'false'
+          VITE_SECURE_ORDER_BACKEND: ${{ vars.VITE_SECURE_ORDER_BACKEND }}
         run: npm run check:production
 
       - name: Auditar dependências
