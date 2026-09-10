@@ -10,3 +10,21 @@ FIREBASE_PROJECT_NUMBER = "COLOQUE_SEU_MESSAGING_SENDER_ID"
 REQUIRE_APP_CHECK = "false"
 ALLOW_CODESPACES = "true"
 ALLOWED_ORIGINS = "https://pratopronto-d861d.web.app,https://pratopronto-d861d.firebaseapp.com,http://localhost:5173"
+
+# Primeira barreira: no máximo 10 POSTs por minuto por IP antes de acessar Auth/Firestore.
+[[ratelimits]]
+name = "IP_RATE_LIMITER"
+namespace_id = "731001"
+
+  [ratelimits.simple]
+  limit = 10
+  period = 60
+
+# Segunda barreira: uma conta autenticada pode tentar confirmar no máximo 3 pedidos por minuto.
+[[ratelimits]]
+name = "USER_ORDER_RATE_LIMITER"
+namespace_id = "731002"
+
+  [ratelimits.simple]
+  limit = 3
+  period = 60
