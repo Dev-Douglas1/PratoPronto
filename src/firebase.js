@@ -31,11 +31,18 @@ const app = firebaseConfigured
   : null
 
 const appCheckSiteKey = import.meta.env.VITE_FIREBASE_APPCHECK_SITE_KEY
+const appCheckDebugEnabled = import.meta.env.DEV
+  && import.meta.env.VITE_FIREBASE_APPCHECK_DEBUG === 'true'
 
 function configureAppCheck() {
   if (!app || !appCheckSiteKey || typeof window === 'undefined') return null
 
   try {
+    if (appCheckDebugEnabled) {
+      self.FIREBASE_APPCHECK_DEBUG_TOKEN = true
+      console.info('[PratoPronto] App Check em modo debug somente neste ambiente de desenvolvimento.')
+    }
+
     return initializeAppCheck(app, {
       provider: new ReCaptchaEnterpriseProvider(appCheckSiteKey),
       isTokenAutoRefreshEnabled: true,
