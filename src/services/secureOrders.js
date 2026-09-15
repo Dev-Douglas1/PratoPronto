@@ -70,6 +70,13 @@ function requireApi() {
     throw new Error('Backend seguro não configurado. Defina VITE_SECURE_ORDER_API_URL antes de ativá-lo.')
   }
   if (!auth?.currentUser) throw new Error('Faça login novamente para continuar.')
+  if (!appCheck) {
+    throw apiError(
+      'App Check não foi iniciado neste ambiente. Configure VITE_FIREBASE_APPCHECK_SITE_KEY e, em desenvolvimento, use o modo debug autorizado no Firebase.',
+      'app-check-client-not-configured',
+      503,
+    )
+  }
 
   const quotaBlock = getPurchaseQuotaBlock()
   if (quotaBlock.blocked) {
@@ -137,17 +144,21 @@ function clearAttemptKey() {
 async function requestHeaders(idempotencyKey) {
   requireApi()
   const idToken = await auth.currentUser.getIdToken()
-  const headers = {
+  const appCheckToken = await getToken(appCheck, false)
+  if (!appCheckToken?.token) {
+    throw apiError(
+      'Não foi possível obter um token válido do App Check. A compra não foi enviada.',
+      'app-check-token-unavailable',
+      503,
+    )
+  }
+
+  return {
     Authorization: `Bearer ${idToken}`,
     'Content-Type': 'application/json',
     'Idempotency-Key': idempotencyKey,
+    'X-Firebase-AppCheck': appCheckToken.token,
   }
-
-  if (appCheck) {
-    const appCheckToken = await getToken(appCheck, false)
-    if (appCheckToken?.token) headers['X-Firebase-AppCheck'] = appCheckToken.token
-  }
-  return headers
 }
 
 function looksLikeCloudflareQuota(response, rawBody) {
@@ -176,6 +187,7 @@ async function callApi(path, payload, idempotencyKey) {
       signal: controller.signal,
     })
   } catch (error) {
+    if (error?.code?.startsWith?.('app-check-') || error?.code?.startsWith?.('appCheck/')) throw error
     const timedOut = error?.name === 'AbortError'
     throw apiError(
       timedOut
