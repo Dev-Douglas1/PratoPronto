@@ -1,30 +1,17 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 
-const sourcePath = 'firestore.rules'
-const outputPath = 'firestore.secure.rules'
-const source = readFileSync(sourcePath, 'utf8')
-
-const orderBlock = 'match /orders/{orderId} {'
-const orderIndex = source.indexOf(orderBlock)
-if (orderIndex === -1) {
-  console.error('Não foi possível localizar o bloco /orders em firestore.rules.')
-  process.exit(1)
+// Compatibility with the previous CI/deployment command. Current rules already
+// deny all browser writes to orders, including restaurant accounts.
+const source = readFileSync('firestore.rules', 'utf8')
+const orders = source.match(/match \/orders\/\{orderId\} \{([\s\S]*?)\n    \}/)?.[1]
+const permissions = orders?.replace(/\/\/[^\n]*/g, '').matchAll(/allow\s+([^:]+):\s*if\s+([^;]+);/g)
+let deniesWrites = false
+for (const [, actions, condition] of permissions || []) {
+  if (actions.split(',').some(action => ['write', 'create', 'update', 'delete'].includes(action.trim()))) {
+    if (condition.trim() !== 'false') throw new Error('Há uma permissão de escrita em pedidos. Revise as regras antes de publicar.')
+    if (actions.trim() === 'write') deniesWrites = true
+  }
 }
-
-const beforeOrders = source.slice(0, orderIndex)
-const ordersAndAfter = source.slice(orderIndex)
-const directCreatePattern = /allow create: if emailVerificado\(\)[\s\S]*?&& request\.resource\.data\.updatedAt == request\.time;/
-
-if (!directCreatePattern.test(ordersAndAfter)) {
-  console.error('Não foi possível localizar a regra de criação direta de pedidos. Nenhuma regra segura foi gerada.')
-  process.exit(1)
-}
-
-const secureOrdersAndAfter = ordersAndAfter.replace(
-  directCreatePattern,
-  `// Modo backend seguro: somente o Firebase Admin SDK/Cloud Functions cria pedidos.\n      // O Admin SDK ignora Security Rules; navegadores e clientes não confiáveis são bloqueados.\n      allow create: if false;`,
-)
-
-const output = beforeOrders + secureOrdersAndAfter
-writeFileSync(outputPath, output)
-console.log(`Regras seguras geradas em ${outputPath}. Criação direta de pedidos pelo cliente: BLOQUEADA.`)
+if (!deniesWrites) throw new Error('Não foi encontrado o bloqueio de escrita de pedidos. Nenhum arquivo foi gerado.')
+writeFileSync('firestore.secure.rules', source)
+console.log('Regras seguras copiadas: escrita de pedidos pelo navegador bloqueada.')

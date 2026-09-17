@@ -5,14 +5,25 @@ import {
 } from 'firebase/app-check'
 import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
+import { startPrivateSession } from './services/auth-session.js'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+
+  authDomain:
+    import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+
+  projectId:
+    import.meta.env.VITE_FIREBASE_PROJECT_ID,
+
+  storageBucket:
+    import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+
+  messagingSenderId:
+    import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+
+  appId:
+    import.meta.env.VITE_FIREBASE_APP_ID,
 }
 
 export const firebaseConfigured = Boolean(
@@ -21,10 +32,6 @@ export const firebaseConfigured = Boolean(
   firebaseConfig.projectId &&
   firebaseConfig.appId
 )
-
-if (!firebaseConfigured) {
-  console.warn('[PratoPronto] Firebase não configurado neste ambiente. Login, pedidos e área da empresa ficarão indisponíveis.')
-}
 
 const app = firebaseConfigured
   ? getApps()[0] ?? initializeApp(firebaseConfig)
@@ -40,23 +47,32 @@ function configureAppCheck() {
   try {
     if (appCheckDebugEnabled) {
       self.FIREBASE_APPCHECK_DEBUG_TOKEN = true
-      console.info('[PratoPronto] App Check em modo debug somente neste ambiente de desenvolvimento.')
     }
-
     return initializeAppCheck(app, {
       provider: new ReCaptchaEnterpriseProvider(appCheckSiteKey),
       isTokenAutoRefreshEnabled: true,
     })
   } catch (error) {
     if (error?.code === 'appCheck/already-initialized') return null
-
-    console.error('[PratoPronto] Não foi possível iniciar o Firebase App Check.', error)
-    return null
+    throw error
   }
 }
 
 export const appCheck = configureAppCheck()
-export const auth = app ? getAuth(app) : null
-export const db = app ? getFirestore(app) : null
+
+export const auth =
+  app ? getAuth(app) : null
+
+// Clear legacy persistent sessions before any account can appear in the UI.
+// New credentials live only in this running page, not in browser storage.
+export const authReady = auth
+  ? startPrivateSession(auth)
+  : Promise.resolve()
+// The provider and explicit sign-in calls surface failures; avoid an unhandled
+// rejection while the React bundle is still loading.
+authReady.catch(() => undefined)
+
+export const db =
+  app ? getFirestore(app) : null
 
 export default app

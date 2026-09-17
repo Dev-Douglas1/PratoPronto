@@ -1,3 +1,5 @@
+> **Documento da implementação Cloudflare anterior.** O código foi preservado, mas a interface 2.0 usa o contrato de Cloud Functions em functions/. Não aplique estes passos de publicação à interface atual. Consulte INTEGRACAO_MAIN.md e ATIVAR_OPERACAO.md.
+
 # PratoPronto — preparação para produção
 
 Este documento descreve o caminho recomendado para publicar o mesmo PratoPronto na Web e, depois, na Google Play como PWA/TWA, mantendo o Firebase no plano Spark.

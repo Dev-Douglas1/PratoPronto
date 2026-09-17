@@ -2,7 +2,7 @@ name: Verificar PratoPronto
 
 on:
   push:
-    branches: [main, codex/auditoria-geral-pratopronto, codex/mobile-pwa-security]
+    branches: [main, codex/integracao-main-atualizada, codex/auditoria-geral-pratopronto, codex/mobile-pwa-security]
   pull_request:
     branches: [main]
 
@@ -40,8 +40,8 @@ jobs:
         shell: bash
         run: |
           node scripts/build-secure-rules.mjs
-          grep -q 'Modo backend seguro' firestore.secure.rules
-          grep -q 'allow create: if false;' firestore.secure.rules
+          cmp firestore.rules firestore.secure.rules
+          grep -q 'allow write: if false;' firestore.secure.rules
 
       - name: Testar Vite em desenvolvimento
         shell: bash

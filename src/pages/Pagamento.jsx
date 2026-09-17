@@ -1,276 +1,97 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
 import TopBar from '../components/TopBar.jsx'
 import { useCart } from '../context/CartContext.jsx'
-import { formatarMoeda } from '../utils/moeda.js'
-import { formatarNumeroCartao, formatarValidade } from '../utils/cartao.js'
 import { useUser } from '../context/UserContext.jsx'
-import { calculateDeliveryFee, createOrder } from '../services/storage.js'
-import {
-  createSecureOrder,
-  getPurchaseQuotaBlock,
-  secureOrderBackendEnabled,
-} from '../services/secureOrders.js'
+import { formatarMoeda as money } from '../utils/moeda.js'
+import { callServer, cartItems, checkoutUrl } from '../services/server.js'
+import useStorefront from '../hooks/useStorefront.js'
 
-const cardDemoEnabled = !secureOrderBackendEnabled
-  && (import.meta.env.DEV || import.meta.env.VITE_ENABLE_CARD_DEMO === 'true')
-
+const methods = [
+  { id: 'pix', title: 'Pix', detail: 'Pague no ambiente do Mercado Pago', icon: '◆' },
+  { id: 'cartao_online', title: 'Cartão online', detail: 'Crédito ou débito disponível no provedor', icon: '▰' },
+  { id: 'maquina_entrega', title: 'Máquina na entrega', detail: 'O motoboy leva a maquininha', icon: '⌁' },
+]
 export default function Pagamento() {
   const navigate = useNavigate()
-  const { lista, total, limpar, precoUnitario } = useCart()
+  const { lista, limpar } = useCart()
   const { usuario } = useUser()
-  const [deliveryFee, setDeliveryFee] = useState(null)
-  const [loadingFee, setLoadingFee] = useState(false)
-  const [feeError, setFeeError] = useState('')
-  const [method, setMethod] = useState(cardDemoEnabled ? 'card-demo' : 'cash-on-delivery')
-  const [form, setForm] = useState({ numero: '', validade: '', cvv: '', nome: '' })
-  const [erro, setErro] = useState('')
-  const [enviando, setEnviando] = useState(false)
-  const [purchaseBlock, setPurchaseBlock] = useState(() => (
-    secureOrderBackendEnabled
-      ? getPurchaseQuotaBlock()
-      : { blocked: false, until: null, message: '' }
-  ))
-
-  const backendItems = useMemo(() => lista.map((item) => ({
-    id: item.produto.id,
-    quantidade: item.quantidade,
-    personalizacao: item.personalizacao,
-  })), [lista])
-
+  const { store, loading, error: storeError } = useStorefront()
+  const [method, setMethod] = useState('pix')
+  const [cardType, setCardType] = useState('credito')
+  const [note, setNote] = useState('')
+  const [quote, setQuote] = useState(null)
+  const [acceptTerms, setAcceptTerms] = useState(false)
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+  const lock = useRef(false)
+  const storageKey = 'pratopronto:checkout:' + usuario?.uid
+  const [pending, setPending] = useState(() => {
+    try { const value = JSON.parse(sessionStorage.getItem(storageKey)); return value?.quoteId && value?.requestId ? value : null } catch { return null }
+  })
+  const cartSignature = JSON.stringify(cartItems(lista))
+  useEffect(() => { setQuote(null) }, [cartSignature, method, cardType, note, usuario?.updatedAt])
   useEffect(() => {
-    let active = true
-
-    async function loadFee() {
-      setFeeError('')
-
-      if (!lista.length || total <= 0) {
-        setDeliveryFee(0)
-        return
-      }
-      if (!usuario?.bairro) {
-        setDeliveryFee(null)
-        setFeeError('Informe seu bairro no perfil antes de finalizar o pedido.')
-        return
-      }
-
-      try {
-        setLoadingFee(true)
-        const value = await calculateDeliveryFee(usuario.bairro, total)
-        if (active) setDeliveryFee(value)
-      } catch (error) {
-        if (active) {
-          setDeliveryFee(null)
-          setFeeError(error.message || 'Não foi possível calcular a taxa de entrega.')
-        }
-      } finally {
-        if (active) setLoadingFee(false)
-      }
-    }
-
-    loadFee()
-    return () => { active = false }
-  }, [usuario?.bairro, total, lista.length])
-
-  useEffect(() => {
-    if (!purchaseBlock.blocked || !purchaseBlock.until) return undefined
-    const remaining = purchaseBlock.until.getTime() - Date.now()
-    if (remaining <= 0) {
-      setPurchaseBlock(getPurchaseQuotaBlock())
-      return undefined
-    }
-
-    const timer = window.setTimeout(() => {
-      setPurchaseBlock(getPurchaseQuotaBlock())
-    }, Math.min(remaining + 1000, 2_147_000_000))
-
-    return () => window.clearTimeout(timer)
-  }, [purchaseBlock])
-
-  const finalTotal = total + (deliveryFee ?? 0)
-
-  async function confirmar(event) {
-    event.preventDefault()
-    setErro('')
-
-    if (!usuario) {
-      setErro('Faça login para finalizar o pedido.')
-      return
-    }
-    if (!usuario.emailVerified) {
-      setErro('Verifique seu e-mail antes de finalizar o pedido.')
-      return
-    }
-    if (!lista.length) {
-      setErro('Seu carrinho está vazio.')
-      return
-    }
-    if (!usuario.endereco?.trim() || !usuario.numero?.trim() || !usuario.bairro?.trim() || !usuario.telefone?.trim()) {
-      setErro('Complete telefone e endereço no perfil antes de finalizar o pedido.')
-      return
-    }
-    if (method === 'card-demo' && !cardDemoEnabled) {
-      setErro('Pagamento por cartão demonstrativo está desativado nesta versão.')
-      return
-    }
-    if (method === 'card-demo' && (form.numero.replace(/\D/g, '').length < 13 || !form.validade || form.cvv.length < 3 || !form.nome.trim())) {
-      setErro('Preencha corretamente os dados do cartão.')
-      return
-    }
-
-    if (secureOrderBackendEnabled) {
-      const currentBlock = getPurchaseQuotaBlock()
-      setPurchaseBlock(currentBlock)
-      if (currentBlock.blocked) {
-        setErro(currentBlock.message)
-        return
-      }
-    }
-
-    try {
-      setEnviando(true)
-
-      if (secureOrderBackendEnabled) {
-        if (method !== 'cash-on-delivery') {
-          throw new Error('O backend seguro aceita somente pagamento na entrega nesta etapa.')
-        }
-
-        const pedido = await createSecureOrder({
-          items: backendItems,
-          paymentMethod: 'cash-on-delivery',
-        })
-
-        setDeliveryFee(Number(pedido.deliveryFee || deliveryFee || 0))
-        limpar()
-        navigate('/acompanhamento', { state: { pedidoId: pedido.id }, replace: true })
-        return
-      }
-
-      const currentDeliveryFee = await calculateDeliveryFee(usuario.bairro, total)
-      const currentFinalTotal = total + currentDeliveryFee
-      setDeliveryFee(currentDeliveryFee)
-
-      const pagamento = method === 'cash-on-delivery'
-        ? { metodo: 'Pagamento na entrega', referencia: `entrega-${Date.now()}`, status: 'pending_delivery' }
-        : { metodo: 'Cartão (demonstração)', referencia: `demo-${Date.now()}`, status: 'demo_approved' }
-
-      const pedido = await createOrder({
-        userId: usuario.uid,
-        subtotal: total,
-        deliveryFee: currentDeliveryFee,
-        total: currentFinalTotal,
-        itens: lista.map((item) => ({
-          id: item.produto.id,
-          nome: item.produto.nome,
-          quantidade: item.quantidade,
-          precoUnitario: precoUnitario(item),
-          personalizacao: item.personalizacao,
-        })),
-        cliente: {
-          nome: usuario.nome,
-          email: usuario.email,
-          telefone: usuario.telefone,
-        },
-        entrega: {
-          endereco: usuario.endereco,
-          numero: usuario.numero,
-          bairro: usuario.bairro,
-          complemento: usuario.complemento,
-        },
-        pagamento,
-      })
-
-      setForm({ numero: '', validade: '', cvv: '', nome: '' })
-      limpar()
-      navigate('/acompanhamento', { state: { pedidoId: pedido.id }, replace: true })
-    } catch (error) {
-      if (error?.code === 'quota-exhausted') {
-        setPurchaseBlock(getPurchaseQuotaBlock())
-      }
-      setErro(error.message)
-    } finally {
-      setEnviando(false)
-    }
+    if (store?.methods?.length && !store.methods.includes(method)) setMethod(store.methods[0])
+  }, [store, method])
+  async function finish(attempt) {
+    const result = await callServer('appCheckout', attempt)
+    setPending(null)
+    try { sessionStorage.removeItem(storageKey) } catch { /* Available in memory. */ }
+    limpar()
+    const url = checkoutUrl(result.checkoutUrl)
+    if (url) window.location.assign(url)
+    else navigate('/acompanhamento?pedido=' + encodeURIComponent(result.orderId), { replace: true })
   }
-
-  return (
-    <AppScreen>
-      <TopBar titulo="Pagamento" perfil />
-      <div className="page-heading">
-        <span className="eyebrow">FINALIZAR PEDIDO</span>
-        <h1>Pagamento seguro</h1>
-        <p>{secureOrderBackendEnabled
-          ? 'O valor mostrado é uma estimativa. Preço, estoque e entrega serão conferidos pelo servidor em uma única chamada quando você confirmar o pedido.'
-          : cardDemoEnabled
-            ? 'O cartão online está em modo de demonstração. Dados sensíveis não são salvos.'
-            : 'Nesta versão pública, o pagamento é feito na entrega. O cartão online só será liberado após integração com um gateway seguro.'}</p>
-      </div>
-      <form className="light-card payment-card" onSubmit={confirmar}>
-        <div className="payment-methods" role="radiogroup" aria-label="Forma de pagamento">
-          {cardDemoEnabled ? (
-            <label className={method === 'card-demo' ? 'is-selected' : ''}>
-              <input type="radio" name="payment-method" value="card-demo" checked={method === 'card-demo'} onChange={(e) => setMethod(e.target.value)} />
-              <span>💳 Cartão online</span><small>Demonstração</small>
-            </label>
-          ) : null}
-          <label className={method === 'cash-on-delivery' ? 'is-selected' : ''}>
-            <input type="radio" name="payment-method" value="cash-on-delivery" checked={method === 'cash-on-delivery'} onChange={(e) => setMethod(e.target.value)} />
-            <span>🏍️ Pagar na entrega</span><small>Máquina/dinheiro</small>
-          </label>
-        </div>
-
-        <div className="payment-total payment-total--stacked">
-          <div><span>Subtotal</span><strong>{formatarMoeda(total)}</strong></div>
-          <div><span>Entrega</span><strong>{loadingFee ? 'Calculando...' : deliveryFee === null ? '—' : deliveryFee ? formatarMoeda(deliveryFee) : 'Grátis'}</strong></div>
-          <div className="payment-grand-total"><span>Total estimado</span><strong>{formatarMoeda(finalTotal)}</strong></div>
-        </div>
-        {secureOrderBackendEnabled ? <p className="privacy-badge">A confirmação final usa uma única chamada segura ao backend. O servidor recalcula os valores antes de gravar o pedido.</p> : null}
-        {purchaseBlock.blocked ? <p className="form-error dark-error" role="alert">{purchaseBlock.message}</p> : null}
-        {feeError ? <p className="form-error dark-error" role="alert">{feeError}</p> : null}
-
-        {method === 'card-demo' && cardDemoEnabled ? (
-          <>
-            <div className="payment-title">
-              <div><span>💳</span><strong>Cartão de crédito</strong></div>
-              <div className="card-brands"><span>VISA</span><span>mastercard</span></div>
-            </div>
-            <div className="privacy-badge">Pagamento demonstrativo. Número do cartão e CVV ficam somente na memória desta tela e não são salvos.</div>
-            <label>Número do cartão</label>
-            <input inputMode="numeric" autoComplete="cc-number" value={form.numero} onChange={(e) => setForm({ ...form, numero: formatarNumeroCartao(e.target.value) })} placeholder="0000 0000 0000 0000" />
-            <div className="payment-grid">
-              <div>
-                <label>Validade</label>
-                <input autoComplete="cc-exp" value={form.validade} onChange={(e) => setForm({ ...form, validade: formatarValidade(e.target.value) })} placeholder="MM/AA" />
-              </div>
-              <div>
-                <label>CVV</label>
-                <input inputMode="numeric" autoComplete="cc-csc" value={form.cvv} onChange={(e) => setForm({ ...form, cvv: e.target.value.replace(/\D/g, '').slice(0, 4) })} placeholder="000" />
-              </div>
-            </div>
-            <label>Nome no cartão</label>
-            <input autoComplete="cc-name" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder="Seu nome" />
-          </>
-        ) : (
-          <div className="privacy-badge">O pedido será preparado normalmente e a empresa verá que o pagamento deve ser cobrado no momento da entrega.</div>
-        )}
-
-        {usuario && (
-          <div className="delivery-summary light-summary">
-            <strong>Entrega:</strong>
-            <span>{usuario.endereco}, {usuario.numero} • {usuario.bairro}</span>
-          </div>
-        )}
-        {erro && !purchaseBlock.blocked && <p className="form-error dark-error" role="alert">{erro}</p>}
-        <button
-          className="btn btn-primary"
-          disabled={enviando || loadingFee || deliveryFee === null || Boolean(feeError) || purchaseBlock.blocked}
-          type="submit"
-        >
-          {purchaseBlock.blocked ? 'Compras temporariamente bloqueadas' : enviando ? 'Confirmando...' : 'Confirmar pedido'}
-        </button>
-        <button className="btn btn-secondary" type="button" onClick={() => navigate('/pedido')}>Voltar</button>
-      </form>
-    </AppScreen>
-  )
+  async function submit(event) {
+    event.preventDefault()
+    if (lock.current) return
+    lock.current = true; setBusy(true); setError('')
+    try {
+      if (pending) { await finish(pending); return }
+      if (!quote) {
+        const value = await callServer('appQuote', { items: cartItems(lista), method, cardType, note, acceptTerms })
+        setQuote(value)
+        return
+      }
+      if (new Date(quote.expiresAt).getTime() <= Date.now()) {
+        setQuote(null); throw new Error('O resumo expirou. Confira os valores novamente antes de pagar.')
+      }
+      const attempt = { quoteId: quote.quoteId, requestId: crypto.randomUUID() }
+      setPending(attempt)
+      try { sessionStorage.setItem(storageKey, JSON.stringify(attempt)) } catch { /* Same key retained in state. */ }
+      await finish(attempt)
+    } catch (err) {
+      if (err.restartCheckout === true) {
+        setPending(null); setQuote(null)
+        try { sessionStorage.removeItem(storageKey) } catch { /* Available in memory. */ }
+      }
+      setError(err.message)
+    }
+    finally { lock.current = false; setBusy(false) }
+  }
+  return <AppScreen>
+    <TopBar titulo="Pagamento" perfil />
+    <div className="page-heading"><span className="eyebrow">FINALIZAR PEDIDO</span><h1>{quote ? 'Confira antes de confirmar' : 'Escolha como pagar'}</h1><p>O restaurante confirma os preços e a entrega antes do pagamento.</p></div>
+    <form className="light-card payment-card" onSubmit={submit}>
+      {store?.environment === 'test' && <div className="demo-payment-banner" role="note"><strong>AMBIENTE DE TESTES</strong><span>Use somente usuários e cartões de teste do Mercado Pago. Não há cobrança real.</span></div>}
+      {(storeError || (!loading && !store?.open)) && <p className="form-error dark-error" role="status">{storeError || 'O restaurante está fechado para novos pedidos neste horário.'}</p>}
+      {pending && <div className="payment-demo-panel"><p>Existe uma tentativa anterior. Recupere o pedido para conferir o resultado antes de iniciar outra compra.</p></div>}
+      <fieldset className="payment-methods" disabled={busy || Boolean(pending)}><legend>Forma de pagamento</legend>
+        {methods.map(item => <button key={item.id} type="button" disabled={!store?.methods.includes(item.id)} className={'payment-method ' + (method === item.id ? 'is-selected' : '')} aria-pressed={method === item.id} onClick={() => setMethod(item.id)}><span className="payment-method__icon">{item.icon}</span><span><strong>{item.title}</strong><small>{item.detail}</small></span><i>{method === item.id ? '✓' : ''}</i></button>)}
+      </fieldset>
+      {method !== 'pix' && <fieldset className="payment-kind" disabled={busy || Boolean(pending)}><legend>Tipo do cartão</legend>{[['credito','Crédito'],['debito','Débito']].map(([id,title]) => <button key={id} type="button" className={cardType === id ? 'is-selected' : ''} onClick={() => setCardType(id)}>{title}</button>)}</fieldset>}
+      <div className="payment-demo-panel"><p>{method === 'maquina_entrega' ? 'O pagamento será feito na entrega. O pedido informa ao entregador que ele deve levar a maquininha.' : 'Você será encaminhado ao Mercado Pago. Os dados do cartão e o CVV são preenchidos no provedor de pagamento. A aprovação aparecerá aqui após a confirmação.'}</p></div>
+      <label htmlFor="checkout-note">Observação do pedido (opcional)</label><textarea id="checkout-note" maxLength={500} value={note} onChange={event => setNote(event.target.value)} disabled={busy || Boolean(pending)} placeholder="Ex.: tocar o interfone ao chegar." />
+      <div className="delivery-summary light-summary"><strong>Entregar em</strong><span>{usuario?.endereco}, {usuario?.numero} · {usuario?.bairro}</span><span>{usuario?.cidade} / {usuario?.uf} · CEP {usuario?.cep}</span><Link to="/perfil">Corrigir endereço</Link></div>
+      {quote && <section className="checkout-quote" aria-live="polite"><h3>Resumo confirmado pelo restaurante</h3>{quote.itens.map(item => <p key={item.id}><span>{item.quantidade} × {item.nome}<small>{item.detalhes}</small>{item.promocao && <small>{item.promocao.percentual}% de desconto · {item.promocao.titulo}</small>}</span><b>{money(item.quantidade * item.precoUnitario)}</b></p>)}<p><span>Entrega</span><b>{quote.taxaEntrega === 0 ? 'Grátis' : money(quote.taxaEntrega)}</b></p><div className="payment-total"><span>Total a {method === 'maquina_entrega' ? 'pagar na entrega' : 'pagar'}</span><strong>{money(quote.total)}</strong></div><small>Previsão: {quote.estimateMinutes} minutos após a confirmação. Valores válidos por 5 minutos.</small></section>}
+      {!usuario?.emailVerificado && <Link className="text-link dark-link" to="/verificar-email">Confirme seu e-mail para finalizar.</Link>}
+      {!pending && <label className="checkbox-line"><input type="checkbox" checked={acceptTerms} required disabled={busy} onChange={event => { setAcceptTerms(event.target.checked); setQuote(null) }} />Li os <Link to="/termos-de-uso">Termos de Uso</Link> e a <Link to="/politica-de-privacidade">Política de Privacidade</Link> apresentados para este pedido.</label>}
+      {error && <p className="form-error dark-error" role="alert">{error}</p>}
+      <button className="btn btn-primary" type="submit" disabled={busy || (!pending && (!lista.length || !store?.open || !store?.methods.includes(method))) || !usuario?.emailVerificado}>{busy ? 'Aguarde…' : pending ? 'Recuperar tentativa anterior' : !quote ? 'Conferir valores e entrega' : method === 'maquina_entrega' ? 'Confirmar pedido · ' + money(quote.total) : 'Pagar no Mercado Pago · ' + money(quote.total)}</button>
+      {pending && <Link to="/acompanhamento" className="text-link dark-link">Consultar meus pedidos</Link>}
+      <Link className="btn btn-secondary" to="/pedido">Voltar ao carrinho</Link>
+    </form>
+  </AppScreen>
 }

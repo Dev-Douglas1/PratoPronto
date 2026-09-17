@@ -1,139 +1,52 @@
-# PratoPronto — React + Firebase
+# PratoPronto
 
-Aplicativo de pedidos de pizza com área do cliente e **Área da Empresa 2.0**, construído em React + Vite + Firebase.
+Aplicativo React/Vite para pedidos de pizzas e bebidas, com Firebase Authentication, Firestore e backend em Cloud Functions.
 
-## Recursos atuais
+- Cliente: conta, confirmação de e-mail, recuperação de senha, endereço completo, cardápio, personalizações, carrinho, resumo de compra, acompanhamento, atendimento e avaliação após entrega.
+- Empresa: pedidos e etapas, comandas de cozinha/entrega, preços e disponibilidade, respostas às avaliações, cancelamentos, configuração de horários/bairros/taxas e verificação de serviços.
+- Pagamentos: integração de Checkout Pro com Pix/cartões e opção de maquininha. O servidor calcula valores, confirma pagamentos e processa devoluções; a ativação depende das contas e da homologação.
+- Segurança: pedidos não podem ser gravados pelo navegador; autenticação verificada, papel administrativo concedido por ferramenta confiável, App Check e limites por usuário. Sem cartão completo, CVV ou senha no Firestore.
+- Celular: interface adaptável, PWA instalável, aviso de atualização e página sem conexão. Dados financeiros não são mantidos pelo service worker.
 
-### Cliente
+A demonstração empresarial fica em `/demo/empresa/pedidos`, com dados fictícios em memória. A operação real fica em `/empresa/pedidos` e depende do acesso administrativo no Firebase.
 
-- cadastro e login com Firebase Authentication;
-- recuperação de senha e verificação de e-mail;
-- perfil, endereço e controles de privacidade/LGPD;
-- catálogo de pizzas e bebidas com disponibilidade, estoque e preços em tempo real;
-- personalização de pizzas por tamanho, borda, adicionais e observação;
-- carrinho com limite de estoque;
-- taxa de entrega por bairro e entrega grátis por valor configurável;
-- pagamento na entrega e cartão em modo demonstrativo;
-- acompanhamento de pedidos em tempo real;
-- solicitação de cancelamento e reembolso;
-- avaliação de comida e entrega após pedido entregue;
-- PWA instalável.
-
-### Empresa
-
-A rota `/empresa` é protegida por perfil administrativo e possui:
-
-- visão geral de pedidos;
-- pedidos em preparo, entrega e concluídos;
-- dados necessários de cliente e entrega;
-- atribuição e persistência do motoboy responsável;
-- impressão de nota de cozinha e motoboy em 80 mm;
-- tratamento de cancelamentos e reembolsos;
-- avaliações e respostas da empresa;
-- edição de preço, estoque e disponibilidade;
-- configuração de taxas de entrega por bairro.
-
-## Segurança importante
-
-- senhas ficam somente no Firebase Authentication;
-- número completo de cartão e CVV não são persistidos;
-- regras do Firestore separam cliente e administrador;
-- pedidos passam por validações de endereço, total, disponibilidade e estoque no fluxo do app;
-- o pagamento real ainda **não** está ativado.
-
-O acesso administrativo por e-mail usado durante o desenvolvimento é temporário. Antes do lançamento comercial, migre administradores para **Custom Claims/Admin SDK** e remova o bootstrap de teste das regras.
-
-Preços, estoque, cobrança e reembolso de produção precisam de um backend confiável. Validação no navegador melhora o fluxo normal, mas não substitui validação server-side.
-
-## Configurar Firebase
-
-1. Crie um projeto no Firebase.
-2. Adicione um Web App.
-3. Em Authentication, ative **E-mail/Senha**.
-4. Crie o Firestore Database.
-5. Copie `.env.example` para `.env`.
-6. Preencha as variáveis `VITE_FIREBASE_*`.
-7. Preencha `VITE_CONTROLLER_NAME` e `VITE_PRIVACY_EMAIL`.
-8. Publique `firestore.rules`.
-9. Adicione o domínio usado pelo app em **Authentication → Configurações → Domínios autorizados**.
-
-```bash
-cp .env.example .env
-npm ci
-npm run dev
-```
-
-## Codespaces
-
-O projeto possui `.devcontainer/devcontainer.json` configurado para a porta `5173`. Ao criar ou reconstruir o Codespace:
-
-- `npm ci` é executado na criação;
-- o Vite é iniciado automaticamente quando o Codespace inicia;
-- a porta `5173` é encaminhada e aberta pelo Codespaces;
-- o HMR usa WebSocket seguro no domínio `*.app.github.dev`.
-
-Se um Codespace já existia antes dessa configuração, use **Codespaces: Rebuild Container** uma vez.
-
-O log do Vite iniciado automaticamente fica em:
-
-```bash
-cat /tmp/pratopronto-vite.log
-```
-
-## Comandos
+## Executar
 
 ```bash
 npm ci
+npm ci --prefix functions
 npm run dev
-npm run build
-npm run preview
 ```
 
-## Verificação automática
+Preencha `.env` com a configuração pública Web do Firebase e a chave pública do App Check. Use os exemplos do projeto; não copie credenciais administrativas para o frontend.
 
-O workflow `.github/workflows/ci.yml` executa em pushes e pull requests:
+## Ativar a operação
 
-1. `npm ci`;
-2. servidor Vite de desenvolvimento;
-3. smoke test das rotas principais;
-4. `npm run build`;
-5. preview do build;
-6. smoke test das rotas SPA e arquivos PWA.
+Siga [ATIVAR_OPERACAO.md](ATIVAR_OPERACAO.md) para preparar Firebase, conta recebedora, segredos, administrador, horários, entrega, publicação pública e homologação. Consulte [LANCAMENTO.md](LANCAMENTO.md) para o estado desta entrega.
 
-Rotas verificadas: `/`, `/login`, `/cadastro`, `/pizzas`, `/bebidas`, `/pedido`, `/pagamento`, `/acompanhamento`, `/perfil` e `/empresa`.
-
-## Publicar regras do Firestore
+## Testes
 
 ```bash
-npm install -g firebase-tools
-firebase login
-firebase deploy --only firestore:rules
-```
-
-## Publicar no Firebase Hosting
-
-```bash
+npm test
+npm run test:server
+npm run test:rules
+npm run test:integration
 npm run build
-firebase deploy --only hosting
 ```
 
-O `firebase.json` inclui rewrite SPA e cabeçalhos básicos de segurança. O service worker é servido sem cache para permitir atualização da PWA.
+Os testes de integração usam Firestore Emulator e um provedor de pagamentos controlado. Não movimentam dinheiro nem demonstram, por si só, que uma conta real foi configurada.
 
-## Dados principais
+## Organização
 
-- `users/{uid}`: perfil e consentimentos;
-- `admins/{uid}`: autorização administrativa de desenvolvimento;
-- `orders/{orderId}`: pedido, entrega, pagamento não sensível e status;
-- `reviews/{orderId}`: avaliação do pedido;
-- `catalog/{productId}`: preço, estoque e disponibilidade;
-- `settings/delivery`: taxas de entrega.
+- `src/`: páginas, componentes, contexto e integração do frontend.
+- `functions/src/`: cálculo de pedido, Checkout Pro, confirmação, reembolso, administração e manutenção.
+- `functions/src/catalog-data.js`: catálogo público compartilhado entre frontend e servidor.
+- `functions/scripts/`: ferramentas de configuração administrativa, autenticadas com a conta Google responsável.
+- `firestore.rules` e `firestore.indexes.json`: proteção e índices do banco.
+- `ops/`: políticas de monitoramento e ciclo de vida de backups para configuração da operação.
 
-## Nunca armazenar
+As comandas são documentos não fiscais. Imagens dos produtos e identidade visual permanecem nos arquivos locais do projeto; a documentação específica de origem/licenciamento dos assets deve acompanhar a publicação comercial.
 
-- senha do usuário;
-- número completo do cartão;
-- CVV;
-- credenciais privadas do Mercado Pago/Firebase Admin;
-- chaves secretas de servidor em variáveis `VITE_*`.
+## Integração com a main
 
-Consulte também `SECURITY_AND_LGPD.md` antes de qualquer lançamento comercial.
+Consulte [INTEGRACAO_MAIN.md](INTEGRACAO_MAIN.md) para as escolhas de resolução, recuperação do merge no Codespaces e limitações de compatibilidade com o Worker. As regras atuais bloqueiam escrita de pedidos pelo navegador em todos os ambientes.

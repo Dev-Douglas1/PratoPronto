@@ -4,7 +4,8 @@ import { useCart } from '../context/CartContext.jsx'
 const items = [
   { to: '/pizzas', icon: '🍕', label: 'Pizzas' },
   { to: '/bebidas', icon: '🥤', label: 'Bebidas' },
-  { to: '/pedido', icon: '🛒', label: 'Pedido', cart: true },
+  { to: '/pedido', icon: '🛒', label: 'Carrinho', cart: true },
+  { to: '/acompanhamento', icon: '▤', label: 'Pedidos' },
   { to: '/perfil', icon: '●', label: 'Perfil' },
 ]
 

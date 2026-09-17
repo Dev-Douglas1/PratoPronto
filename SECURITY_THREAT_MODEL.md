@@ -1,3 +1,5 @@
+> **Documento da implementação Cloudflare anterior.** O código foi preservado, mas a interface 2.0 usa o contrato de Cloud Functions em functions/. Não aplique estes passos de publicação à interface atual. Consulte INTEGRACAO_MAIN.md e ATIVAR_OPERACAO.md.
+
 # PratoPronto — modelo de ameaça e defesas
 
 Este documento descreve, em nível defensivo, os principais caminhos de abuso que precisam ser considerados antes do lançamento.

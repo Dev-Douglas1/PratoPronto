@@ -1,37 +1,37 @@
-import { StrictMode } from 'react'
+import { StrictMode, useEffect } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
-import AppErrorBoundary from './components/AppErrorBoundary.jsx'
 import { CartProvider } from './context/CartContext.jsx'
 import { UserProvider } from './context/UserContext.jsx'
+import AppErrorBoundary from './components/AppErrorBoundary.jsx'
 import './index.css'
 import './mobile-responsive.css'
+import './pwa.js'
+import { watchForUpdates } from './pwa.js'
 
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch((error) => {
-      console.warn('[PratoPronto] Service worker não pôde ser registrado.', error)
-    })
-  })
+function StartupReady() {
+  useEffect(() => { window.dispatchEvent(new Event('pratopronto-ready')) }, [])
+  return null
 }
 
-const rootElement = document.getElementById('root')
-
-if (!rootElement) {
-  throw new Error('Elemento #root não encontrado no HTML.')
-}
-
-createRoot(rootElement).render(
+createRoot(document.getElementById('root')).render(
   <StrictMode>
     <AppErrorBoundary>
-      <BrowserRouter>
-        <UserProvider>
-          <CartProvider>
-            <App />
-          </CartProvider>
-        </UserProvider>
-      </BrowserRouter>
+    <BrowserRouter>
+      <UserProvider>
+        <CartProvider>
+          <App />
+          <StartupReady />
+        </CartProvider>
+      </UserProvider>
+    </BrowserRouter>
     </AppErrorBoundary>
   </StrictMode>,
 )
+
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then(watchForUpdates).catch(() => undefined)
+  })
+}

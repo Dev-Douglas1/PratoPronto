@@ -1,3 +1,5 @@
+import { validateName, validatePhone, phoneInput } from '../../functions/src/input-policy.js'
+import AddressFields from '../components/AddressFields.jsx'
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
@@ -7,11 +9,11 @@ import BottomNav from '../components/BottomNav.jsx'
 
 export default function Perfil() {
   const navigate = useNavigate()
-  const { usuario, loading, atualizar, reenviarVerificacao, sair } = useUser()
+  const { usuario, loading, atualizar, sair, enviarVerificacaoEmail } = useUser()
   const [form, setForm] = useState({})
   const [mensagem, setMensagem] = useState('')
   const [erro, setErro] = useState('')
-  const [enviandoVerificacao, setEnviandoVerificacao] = useState(false)
+  const [salvando, setSalvando] = useState(false)
 
   useEffect(() => {
     if (usuario) setForm(usuario)
@@ -19,32 +21,40 @@ export default function Perfil() {
 
   function handleChange(event) {
     const { name, value, type, checked } = event.target
-    setForm((atual) => ({ ...atual, [name]: type === 'checkbox' ? checked : value }))
+    if (name === 'telefone' && phoneInput(value).length > 11) { setErro('O telefone deve ter no máximo 11 números, incluindo o DDD.'); return }
+    setForm((atual) => ({ ...atual, [name]: type === 'checkbox' ? checked : name === 'telefone' ? phoneInput(value) : value }))
   }
 
   async function salvar(event) {
     event.preventDefault()
+    if (salvando) return
     setErro('')
     setMensagem('')
+    try { validateName(form.nome); validatePhone(form.telefone) } catch (error) { setErro(error.message); return }
+    if (!form.nome?.trim() || !form.telefone?.trim()) {
+      setErro('Preencha nome e telefone.')
+      return
+    }
+    if (!form.endereco?.trim() || !form.numero?.trim() || !form.bairro?.trim()) {
+      setErro('Preencha rua, número e bairro para calcular e realizar a entrega.')
+      return
+    }
     try {
+      setSalvando(true)
       await atualizar(form)
       setMensagem('Dados atualizados com sucesso.')
     } catch (error) {
       setErro(error.message)
-    }
+    } finally { setSalvando(false) }
   }
 
-  async function reenviarEmail() {
+  async function verificarEmail() {
     try {
       setErro('')
-      setMensagem('')
-      setEnviandoVerificacao(true)
-      await reenviarVerificacao()
-      setMensagem('Novo e-mail de verificação enviado. Confira também a pasta de spam.')
+      await enviarVerificacaoEmail()
+      setMensagem('E-mail de verificação enviado. Confira sua caixa de entrada.')
     } catch (error) {
       setErro(error.message)
-    } finally {
-      setEnviandoVerificacao(false)
     }
   }
 
@@ -59,42 +69,37 @@ export default function Perfil() {
         <div><span className="eyebrow">MINHA CONTA</span><h1>{usuario.nome || 'Cliente PratoPronto'}</h1><p>{usuario.email}</p></div>
       </div>
       <form className="light-card form-card" onSubmit={salvar}>
-        {!usuario.emailVerified ? (
-          <div className="privacy-badge">
-            Seu e-mail ainda não foi verificado.
-            <button className="text-action" type="button" disabled={enviandoVerificacao} onClick={reenviarEmail}>{enviandoVerificacao ? 'Enviando...' : 'Reenviar verificação'}</button>
-          </div>
-        ) : null}
-        <label>Nome</label>
-        <input name="nome" maxLength={100} value={form.nome ?? ''} onChange={handleChange} />
-        <label>E-mail</label>
-        <input value={form.email ?? ''} disabled />
-        <label>Telefone</label>
-        <input name="telefone" maxLength={30} value={form.telefone ?? ''} onChange={handleChange} />
-        <label>Endereço</label>
-        <input name="endereco" maxLength={180} value={form.endereco ?? ''} onChange={handleChange} />
+        <div className={`account-badge ${usuario.emailVerificado ? 'is-verified' : ''}`}>
+          <strong>{usuario.emailVerificado ? '✓ E-mail verificado' : '! E-mail ainda não verificado'}</strong>
+          {!usuario.emailVerificado && <button type="button" onClick={verificarEmail}>Enviar verificação</button>}
+        </div>
+        <label htmlFor="perfil-nome">Nome (2 a 80 caracteres)</label>
+        <input id="perfil-nome" minLength={2} maxLength={80} autoComplete="name" required name="nome" value={form.nome ?? ''} onChange={handleChange} />
+        <label htmlFor="perfil-email">E-mail</label>
+        <input id="perfil-email" value={form.email ?? ''} disabled />
+        <label htmlFor="perfil-telefone">Telefone com DDD (10 ou 11 números)</label>
+        <input id="perfil-telefone" type="tel" inputMode="tel" maxLength={32} autoComplete="tel-national" required name="telefone" value={form.telefone ?? ''} onChange={handleChange} />
+        <AddressFields data={form} onChange={handleChange} />
+        <label htmlFor="perfil-endereco">Endereço</label>
+        <input id="perfil-endereco" maxLength={180} name="endereco" value={form.endereco ?? ''} onChange={handleChange} />
         <div className="payment-grid">
           <div>
-            <label>Número</label>
-            <input name="numero" maxLength={20} value={form.numero ?? ''} onChange={handleChange} />
+            <label htmlFor="perfil-numero">Número</label>
+            <input id="perfil-numero" maxLength={20} name="numero" value={form.numero ?? ''} onChange={handleChange} />
           </div>
           <div>
-            <label>Bairro</label>
-            <input name="bairro" maxLength={100} value={form.bairro ?? ''} onChange={handleChange} />
+            <label htmlFor="perfil-bairro">Bairro</label>
+            <input id="perfil-bairro" maxLength={100} name="bairro" value={form.bairro ?? ''} onChange={handleChange} />
           </div>
         </div>
-        <label>Complemento</label>
-        <input name="complemento" maxLength={180} value={form.complemento ?? ''} onChange={handleChange} />
+        <label htmlFor="perfil-complemento">Complemento</label>
+        <input id="perfil-complemento" maxLength={180} name="complemento" value={form.complemento ?? ''} onChange={handleChange} />
         <label className="checkbox-line"><input type="checkbox" name="aceitarMarketing" checked={Boolean(form.aceitarMarketing)} onChange={handleChange} /> Receber promoções por e-mail</label>
-        {mensagem && <p className="success-note" role="status">{mensagem}</p>}
+        {mensagem && <p className="success-note">{mensagem}</p>}
         {erro && <p className="form-error dark-error" role="alert">{erro}</p>}
-        <button className="btn btn-primary" type="submit">Salvar dados</button>
-        {usuario?.adminCandidate ? (
-          <button className="btn btn-primary" type="button" onClick={() => navigate('/empresa')}>
-            {usuario.emailVerified ? 'Área da empresa' : 'Área da empresa — verificar e-mail'}
-          </button>
-        ) : null}
+        <button className="btn btn-primary" type="submit" disabled={salvando}>{salvando ? 'Salvando...' : 'Salvar dados'}</button>
         <button className="btn ghost-button" type="button" onClick={() => navigate('/privacidade')}>Privacidade e meus dados</button>
+        {usuario.admin && <button className="btn admin-button" type="button" onClick={() => navigate('/admin')}>Painel do restaurante</button>}
         <button className="btn btn-secondary" type="button" onClick={async () => { await sair(); navigate('/login') }}>Sair</button>
       </form>
       <BottomNav />

@@ -1,159 +1,120 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useCart } from '../context/CartContext.jsx'
+import { tamanhos, bordas, extras } from '../data/produtos.js'
+import { productPrice } from '../utils/productPrice.js'
 import { formatarMoeda } from '../utils/moeda.js'
 
-const PIZZA_IDS = new Set(['calabresa', 'quatro-queijos', 'estrogonofe', 'frango-catupiry', 'mussarela', 'lombo-canadense'])
-const TAMANHOS = [
-  { id: 'P', label: 'Pequena', ajuste: -10 },
-  { id: 'M', label: 'Média', ajuste: -5 },
-  { id: 'G', label: 'Grande', ajuste: 0 },
-]
-const BORDAS = [
-  { id: 'sem', label: 'Sem borda recheada', ajuste: 0 },
-  { id: 'catupiry', label: 'Catupiry', ajuste: 8 },
-  { id: 'cheddar', label: 'Cheddar', ajuste: 8 },
-]
-const ADICIONAIS = [
-  { id: 'bacon', label: 'Bacon', ajuste: 6 },
-  { id: 'catupiry', label: 'Catupiry extra', ajuste: 6 },
-  { id: 'cebola', label: 'Cebola', ajuste: 3 },
-  { id: 'azeitona', label: 'Azeitona', ajuste: 3 },
-]
-
-export default function ProductCard({ produto }) {
-  const { adicionar, podeAdicionar } = useCart()
+export default function ProductCard({ produto, readOnly = false }) {
+  const { adicionar } = useCart()
   const [adicionado, setAdicionado] = useState(false)
-  const [modal, setModal] = useState(false)
-  const [tamanho, setTamanho] = useState('G')
-  const [borda, setBorda] = useState('sem')
+  const [personalizando, setPersonalizando] = useState(false)
+  const modal = useRef(null)
+  useEffect(() => {
+    const dialog = modal.current
+    if (personalizando && dialog) dialog.showModal()
+    return () => { if (dialog?.open) dialog.close() }
+  }, [personalizando])
+  const [tamanho, setTamanho] = useState('grande')
+  const [borda, setBorda] = useState('tradicional')
   const [adicionais, setAdicionais] = useState([])
-  const [observacao, setObservacao] = useState('')
-  const isPizza = PIZZA_IDS.has(produto.id)
 
-  const ajuste = useMemo(() => {
-    const tamanhoValue = TAMANHOS.find((item) => item.id === tamanho)?.ajuste || 0
-    const bordaValue = BORDAS.find((item) => item.id === borda)?.ajuste || 0
-    const extrasValue = adicionais.reduce((sum, id) => sum + (ADICIONAIS.find((item) => item.id === id)?.ajuste || 0), 0)
-    return tamanhoValue + bordaValue + extrasValue
-  }, [tamanho, borda, adicionais])
+  const tamanhoAtual = tamanhos.find((item) => item.id === tamanho)
+  const bordaAtual = bordas.find((item) => item.id === borda)
+  const extrasAtuais = extras.filter((item) => adicionais.includes(item.id))
+  const customPrice = productPrice(produto, { tamanho, borda, extras: adicionais })
+  const precoPersonalizado = customPrice.preco
+  const displayPrice = productPrice(produto, produto.personalizavel ? { tamanho: 'pequena' } : {})
 
-  function feedback() {
+
+  function handleAdd() {
+    if (readOnly || produto.disponivel === false) return
+    if (produto.personalizavel) {
+      setPersonalizando(true)
+      return
+    }
+    adicionar({ ...produto, preco: displayPrice.preco, precoOriginal: displayPrice.precoOriginal, oferta: displayPrice.oferta })
     setAdicionado(true)
     window.setTimeout(() => setAdicionado(false), 900)
   }
 
-  function handleAdd() {
-    if (!podeAdicionar(produto)) return
-    if (isPizza) {
-      setModal(true)
-      return
-    }
-    adicionar(produto)
-    feedback()
+  function alternarAdicional(id) {
+    setAdicionais((atuais) => atuais.includes(id)
+      ? atuais.filter((item) => item !== id)
+      : [...atuais, id])
   }
 
-  function toggleAdicional(id) {
-    setAdicionais((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id])
-  }
+  function confirmarPersonalizacao() {
+    if (readOnly || produto.disponivel === false) { setPersonalizando(false); return }
+    const detalhes = [
+      tamanhoAtual.nome,
+      `borda ${bordaAtual.nome.toLowerCase()}`,
+      extrasAtuais.length ? `extras: ${extrasAtuais.map((item) => item.nome).join(', ')}` : '',
+    ].filter(Boolean).join(' • ')
 
-  function confirmarPizza() {
-    if (!podeAdicionar(produto)) {
-      setModal(false)
-      return
-    }
-
-    const tamanhoLabel = TAMANHOS.find((item) => item.id === tamanho)?.label || tamanho
-    const bordaLabel = BORDAS.find((item) => item.id === borda)?.label || borda
-    const extrasLabels = adicionais.map((id) => ADICIONAIS.find((item) => item.id === id)?.label || id)
-    adicionar(produto, {
-      tamanho,
-      tamanhoLabel,
-      borda,
-      bordaLabel,
-      adicionais,
-      extrasLabels,
-      observacao: observacao.trim().slice(0, 300),
-      ajuste,
+    adicionar({
+      ...produto,
+      id: `${produto.id}--${tamanho}--${borda}--${[...adicionais].sort().join('.') || 'sem-extra'}`,
+      produtoBaseId: produto.id,
+      opcoes: { tamanho, borda, extras: [...adicionais].sort() },
+      preco: precoPersonalizado,
+      detalhes,
     })
-    setModal(false)
-    feedback()
+    setPersonalizando(false)
+    setAdicionado(true)
+    window.setTimeout(() => setAdicionado(false), 900)
   }
-
-  const semEstoque = produto.available === false || Number(produto.stock) === 0
-  const limiteCarrinho = !semEstoque && !podeAdicionar(produto)
-  const bloqueado = semEstoque || limiteCarrinho
-  const tag = semEstoque ? 'Indisponível' : limiteCarrinho ? 'Limite no carrinho' : 'Feito na hora'
 
   return (
-    <>
-      <article className={`product-card ${bloqueado ? 'is-unavailable' : ''}`}>
-        <div className="product-card__image">
-          <img src={produto.imagem} alt={produto.nome} loading="lazy" />
-          <span className="product-card__tag">{tag}</span>
-        </div>
-        <div className="product-card-content">
-          <h3>{produto.nome}</h3>
-          <p>{produto.descricao}</p>
-          {Number.isFinite(Number(produto.stock)) && produto.stock > 0 && produto.stock <= 5 ? <small className="stock-warning">Restam {produto.stock}</small> : null}
-          <div className="product-card-bottom">
-            <div className="product-price">
-              <small>A partir de</small>
-              <strong>{formatarMoeda(produto.preco)}</strong>
-            </div>
-            <button type="button" disabled={bloqueado} className={`add-button ${adicionado ? 'is-added' : ''}`} onClick={handleAdd} aria-label={`Adicionar ${produto.nome}`}>
-              {bloqueado ? '×' : adicionado ? '✓' : '+'}
-            </button>
+    <article className={`product-card ${displayPrice.oferta ? 'has-offer' : ''}`}>
+      <div className="product-card__image">
+        <img src={produto.imagem} alt={produto.nome} loading="lazy" />
+        <span className="product-card__tag">{readOnly ? 'Disponibilidade a confirmar' : produto.disponivel === false ? 'Indisponível' : displayPrice.oferta ? `−${displayPrice.oferta.percentual}%` : produto.personalizavel ? 'Feita na hora' : 'Gelada'}</span>
+      </div>
+      <div className="product-card-content">
+        <h3>{produto.nome}</h3>
+        <p>{produto.descricao}</p>
+        {displayPrice.oferta && <span className="product-offer-title">{displayPrice.oferta.titulo}</span>}
+        <div className="product-card-bottom">
+          <div className="product-price">
+            <small>{readOnly ? 'Preço de referência' : produto.personalizavel ? 'A partir de' : 'Por unidade'}</small>
+            {displayPrice.oferta && <del aria-label="Preço anterior">{formatarMoeda(displayPrice.precoOriginal)}</del>}
+            <strong>{formatarMoeda(displayPrice.preco)}</strong>
           </div>
+          <button type="button" disabled={readOnly || produto.disponivel === false} className={`add-button ${adicionado ? 'is-added' : ''}`} onClick={handleAdd} aria-label={`Adicionar ${produto.nome}`}>
+            {adicionado ? '✓' : '+'}
+          </button>
         </div>
-      </article>
-
-      {modal && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={() => setModal(false)}>
-          <section className="custom-modal" role="dialog" aria-modal="true" aria-label={`Personalizar ${produto.nome}`} onMouseDown={(event) => event.stopPropagation()}>
-            <div className="custom-modal__head">
-              <div><small>PERSONALIZE</small><h2>{produto.nome}</h2></div>
-              <button type="button" className="modal-close" onClick={() => setModal(false)}>×</button>
+      </div>
+      {personalizando && createPortal(
+          <dialog ref={modal} className="customizer-modal" aria-labelledby={`customizer-${produto.id}`} onCancel={() => setPersonalizando(false)}>
+            <div className="customizer-header">
+              <div><small>PERSONALIZE SUA PIZZA</small><h2 id={`customizer-${produto.id}`}>{produto.nome}</h2></div>
+              <button type="button" onClick={() => setPersonalizando(false)} aria-label="Fechar">×</button>
             </div>
-
-            <fieldset>
+            <fieldset className="customizer-options">
               <legend>Tamanho</legend>
-              {TAMANHOS.map((item) => (
-                <label className="option-row" key={item.id}>
-                  <input type="radio" name={`tamanho-${produto.id}`} checked={tamanho === item.id} onChange={() => setTamanho(item.id)} />
-                  <span>{item.label}</span><b>{item.ajuste === 0 ? 'base' : `${item.ajuste > 0 ? '+' : ''}${formatarMoeda(item.ajuste)}`}</b>
-                </label>
+              {tamanhos.map((item) => (
+                <label key={item.id}><input type="radio" name={`tamanho-${produto.id}`} checked={tamanho === item.id} onChange={() => setTamanho(item.id)} /><span>{item.nome}</span><b>{item.ajuste ? `${item.ajuste > 0 ? '+' : ''}${formatarMoeda(item.ajuste)}` : 'Incluso'}</b></label>
               ))}
             </fieldset>
-
-            <fieldset>
+            <fieldset className="customizer-options">
               <legend>Borda</legend>
-              {BORDAS.map((item) => (
-                <label className="option-row" key={item.id}>
-                  <input type="radio" name={`borda-${produto.id}`} checked={borda === item.id} onChange={() => setBorda(item.id)} />
-                  <span>{item.label}</span><b>{item.ajuste ? `+${formatarMoeda(item.ajuste)}` : 'grátis'}</b>
-                </label>
+              {bordas.map((item) => (
+                <label key={item.id}><input type="radio" name={`borda-${produto.id}`} checked={borda === item.id} onChange={() => setBorda(item.id)} /><span>{item.nome}</span><b>{item.ajuste ? `+${formatarMoeda(item.ajuste)}` : 'Incluso'}</b></label>
               ))}
             </fieldset>
-
-            <fieldset>
+            <fieldset className="customizer-options">
               <legend>Adicionais</legend>
-              {ADICIONAIS.map((item) => (
-                <label className="option-row" key={item.id}>
-                  <input type="checkbox" checked={adicionais.includes(item.id)} onChange={() => toggleAdicional(item.id)} />
-                  <span>{item.label}</span><b>+{formatarMoeda(item.ajuste)}</b>
-                </label>
+              {extras.map((item) => (
+                <label key={item.id}><input type="checkbox" checked={adicionais.includes(item.id)} onChange={() => alternarAdicional(item.id)} /><span>{item.nome}</span><b>+{formatarMoeda(item.ajuste)}</b></label>
               ))}
             </fieldset>
-
-            <label className="custom-note">Observação
-              <textarea value={observacao} onChange={(e) => setObservacao(e.target.value)} maxLength={300} placeholder="Ex.: sem cebola, cortar em 8 pedaços..." />
-            </label>
-            <button className="btn btn-primary wide-button" type="button" disabled={!podeAdicionar(produto)} onClick={confirmarPizza}>
-              {podeAdicionar(produto) ? `Adicionar • ${formatarMoeda(produto.preco + ajuste)}` : 'Estoque atingido'}
-            </button>
-          </section>
-        </div>
+            {customPrice.oferta && <p className="customizer-offer">{customPrice.oferta.percentual}% de desconto aplicado ao produto e opcionais. De <del>{formatarMoeda(customPrice.precoOriginal)}</del> por <strong>{formatarMoeda(precoPersonalizado)}</strong>.</p>}
+            <button className="btn btn-primary" type="button" disabled={readOnly || produto.disponivel === false} onClick={confirmarPersonalizacao}>Adicionar • {formatarMoeda(precoPersonalizado)}</button>
+          </dialog>,
+        document.body,
       )}
-    </>
+    </article>
   )
 }

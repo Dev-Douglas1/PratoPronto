@@ -1,29 +1,29 @@
+import PasswordField from '../components/PasswordField.jsx'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
 import BrandMark from '../components/BrandMark.jsx'
 import { useUser } from '../context/UserContext.jsx'
+import { accountDestination } from '../utils/access.js'
 
 export default function Login() {
   const navigate = useNavigate()
-  const { entrar, recuperarSenha, firebaseConfigured } = useUser()
+  const { entrar, firebaseConfigured } = useUser()
   const [usuario, setUsuario] = useState('')
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState('')
-  const [mensagem, setMensagem] = useState('')
   const [enviando, setEnviando] = useState(false)
 
   async function handleEntrar(event) {
     event.preventDefault()
     setErro('')
-    setMensagem('')
 
     if (!firebaseConfigured) {
       setErro('Configure o Firebase no arquivo .env antes de usar contas reais.')
       return
     }
 
-    if (!usuario.trim() || !senha.trim()) {
+    if (!usuario.trim() || !senha) {
       setErro('Preencha o e-mail e a senha.')
       return
     }
@@ -31,26 +31,12 @@ export default function Login() {
     try {
       setEnviando(true)
       const conta = await entrar(usuario, senha)
-      if (!conta?.emailVerified) {
-        navigate('/verificar-email', { replace: true })
-        return
-      }
-      navigate(conta?.adminCandidate ? '/empresa' : '/pizzas', { replace: true })
+      setSenha('')
+      navigate(accountDestination(conta), { replace: true })
     } catch (error) {
       setErro(error.message)
     } finally {
       setEnviando(false)
-    }
-  }
-
-  async function handleRecuperarSenha() {
-    setErro('')
-    setMensagem('')
-    try {
-      await recuperarSenha(usuario)
-      setMensagem('Link de recuperação enviado. Confira sua caixa de entrada e o spam.')
-    } catch (error) {
-      setErro(error.message)
     }
   }
 
@@ -60,37 +46,40 @@ export default function Login() {
         <BrandMark compact />
         <form className="login-card" onSubmit={handleEntrar}>
           <span className="eyebrow">BEM-VINDO DE VOLTA</span>
-          <h2>Entre no PratoPronto</h2>
+          <h2>Entre para fazer seu pedido</h2>
           <label htmlFor="login-email">E-mail</label>
           <input
             id="login-email"
             type="email"
+            maxLength={254}
+            required
             value={usuario}
             onChange={(e) => setUsuario(e.target.value)}
             placeholder="Seu e-mail"
             autoComplete="username"
           />
           <label htmlFor="login-senha">Senha</label>
-          <input
+          <PasswordField
             id="login-senha"
-            type="password"
+            required
+            maxLength={4096}
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
             placeholder="Senha"
             autoComplete="current-password"
           />
-          <button className="text-action" type="button" onClick={handleRecuperarSenha}>Esqueci minha senha</button>
+          <Link className="forgot-link" to="/recuperar-senha">Esqueci minha senha</Link>
           {erro && <p className="form-error" role="alert">{erro}</p>}
-          {mensagem && <p className="form-success" role="status">{mensagem}</p>}
           <button className="btn btn-primary" type="submit" disabled={enviando}>
             {enviando ? 'Entrando...' : 'Entrar'}
           </button>
           <p className="auth-switch">Ainda não tem uma conta? <Link to="/cadastro">Cadastre-se</Link></p>
+          <Link className="text-link" to="/demo/empresa/pedidos">Conhecer o painel da empresa</Link>
           <div className="legal-links">
             <Link to="/politica-de-privacidade">Política de Privacidade</Link>
             <Link to="/termos-de-uso">Termos de Uso</Link>
           </div>
-          <small className="demo-note">🔒 Sua senha é protegida pelo Firebase Authentication e não fica salva no banco do PratoPronto.</small>
+          <small className="demo-note">🔒 Sua senha é protegida pelo serviço de autenticação e nunca fica salva no banco do PratoPronto.</small>
         </form>
       </div>
     </AppScreen>

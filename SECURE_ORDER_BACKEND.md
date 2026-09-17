@@ -1,3 +1,5 @@
+> **Documento da implementação Cloudflare anterior.** O código foi preservado, mas a interface 2.0 usa o contrato de Cloud Functions em functions/. Não aplique estes passos de publicação à interface atual. Consulte INTEGRACAO_MAIN.md e ATIVAR_OPERACAO.md.
+
 # PratoPronto — backend seguro sem plano Blaze
 
 O PratoPronto mantém o Firebase no plano Spark e usa um Cloudflare Worker como backend autoritativo de pedidos. Assim, não é necessário ativar faturamento no projeto Firebase para publicar Cloud Functions.

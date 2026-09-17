@@ -1,0 +1,11 @@
+{
+  "displayName": "PratoPronto - falhas no servidor",
+  "combiner": "OR",
+  "enabled": true,
+  "conditions": [{
+    "displayName": "Falha em pagamento, devolução ou manutenção",
+    "conditionMatchedLog": { "filter": "resource.type=\"cloud_run_revision\" AND severity>=WARNING AND (textPayload=~\"checkout_pending|webhook|refund|reconciliation|backup\" OR jsonPayload.message=~\"checkout_pending|webhook|refund|reconciliation|backup|callable_failed\")" }
+  }],
+  "alertStrategy": { "notificationRateLimit": { "period": "300s" }, "autoClose": "1800s" },
+  "documentation": { "mimeType": "text/markdown", "content": "Consulte Empresa > Configurações > Ocorrências operacionais. Não repita uma cobrança com resultado desconhecido. Reconsulte o provedor e acompanhe o reembolso. Os logs não devem conter dados pessoais, cartões ou tokens." }
+}
