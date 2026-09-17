@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
 import TopBar from '../components/TopBar.jsx'
 import { useUser } from '../context/UserContext.jsx'
-import { getOrdersForUser } from '../services/storage.js'
+import { getOrdersForUser, getRefundRequestsForUser, getReviewsForUser } from '../services/storage.js'
 
 export default function PrivacidadeDados() {
   const navigate = useNavigate()
@@ -11,16 +11,23 @@ export default function PrivacidadeDados() {
   const [erro, setErro] = useState('')
   const [processando, setProcessando] = useState(false)
   const [senha, setSenha] = useState('')
+  const [message, setMessage] = useState('')
 
   async function exportarDados() {
     if (!usuario) return
     try {
       setErro('')
-      const pedidos = await getOrdersForUser(usuario.uid)
+      const [pedidos, solicitacoes, avaliacoes] = await Promise.all([
+        getOrdersForUser(usuario.uid),
+        getRefundRequestsForUser(usuario.uid),
+        getReviewsForUser(usuario.uid),
+      ])
       const payload = {
         exportadoEm: new Date().toISOString(),
         perfil: usuario,
         pedidos,
+        solicitacoesDeCancelamentoEReembolso: solicitacoes,
+        avaliacoes,
       }
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
@@ -38,14 +45,15 @@ export default function PrivacidadeDados() {
 
   async function handleDelete() {
     if (!usuario) return
-    const confirmed = window.confirm('Excluir sua conta, perfil e histórico de pedidos? Esta ação não pode ser desfeita.')
+    const confirmed = window.confirm('Solicitar a exclusão da conta? Pedidos e devoluções em andamento precisam ser concluídos antes do encerramento.')
     if (!confirmed) return
 
     try {
       setProcessando(true)
       setErro('')
       await excluirConta(senha)
-      navigate('/cadastro')
+      setSenha('')
+      setMessage('Solicitação registrada. O servidor encerrará sua conta após resolver pedidos e devoluções em andamento. Registros mínimos de transações podem permanecer pelo prazo aplicável.')
     } catch (error) {
       setErro(error.message)
     } finally {
@@ -64,8 +72,11 @@ export default function PrivacidadeDados() {
           <li>Perfil: nome, e-mail, telefone e endereço de entrega.</li>
           <li>Pedidos: itens, valores, endereço usado e status.</li>
           <li>Consentimentos: versões da política/termos e preferência de marketing.</li>
-          <li>Pagamento: cartão completo, CVV e senha <strong>não são armazenados</strong>.</li>
+          <li>Atendimento: motivo e andamento de solicitações de cancelamento/reembolso.</li>
+          <li>Avaliações: suas notas, comentários e respostas da empresa.</li>
+          <li>Pagamento: método, modalidade, valores, referência no provedor e status são registrados; cartão completo e CVV <strong>não são solicitados nem armazenados</strong>.</li>
         </ul>
+        {message && <p className="success-note" role="status">{message}</p>}
         {erro && <p className="form-error dark-error">{erro}</p>}
         {usuario ? (
           <>
@@ -74,7 +85,7 @@ export default function PrivacidadeDados() {
             <label>Senha para confirmar exclusão</label>
             <input type="password" value={senha} onChange={(event) => setSenha(event.target.value)} placeholder="Sua senha atual" autoComplete="current-password" />
             <button className="btn btn-secondary wide-button" disabled={processando || !senha} onClick={handleDelete}>
-              {processando ? 'Excluindo...' : 'Excluir minha conta e meus dados'}
+              {processando ? 'Solicitando...' : 'Solicitar exclusão da minha conta'}
             </button>
           </>
         ) : (

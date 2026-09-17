@@ -1,3 +1,6 @@
+import PasswordField from '../components/PasswordField.jsx'
+import { validateName, validatePassword, validatePhone, phoneInput, normalizeName } from '../../functions/src/input-policy.js'
+import AddressFields from '../components/AddressFields.jsx'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
@@ -14,6 +17,9 @@ const initialState = {
   endereco: '',
   numero: '',
   bairro: '',
+  cep: '',
+  cidade: '',
+  uf: '',
   complemento: '',
   aceitarPolitica: false,
   aceitarTermos: false,
@@ -30,10 +36,11 @@ export default function Cadastro() {
 
   function alterar(event) {
     const { name, value, type, checked } = event.target
+    if (name === 'telefone' && phoneInput(value).length > 11) { setErro('O telefone deve ter no máximo 11 números, incluindo o DDD.'); return }
 
     setDados((atual) => ({
       ...atual,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: type === 'checkbox' ? checked : name === 'telefone' ? phoneInput(value) : value,
     }))
 
     // Apaga o erro quando o usuário começa a corrigir os dados
@@ -44,18 +51,21 @@ export default function Cadastro() {
 
   async function handleSubmit(event) {
     event.preventDefault()
+    if (enviando) return
     setErro('')
 
     if (!firebaseConfigured) {
       setErro(
-        'O Firebase não está configurado. Verifique os dados no arquivo .env e reinicie o servidor.'
+        'O cadastro ainda não está disponível. A empresa precisa concluir a ativação do serviço.'
       )
       return
     }
 
-    const nome = dados.nome.trim()
+    try { validateName(dados.nome); validatePhone(dados.telefone); validatePassword(dados.senha) }
+    catch (error) { setErro(error.message); return }
+    const nome = normalizeName(dados.nome)
     const email = dados.email.trim().toLowerCase()
-    const telefone = dados.telefone.trim()
+    const telefone = validatePhone(dados.telefone)
     const endereco = dados.endereco.trim()
     const numero = dados.numero.trim()
     const bairro = dados.bairro.trim()
@@ -82,11 +92,11 @@ export default function Cadastro() {
     }
 
     if (
-      dados.senha.length < 8 ||
+      dados.senha.length < 12 ||
       !/[A-Za-zÀ-ÿ]/.test(dados.senha) ||
       !/\d/.test(dados.senha)
     ) {
-      setErro('A senha deve ter pelo menos 8 caracteres, incluindo uma letra e um número.')
+      setErro('A senha deve ter pelo menos 12 caracteres, incluindo uma letra e um número.')
       return
     }
 
@@ -135,10 +145,9 @@ export default function Cadastro() {
       setEnviando(true)
 
       await cadastrar(dadosCorrigidos)
-
-      navigate('/pizzas')
+      setDados(atual => ({ ...atual, senha: '', confirmarSenha: '' }))
+      navigate('/verificar-email', { replace: true })
     } catch (error) {
-      console.error('Erro ao cadastrar usuário:', error)
       setErro(traduzirErroFirebase(error))
     } finally {
       setEnviando(false)
@@ -152,7 +161,7 @@ export default function Cadastro() {
       <div className="page-heading">
         <span className="eyebrow">NOVO CLIENTE</span>
         <h1>Crie sua conta</h1>
-        <p>Preencha seus dados para receber o pedido no endereço certo.</p>
+        <p>Depois do cadastro, toque no link enviado ao seu e-mail para liberar o acesso.</p>
       </div>
 
       <form
@@ -174,9 +183,12 @@ export default function Cadastro() {
           onChange={alterar}
           placeholder="Seu nome"
           autoComplete="name"
-          maxLength={100}
+          maxLength={80}
+          minLength={2}
+          aria-describedby="nome-ajuda"
           disabled={enviando}
         />
+        <small className="field-help" id="nome-ajuda">De 2 a 80 caracteres · {dados.nome.length}/80</small>
 
         <label htmlFor="email">E-mail</label>
         <input
@@ -200,36 +212,43 @@ export default function Cadastro() {
           onChange={alterar}
           placeholder="(41) 99999-9999"
           autoComplete="tel"
-          maxLength={30}
+          maxLength={32}
+          inputMode="tel"
+          aria-describedby="telefone-ajuda"
           disabled={enviando}
         />
+
+        <small className="field-help" id="telefone-ajuda">DDD + telefone: 10 ou 11 números.</small>
 
         <label htmlFor="senha">Senha</label>
-        <input
+        <PasswordField
           id="senha"
           name="senha"
-          type="password"
           value={dados.senha}
           onChange={alterar}
-          placeholder="Mínimo de 8 caracteres"
+          placeholder="Mínimo de 12 caracteres"
           autoComplete="new-password"
-          minLength={8}
+          minLength={12}
+          maxLength={128}
           disabled={enviando}
         />
 
+        <small className="field-help">De 12 a 128 caracteres, com letra e número.</small>
         <label htmlFor="confirmarSenha">Confirmar senha</label>
-        <input
+        <PasswordField
           id="confirmarSenha"
           name="confirmarSenha"
-          type="password"
           value={dados.confirmarSenha}
           onChange={alterar}
           placeholder="Digite a senha novamente"
           autoComplete="new-password"
-          minLength={8}
+          minLength={12}
+          maxLength={128}
           disabled={enviando}
         />
 
+        <h2 className="form-section-title">Endereço de entrega</h2>
+        <AddressFields data={dados} onChange={alterar} />
         <label htmlFor="endereco">Endereço</label>
         <input
           id="endereco"

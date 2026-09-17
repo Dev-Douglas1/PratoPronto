@@ -5,6 +5,7 @@ import {
 } from 'firebase/app-check'
 import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
+import { startPrivateSession } from './services/auth-session.js'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -56,6 +57,15 @@ export const appCheck = configureAppCheck()
 
 export const auth =
   app ? getAuth(app) : null
+
+// Clear legacy persistent sessions before any account can appear in the UI.
+// New credentials live only in this running page, not in browser storage.
+export const authReady = auth
+  ? startPrivateSession(auth)
+  : Promise.resolve()
+// The provider and explicit sign-in calls surface failures; avoid an unhandled
+// rejection while the React bundle is still loading.
+authReady.catch(() => undefined)
 
 export const db =
   app ? getFirestore(app) : null

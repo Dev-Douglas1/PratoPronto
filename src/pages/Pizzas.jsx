@@ -1,22 +1,23 @@
+import StoreInfo from '../components/StoreInfo.jsx'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
 import TopBar from '../components/TopBar.jsx'
-import ProductGrid from '../components/ProductGrid.jsx'
+import CatalogResults from '../components/CatalogResults.jsx'
 import BottomActions from '../components/BottomActions.jsx'
 import BottomNav from '../components/BottomNav.jsx'
-import { pizzas } from '../data/produtos.js'
 import { useUser } from '../context/UserContext.jsx'
-import { useCatalog } from '../hooks/useCatalog.js'
+import useCatalog from '../hooks/useCatalog.js'
 
 export default function Pizzas() {
   const navigate = useNavigate()
   const { usuario } = useUser()
   const [busca, setBusca] = useState('')
-  const catalog = useCatalog(pizzas)
+  const [somenteOfertas, setSomenteOfertas] = useState(false)
+  const { catalog, loading, error, confirmed, retry } = useCatalog()
   const filtradas = useMemo(
-    () => catalog.filter((pizza) => pizza.nome.toLowerCase().includes(busca.toLowerCase())),
-    [catalog, busca],
+    () => catalog.filter((pizza) => pizza.personalizavel && pizza.nome.toLowerCase().includes(busca.toLowerCase()) && (!confirmed || !somenteOfertas || pizza.ofertaAtiva)),
+    [busca, catalog, somenteOfertas, confirmed],
   )
 
   return (
@@ -27,9 +28,6 @@ export default function Pizzas() {
           <small>Olá, {usuario?.nome?.split(' ')[0] || 'cliente'} 👋</small>
           <h1>O que vai pedir hoje?</h1>
         </div>
-        {!usuario?.emailVerified ? (
-          <div className="verify-banner">📧 Verifique seu e-mail para manter sua conta protegida. O link foi enviado no cadastro.</div>
-        ) : null}
         <label className="search-box">
           <span aria-hidden="true">⌕</span>
           <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar pizza..." />
@@ -38,13 +36,14 @@ export default function Pizzas() {
           <button className="is-active" role="tab" aria-selected="true">🍕 Pizzas</button>
           <button role="tab" aria-selected="false" onClick={() => navigate('/bebidas')}>🥤 Bebidas</button>
         </div>
+        <button className="offer-filter" type="button" disabled={!confirmed} aria-pressed={confirmed && somenteOfertas} onClick={() => setSomenteOfertas(value => !value)}>{confirmed && somenteOfertas ? '✓ Mostrando ofertas · ver todos' : 'Ver produtos em oferta'}</button>
         <div className="section-heading"><h2>Pizzas favoritas</h2><span>{filtradas.length} opções</span></div>
-        <ProductGrid produtos={filtradas} />
+        <StoreInfo />
+        <CatalogResults produtos={filtradas} loading={loading} error={error} retry={retry} confirmed={confirmed} />
         <BottomActions>
           <button className="btn btn-secondary" onClick={() => navigate('/bebidas')}>Ver bebidas</button>
           <button className="btn btn-primary" onClick={() => navigate('/pedido')}>Ver pedido</button>
         </BottomActions>
-        {usuario?.admin ? <button className="btn btn-primary wide-button" onClick={() => navigate('/empresa')}>Área da empresa</button> : null}
         <button className="btn ghost-button wide-button" onClick={() => navigate('/perfil')}>Meu perfil</button>
       </section>
       <BottomNav />

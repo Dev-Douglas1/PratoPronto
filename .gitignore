@@ -2,3 +2,12 @@ node_modules
 dist
 .env
 .env.local
+.env.*
+!.env.example
+.firebase/
+*-debug.log
+coverage/
+
+.secret.local
+*.pem
+*service-account*.json

@@ -1,195 +1,81 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { callServer, checkoutUrl } from '../services/server.js'
+import { useEffect, useState } from 'react'
+import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
 import TopBar from '../components/TopBar.jsx'
 import { useUser } from '../context/UserContext.jsx'
-import {
-  createReview,
-  getReview,
-  ORDER_STATUS,
-  ORDER_STATUS_LABELS,
-  requestOrderCancellation,
-  requestRefund,
-  subscribeOrdersForUser,
-} from '../services/storage.js'
-import { formatarMoeda } from '../utils/moeda.js'
-
-const STEPS = [ORDER_STATUS.RECEIVED, ORDER_STATUS.PREPARING, ORDER_STATUS.OUT_FOR_DELIVERY, ORDER_STATUS.DELIVERED]
-
-function normalizeStatus(status) {
-  if (status === 'Pedido confirmado • preparando') return ORDER_STATUS.PREPARING
-  if (status === ORDER_STATUS.READY) return ORDER_STATUS.PREPARING
-  return status
-}
+import { submitRefund, submitReview, subscribeCustomerOrders, subscribeOrderRecord } from '../services/company.js'
+import { formatarMoeda as money } from '../utils/moeda.js'
+import { normalizeOrderStatus, orderStatusLabel, ORDER_STATUS_OPTIONS } from '../config/orderStatus.js'
+import { paymentLabel, paymentStatusLabel, timestampMillis } from '../utils/pedido.js'
+import { traduzirErroFirebase } from '../utils/firebaseError.js'
 
 export default function Acompanhamento() {
-  const navigate = useNavigate()
   const { usuario } = useUser()
+  const location = useLocation()
+  const [params, setParams] = useSearchParams()
   const [orders, setOrders] = useState([])
-  const [selectedId, setSelectedId] = useState('')
-  const [erro, setErro] = useState('')
-  const [actionMessage, setActionMessage] = useState('')
-  const [reason, setReason] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [refund, setRefund] = useState(null)
   const [review, setReview] = useState(null)
-  const [reviewForm, setReviewForm] = useState({ foodRating: 5, deliveryRating: 5, comment: '' })
-
+  const [recordLoading, setRecordLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [reason, setReason] = useState('')
+  const [help, setHelp] = useState(false)
+  const [food, setFood] = useState('')
+  const [delivery, setDelivery] = useState('')
+  const [comment, setComment] = useState('')
+  const selectedId = params.get('pedido') || location.state?.pedidoId
+  const order = selectedId ? orders.find(item => item.id === selectedId) : orders[0]
+  function showError(err) { setError(err.code ? traduzirErroFirebase(err) : err.message) }
   useEffect(() => {
-    if (!usuario?.uid) return undefined
-    setErro('')
-    try {
-      return subscribeOrdersForUser(usuario.uid, (items) => {
-        setOrders(items)
-        setSelectedId((current) => current && items.some((item) => item.id === current) ? current : items[0]?.id || '')
-      }, (error) => setErro(error.message))
-    } catch (error) {
-      setErro(error.message)
-      return undefined
-    }
-  }, [usuario?.uid])
-
-  const order = useMemo(() => orders.find((item) => item.id === selectedId) || orders[0] || null, [orders, selectedId])
-  const normalizedStatus = normalizeStatus(order?.status)
-  const currentIndex = Math.max(0, STEPS.indexOf(normalizedStatus))
-
+    return subscribeCustomerOrders(usuario.uid, list => { setOrders(list); setLoading(false) }, err => { showError(err); setLoading(false) })
+  }, [usuario.uid])
   useEffect(() => {
-    let active = true
-    if (!order?.id || normalizedStatus !== ORDER_STATUS.DELIVERED) {
-      setReview(null)
-      return undefined
-    }
-    getReview(order.id).then((value) => { if (active) setReview(value) }).catch(() => undefined)
-    return () => { active = false }
-  }, [order?.id, normalizedStatus])
-
-  async function solicitarCancelamento() {
-    if (!order) return
-    try {
-      setErro('')
-      await requestOrderCancellation(order.id, reason)
-      setReason('')
-      setActionMessage('Solicitação de cancelamento enviada para a empresa.')
-    } catch (error) {
-      setErro(error.message)
-    }
-  }
-
-  async function solicitarReembolso() {
-    if (!order) return
-    try {
-      setErro('')
-      await requestRefund(order.id, reason)
-      setReason('')
-      setActionMessage('Solicitação de reembolso enviada para análise.')
-    } catch (error) {
-      setErro(error.message)
-    }
-  }
-
-  async function enviarAvaliacao(event) {
+    setRefund(null); setReview(null); setRecordLoading(true); setHelp(false); setError(''); setReason(''); setFood(''); setDelivery(''); setComment('')
+    if (!order?.id) return
+    let loaded = 0
+    const done = () => { if (++loaded >= 2) setRecordLoading(false) }
+    const unsubscribe = [
+      subscribeOrderRecord('refundRequests', order.id, value => { setRefund(value); done() }, err => { showError(err); done() }),
+      subscribeOrderRecord('reviews', order.id, value => { setReview(value); done() }, err => { showError(err); done() }),
+    ]
+    return () => unsubscribe.forEach(fn => fn())
+  }, [order?.id])
+  async function submit(event, action) {
     event.preventDefault()
-    if (!order || !usuario) return
-    try {
-      setErro('')
-      await createReview({
-        orderId: order.id,
-        userId: usuario.uid,
-        displayName: usuario.nome ? `${usuario.nome.split(' ')[0]} ${usuario.nome.split(' ')[1]?.[0] || ''}.`.trim() : 'Cliente',
-        foodRating: reviewForm.foodRating,
-        deliveryRating: reviewForm.deliveryRating,
-        comment: reviewForm.comment,
-      })
-      const saved = await getReview(order.id)
-      setReview(saved)
-      setActionMessage('Obrigado pela avaliação!')
-    } catch (error) {
-      setErro(error.message)
-    }
+    if (busy) return
+    setBusy(true); setError('')
+    try { await action(); setHelp(false) } catch (err) { showError(err) } finally { setBusy(false) }
   }
-
-  const canCancel = order && ![ORDER_STATUS.DELIVERED, ORDER_STATUS.CANCELLED, ORDER_STATUS.CANCELLATION_REQUESTED].includes(normalizedStatus)
-  const canRefund = order && order.refundStatus !== 'requested' && order.refundStatus !== 'refunded'
-
-  return (
-    <AppScreen>
-      <TopBar titulo="Acompanhamento do pedido" perfil />
-      <div className="page-heading">
-        <span className="eyebrow">ATUALIZAÇÃO AUTOMÁTICA</span>
-        <h1>Acompanhe seus pedidos</h1>
-        <p>O status muda em tempo real quando a empresa atualiza o pedido.</p>
-      </div>
-
-      {orders.length > 1 ? (
-        <label className="order-selector">Pedido
-          <select value={selectedId} onChange={(e) => setSelectedId(e.target.value)}>
-            {orders.map((item) => <option value={item.id} key={item.id}>#{item.id.slice(0, 8)} • {formatarMoeda(item.total)}</option>)}
-          </select>
-        </label>
-      ) : null}
-
-      {order ? (
-        <>
-          <div className="delivery-summary">
-            <span className="delivery-summary__icon">✓</span>
-            <div>
-              <strong>Pedido #{order.id.slice(0, 8)}</strong>
-              <span>Total: {formatarMoeda(order.total)}</span>
-              <small>{order.entrega?.endereco}, {order.entrega?.numero} • {order.entrega?.bairro}</small>
-            </div>
-          </div>
-          <div className="status-badge">{ORDER_STATUS_LABELS[order.status] || order.status}</div>
-          {order.refundStatus && order.refundStatus !== 'none' ? <div className="refund-badge">Reembolso: {order.refundStatus}</div> : null}
-
-          <div className="order-progress" aria-label="Etapas do pedido">
-            {[
-              ['Pedido recebido', 'Recebemos seu pedido'],
-              ['Preparando', 'A cozinha está preparando'],
-              ['Saiu para entrega', 'O entregador está a caminho'],
-              ['Entregue', 'Bom apetite!'],
-            ].map(([title, detail], index) => (
-              <div key={title} className={index < currentIndex ? 'is-done' : index === currentIndex ? 'is-current' : ''}>
-                <i>{index < currentIndex ? '✓' : index + 1}</i>
-                <span><strong>{title}</strong><small>{detail}</small></span>
-              </div>
-            ))}
-          </div>
-
-          <div className="light-card support-card">
-            <h3>Problema com o pedido?</h3>
-            <textarea value={reason} maxLength={300} onChange={(e) => setReason(e.target.value)} placeholder="Explique rapidamente o motivo (opcional)." />
-            <div className="two-actions">
-              <button className="btn btn-secondary" disabled={!canCancel} type="button" onClick={solicitarCancelamento}>Cancelar pedido</button>
-              <button className="btn btn-secondary" disabled={!canRefund} type="button" onClick={solicitarReembolso}>Solicitar reembolso</button>
-            </div>
-            <small>Cancelamentos e reembolsos são analisados pela empresa. O reembolso financeiro real será automatizado quando o backend do Mercado Pago estiver ativado.</small>
-          </div>
-
-          {normalizedStatus === ORDER_STATUS.DELIVERED ? (
-            <div className="light-card review-card">
-              <h3>Avalie seu pedido</h3>
-              {review ? (
-                <div className="review-saved">
-                  <strong>Comida: {review.foodRating}/5 • Entrega: {review.deliveryRating}/5</strong>
-                  {review.comment ? <p>{review.comment}</p> : null}
-                  {review.restaurantReply ? <small>Resposta da empresa: {review.restaurantReply}</small> : null}
-                </div>
-              ) : (
-                <form onSubmit={enviarAvaliacao}>
-                  <div className="rating-grid">
-                    <label>Comida<select value={reviewForm.foodRating} onChange={(e) => setReviewForm({ ...reviewForm, foodRating: Number(e.target.value) })}>{[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n} estrelas</option>)}</select></label>
-                    <label>Entrega<select value={reviewForm.deliveryRating} onChange={(e) => setReviewForm({ ...reviewForm, deliveryRating: Number(e.target.value) })}>{[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n} estrelas</option>)}</select></label>
-                  </div>
-                  <textarea value={reviewForm.comment} maxLength={800} onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })} placeholder="Comentário opcional" />
-                  <button className="btn btn-primary wide-button" type="submit">Enviar avaliação</button>
-                </form>
-              )}
-            </div>
-          ) : null}
-        </>
-      ) : <div className="light-card empty-state"><span>🍕</span><p>Nenhum pedido encontrado.</p></div>}
-
-      {actionMessage && <p className="form-success" role="status">{actionMessage}</p>}
-      {erro && <p className="form-error" role="alert">{erro}</p>}
-      <button className="btn ghost-button wide-button" onClick={() => navigate('/pizzas')}>Fazer novo pedido</button>
-    </AppScreen>
-  )
+  const status = normalizeOrderStatus(order?.status)
+  const demo = order?.pagamento.ambiente === 'demonstracao'
+  const test = order?.pagamento.ambiente !== 'producao'
+  async function payAgain() {
+    setBusy(true); setError('')
+    try { const result = await callServer('appResume', { orderId: order.id }); const url = checkoutUrl(result.checkoutUrl); if (url) window.location.assign(url); else setError(result.checkoutState === 'expired' ? 'O prazo deste pagamento terminou. Aguarde a atualização do pedido.' : 'O provedor ainda não confirmou a abertura do pagamento. Aguarde ou solicite ajuda à empresa.') } catch (err) { setError(err.message) } finally { setBusy(false) }
+  }
+  const stages = ORDER_STATUS_OPTIONS.filter(s => s.id !== 'cancelado')
+  const index = stages.findIndex(s => s.id === status)
+  return <AppScreen>
+    <TopBar titulo="Meus pedidos" perfil />
+    <div className="page-heading"><span className="eyebrow">CADA ETAPA DO SEU PEDIDO</span><h1>{loading ? 'Buscando seus pedidos…' : order ? orderStatusLabel(status) : 'Seu histórico de pedidos'}</h1></div>
+    {orders.length > 0 && <label className="customer-order-picker">Escolher pedido<select value={order?.id || ''} onChange={event => setParams({ pedido: event.target.value })}>{!order && <option value="">Selecione um pedido</option>}{orders.map(item => <option key={item.id} value={item.id}>#{item.id.slice(-8)} · {new Date(timestampMillis(item.createdAt)).toLocaleDateString('pt-BR')} · {orderStatusLabel(item.status)}</option>)}</select></label>}
+    {error && <p className="form-error" role="alert">{error}</p>}
+    {!loading && !order && <div className="light-card">{selectedId ? 'Este pedido não está disponível na sua conta. Selecione outro pedido.' : 'Você ainda não fez pedidos. Escolha uma pizza para começar.'}</div>}
+    {order && <>
+      <div className="delivery-summary"><span className="delivery-summary__icon">{status === 'entregue' ? '✓' : '#'}</span><div><strong>Pedido #{order.id.slice(-8)}</strong><span>Total: {money(order.total)}</span><small>{order.entrega.endereco}, {order.entrega.numero} · {order.entrega.bairro} · {order.entrega.cidade}/{order.entrega.uf}</small></div></div>
+      <div className="payment-status-card"><span>▰</span><div><small>{test ? 'AMBIENTE DE TESTES' : 'PAGAMENTO'}</small><strong>{paymentLabel(order.pagamento)}</strong><p>{paymentStatusLabel(order.pagamento)}.{test ? ' Nenhum valor real foi movimentado.' : ''}</p></div></div>
+      {status === 'aguardando_pagamento' && !demo && <button className="btn btn-primary wide-button" disabled={busy} onClick={payAgain}>Continuar pagamento no Mercado Pago</button>}
+      {status !== 'cancelado' && <div className="order-progress" aria-label="Etapas do pedido">{stages.map((step, i) => <div key={step.id} className={i < index ? 'is-done' : i === index ? 'is-current' : ''} aria-current={i === index ? 'step' : undefined}><i>{i < index ? '✓' : i + 1}</i><span><strong>{step.label}</strong><small>{i < index ? 'Concluído' : i === index ? 'Etapa atual' : 'Próxima etapa'}</small></span></div>)}</div>}
+      <div className="light-card"><h3>Seu pedido</h3>{order.itens.map((item, i) => <p key={item.id + i}><strong>{item.quantidade} × {item.nome}</strong><br /><small>{item.detalhes}</small></p>)}</div>
+      <p className="live-update-note">O restaurante atualiza as etapas do seu pedido.</p>
+      {refund && <div className="refund-note"><strong>Atendimento: {refund.status === 'pendente' ? 'em análise' : refund.status === 'recusado' ? 'solicitação recusada' : refund.status === 'aprovado_demo' ? 'cancelamento aprovado (teste)' : refund.status === 'cancelado_sem_cobranca' ? 'cancelado sem cobrança' : paymentStatusLabel({ status: refund.status })}</strong><span>{refund.motivo}</span>{refund.resposta && <p><b>Resposta da empresa:</b> {refund.resposta}</p>}</div>}
+      {!refund && !recordLoading && status !== 'cancelado' && !help && <button className="btn btn-secondary wide-button" onClick={() => setHelp(true)}>Preciso de ajuda com este pedido</button>}
+      {help && <form className="light-card refund-form" onSubmit={event => submit(event, () => submitRefund({ userId: usuario.uid, orderId: order.id, motivo: reason }))}><label htmlFor="reason">Cancelamento ou problema na entrega</label><textarea id="reason" required minLength={5} maxLength={500} value={reason} onChange={event => setReason(event.target.value)} placeholder="Conte o que aconteceu para a empresa ajudar." /><small>O restaurante analisará sua solicitação. {test ? 'Neste ambiente, o reembolso é de teste.' : 'A devolução será solicitada após a aprovação. Você acompanha aqui a confirmação do provedor.'}</small><div className="two-actions"><button className="btn btn-secondary" type="button" onClick={() => setHelp(false)}>Voltar</button><button className="btn btn-primary" disabled={busy}>Enviar</button></div></form>}
+      {status === 'entregue' && !recordLoading && <section className="light-card customer-review"><h3>{review ? 'Sua avaliação' : 'Como foi seu pedido?'}</h3>{review ? <><p>Comida: {review.notaComida}/5 · Entrega: {review.notaEntrega}/5</p><p>{review.comentario}</p>{review.resposta && <blockquote><strong>A empresa respondeu</strong><p>{review.resposta}</p></blockquote>}</> : <form onSubmit={event => submit(event, () => submitReview({ userId: usuario.uid, orderId: order.id, nome: usuario.nome || 'Cliente', notaComida: food, notaEntrega: delivery, comentario: comment }))}><p>Sua opinião ajuda o restaurante a melhorar.</p><label>Comida<select required value={food} onChange={event => setFood(event.target.value)}><option value="">Escolha uma nota</option>{[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n} {n === 1 ? 'estrela' : 'estrelas'}</option>)}</select></label><label>Entrega<select required value={delivery} onChange={event => setDelivery(event.target.value)}><option value="">Escolha uma nota</option>{[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n} {n === 1 ? 'estrela' : 'estrelas'}</option>)}</select></label><label>Comentário (opcional)<textarea maxLength={1000} value={comment} onChange={event => setComment(event.target.value)} /></label><button className="btn btn-primary wide-button" disabled={busy}>{busy ? 'Enviando…' : 'Enviar avaliação'}</button></form>}</section>}
+    </>}
+    <Link className="btn btn-primary wide-button" to="/pizzas">Escolher pizzas</Link>
+  </AppScreen>
 }

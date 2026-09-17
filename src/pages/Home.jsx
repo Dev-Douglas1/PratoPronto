@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
 import BrandMark from '../components/BrandMark.jsx'
 import { useUser } from '../context/UserContext.jsx'
+import InstallApp from '../components/InstallApp.jsx'
 
 export default function Home() {
   const { autenticado } = useUser()
@@ -9,8 +10,8 @@ export default function Home() {
   return (
     <AppScreen className="home-screen">
       <header className="home-status">
-        <span><i /> ABERTO AGORA</span>
-        <small>Entrega estimada: 35–50 min</small>
+        <span><i /> PRATOPRONTO</span>
+        <small>Pedidos pelo celular</small>
       </header>
 
       <div className="home-hero">
@@ -25,6 +26,7 @@ export default function Home() {
             <span aria-hidden="true">→</span>
           </Link>
           {!autenticado && <Link className="btn btn-outline" to="/cadastro">Criar minha conta</Link>}
+          <Link className="btn btn-outline" to="/demo/empresa/pedidos">Conhecer a área da empresa 2.0 →</Link>
         </div>
 
         <div className="service-highlights">
@@ -36,6 +38,7 @@ export default function Home() {
           <Link to="/politica-de-privacidade">Política de Privacidade</Link>
           <Link to="/termos-de-uso">Termos de Uso</Link>
         </div>
+        <InstallApp />
       </div>
     </AppScreen>
   )

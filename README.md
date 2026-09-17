@@ -1,148 +1,48 @@
-# PratoPronto — React + Firebase
+# PratoPronto
 
-Versão reorganizada para transformar o protótipo em uma base mais segura para publicação.
+Aplicativo React/Vite para pedidos de pizzas e bebidas, com Firebase Authentication, Firestore e backend em Cloud Functions.
 
-## O que foi corrigido
+- Cliente: conta, confirmação de e-mail, recuperação de senha, endereço completo, cardápio, personalizações, carrinho, resumo de compra, acompanhamento, atendimento e avaliação após entrega.
+- Empresa: pedidos e etapas, comandas de cozinha/entrega, preços e disponibilidade, respostas às avaliações, cancelamentos, configuração de horários/bairros/taxas e verificação de serviços.
+- Pagamentos: integração de Checkout Pro com Pix/cartões e opção de maquininha. O servidor calcula valores, confirma pagamentos e processa devoluções; a ativação depende das contas e da homologação.
+- Segurança: pedidos não podem ser gravados pelo navegador; autenticação verificada, papel administrativo concedido por ferramenta confiável, App Check e limites por usuário. Sem cartão completo, CVV ou senha no Firestore.
+- Celular: interface adaptável, PWA instalável, aviso de atualização e página sem conexão. Dados financeiros não são mantidos pelo service worker.
 
-- React com páginas, componentes, contexto e serviços separados.
-- Firebase Authentication para cadastro/login: a senha não é salva no Firestore nem no localStorage.
-- Cloud Firestore para perfil e pedidos.
-- Carrinho permanece no localStorage apenas para conveniência do usuário.
-- Área `Privacidade` com exportação, correção e exclusão dos dados da conta.
-- Consentimento de marketing separado e opcional.
-- Registro da versão da Política de Privacidade/Termos aceita pelo usuário.
-- Política de Privacidade e Termos de Uso dentro do app.
-- Regras do Firestore para impedir que um usuário leia os dados de outro.
-- Pagamento demonstrativo sem persistir número do cartão ou CVV.
-- Imagens dos produtos refeitas em SVG local, centralizadas e condizentes com o nome de cada pizza/bebida.
+A demonstração empresarial fica em `/demo/empresa/pedidos`, com dados fictícios em memória. A operação real fica em `/empresa/pedidos` e depende do acesso administrativo no Firebase.
 
-## Estrutura
-
-```text
-src/
-├── App.jsx
-├── App.css
-├── firebase.js
-├── config/
-│   └── privacy.js
-├── components/
-│   ├── AppScreen.jsx
-│   ├── BottomActions.jsx
-│   ├── ProductCard.jsx
-│   ├── ProductGrid.jsx
-│   ├── ProtectedRoute.jsx
-│   └── TopBar.jsx
-├── context/
-│   ├── CartContext.jsx
-│   └── UserContext.jsx
-├── data/
-│   └── produtos.js
-├── pages/
-│   ├── Home.jsx
-│   ├── Login.jsx
-│   ├── Cadastro.jsx
-│   ├── Pizzas.jsx
-│   ├── Bebidas.jsx
-│   ├── Pedido.jsx
-│   ├── Pagamento.jsx
-│   ├── Acompanhamento.jsx
-│   ├── Perfil.jsx
-│   ├── PrivacidadeDados.jsx
-│   ├── PoliticaPrivacidade.jsx
-│   └── TermosUso.jsx
-├── services/
-│   └── storage.js
-└── utils/
-```
-
-## 1. Configurar Firebase
-
-No Firebase Console:
-
-1. Crie um projeto.
-2. Adicione um **Web App**.
-3. Em **Authentication**, ative `Email/Password`.
-4. Em **Firestore Database**, crie o banco.
-5. Copie `.env.example` para `.env`.
-6. Preencha as variáveis `VITE_FIREBASE_*` com os dados do seu projeto.
-7. Preencha `VITE_CONTROLLER_NAME` e `VITE_PRIVACY_EMAIL` com os dados reais do responsável pelo aplicativo.
+## Executar
 
 ```bash
-cp .env.example .env
-```
-
-Não coloque senhas, chaves privadas ou credenciais de servidor no `.env`. As chaves Web do Firebase identificam o projeto; a proteção do banco depende principalmente de Authentication + Security Rules.
-
-Se aparecer `auth/configuration-not-found`, o SDK está conectado ao projeto, mas o provedor ainda não foi ativado. Abra **Authentication → Método de login → E-mail/senha**, ative a primeira opção e clique em **Salvar**.
-
-No Codespaces, adicione também o domínio exibido na barra do navegador em **Authentication → Configurações → Domínios autorizados**. Informe apenas o domínio, sem `https://` e sem o caminho `/login`.
-
-## 2. Aplicar as regras do Firestore
-
-O arquivo `firestore.rules` já está no projeto.
-
-Você pode copiar seu conteúdo para **Firestore > Rules** no Firebase Console ou usar o Firebase CLI.
-
-```bash
-npm install -g firebase-tools
-firebase login
-firebase init firestore
-firebase deploy --only firestore:rules
-```
-
-Se `firebase init` perguntar pelo arquivo de regras, use `firestore.rules`.
-
-## 3. Rodar
-
-```bash
-npm install
+npm ci
+npm ci --prefix functions
 npm run dev
 ```
 
-No Codespaces, abra a porta `5173`.
+Preencha `.env` com a configuração pública Web do Firebase e a chave pública do App Check. Use os exemplos do projeto; não copie credenciais administrativas para o frontend.
 
-## Dados salvos
+## Ativar a operação
 
-### `users/{uid}`
+Siga [ATIVAR_OPERACAO.md](ATIVAR_OPERACAO.md) para preparar Firebase, conta recebedora, segredos, administrador, horários, entrega, publicação pública e homologação. Consulte [LANCAMENTO.md](LANCAMENTO.md) para o estado desta entrega.
 
-- nome
-- e-mail
-- telefone
-- endereço
-- número
-- bairro
-- complemento
-- preferência de marketing
-- versão da Política de Privacidade
-- versão dos Termos
-- data/hora do aceite
+## Testes
 
-A credencial de acesso fica no **Firebase Authentication**. O Firestore recebe somente os dados do perfil permitidos pelas regras e nunca recebe a senha.
+```bash
+npm test
+npm run test:server
+npm run test:rules
+npm run test:integration
+npm run build
+```
 
-### `orders/{orderId}`
+Os testes de integração usam Firestore Emulator e um provedor de pagamentos controlado. Não movimentam dinheiro nem demonstram, por si só, que uma conta real foi configurada.
 
-- dono do pedido (`userId`)
-- itens e quantidades
-- total
-- dados mínimos de contato
-- endereço usado na entrega
-- status
-- método/referência não sensível de pagamento
-- timestamps
+## Organização
 
-### Não salvar
+- `src/`: páginas, componentes, contexto e integração do frontend.
+- `functions/src/`: cálculo de pedido, Checkout Pro, confirmação, reembolso, administração e manutenção.
+- `functions/src/catalog-data.js`: catálogo público compartilhado entre frontend e servidor.
+- `functions/scripts/`: ferramentas de configuração administrativa, autenticadas com a conta Google responsável.
+- `firestore.rules` e `firestore.indexes.json`: proteção e índices do banco.
+- `ops/`: políticas de monitoramento e ciclo de vida de backups para configuração da operação.
 
-- senha do usuário
-- número completo do cartão
-- CVV
-- PIN/senha do cartão
-
-## Pagamento
-
-A tela atual é **demonstrativa**. Antes de cobrar clientes reais, substitua o fluxo por Mercado Pago, Stripe ou outro gateway de pagamento com tokenização. Os dados brutos do cartão não devem ser enviados ao Firestore.
-
-## LGPD
-
-O projeto implementa mecanismos técnicos úteis para LGPD: transparência, separação do consentimento de marketing, acesso/exportação, correção, exclusão, autenticação, minimização de dados e regras de acesso.
-
-Isso não substitui a parte jurídica/operacional: antes do lançamento comercial, preencha o controlador e o canal de privacidade reais, defina retenção, fornecedores, atendimento de solicitações, resposta a incidentes e revise Política/Termos conforme a operação real.
+As comandas são documentos não fiscais. Imagens dos produtos e identidade visual permanecem nos arquivos locais do projeto; a documentação específica de origem/licenciamento dos assets deve acompanhar a publicação comercial.

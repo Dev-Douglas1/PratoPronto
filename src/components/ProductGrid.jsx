@@ -1,6 +1,6 @@
 import ProductCard from './ProductCard.jsx'
 
-export default function ProductGrid({ produtos }) {
+export default function ProductGrid({ produtos, readOnly = false }) {
   if (!produtos.length) {
     return (
       <div className="empty-state empty-state--catalog">
@@ -14,7 +14,7 @@ export default function ProductGrid({ produtos }) {
   return (
     <div className="product-grid">
       {produtos.map((produto) => (
-        <ProductCard key={produto.id} produto={produto} />
+        <ProductCard key={produto.id} produto={produto} readOnly={readOnly} />
       ))}
     </div>
   )
