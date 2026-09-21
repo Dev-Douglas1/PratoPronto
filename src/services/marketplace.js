@@ -92,8 +92,10 @@ export async function searchMarketplace(term = '') {
   const companyMap = new Map([[DEFAULT_COMPANY_ID, defaultCompany], ...fetchedCompanies.map(company => [company.id, company])])
   const companies = [...companyMap.values()].filter(company => !needle || normalizeSearch(company.name).includes(needle))
   const activeCompanyIds = new Set([...companyMap.values()].filter(company => company.active !== false).map(company => company.id))
-  const remoteProducts = records(productsSnap).filter(product => activeCompanyIds.has(product.companyId))
-  const legacyProducts = defaultProducts.map(product => ({ ...product, companyId: DEFAULT_COMPANY_ID, categoria: product.personalizavel ? 'Pizzas' : 'Bebidas', public: true, disponivel: true }))
+  const remoteProducts = records(productsSnap)
+    .filter(product => activeCompanyIds.has(product.companyId))
+    .map(product => ({ ...product, companyName: companyMap.get(product.companyId)?.name || product.companyId }))
+  const legacyProducts = defaultProducts.map(product => ({ ...product, companyId: DEFAULT_COMPANY_ID, companyName: 'PratoPronto', categoria: product.personalizavel ? 'Pizzas' : 'Bebidas', public: true, disponivel: true }))
   const products = [...legacyProducts, ...remoteProducts].filter(product => {
     if (!needle) return true
     return [product.nome, product.descricao, product.categoria].some(value => normalizeSearch(value).includes(needle))
