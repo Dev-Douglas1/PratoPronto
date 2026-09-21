@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import AdminRoute from './components/AdminRoute.jsx'
 import PilotRoute from './components/PilotRoute.jsx'
+import PlatformAdminRoute from './components/PlatformAdminRoute.jsx'
 import SessionNotice from './components/SessionNotice.jsx'
 import './App.css'
 
@@ -25,6 +26,7 @@ const CompanyOnboarding = lazy(() => import('./pages/CompanyOnboarding.jsx'))
 const MarketplaceStore = lazy(() => import('./pages/MarketplaceStore.jsx'))
 const PilotPartner = lazy(() => import('./pages/PilotPartner.jsx'))
 const PilotSignup = lazy(() => import('./pages/PilotSignup.jsx'))
+const PilotReview = lazy(() => import('./pages/PilotReview.jsx'))
 
 function protectedPage(element) {
   return <ProtectedRoute>{element}</ProtectedRoute>
@@ -51,6 +53,7 @@ export default function App() {
         <Route path="/empresa/nova" element={protectedPage(<CompanyOnboarding />)} />
         <Route path="/piloto/cadastro" element={protectedPage(<PilotSignup />)} />
         <Route path="/piloto" element={<PilotRoute><PilotPartner /></PilotRoute>} />
+        <Route path="/plataforma/pilotos" element={<PlatformAdminRoute><PilotReview /></PlatformAdminRoute>} />
         <Route path="/admin" element={<Navigate to="/empresa/pedidos" replace />} />
         <Route path="/empresa/:aba?" element={<AdminRoute><CompanyDashboard /></AdminRoute>} />
         <Route path="/demo/empresa/:aba?" element={<CompanyDashboard demo />} />
