@@ -6,7 +6,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
 import TopBar from '../components/TopBar.jsx'
 import { useUser } from '../context/UserContext.jsx'
-import { traduzirErroFirebase } from '../utils/firebaseError'
+import { traduzirErroSupabase } from '../utils/supabaseError.js'
 
 const initialState = {
   nome: '',
@@ -28,7 +28,7 @@ const initialState = {
 
 export default function Cadastro() {
   const navigate = useNavigate()
-  const { cadastrar, firebaseConfigured } = useUser()
+  const { cadastrar, supabaseConfigured } = useUser()
 
   const [dados, setDados] = useState(initialState)
   const [erro, setErro] = useState('')
@@ -54,7 +54,7 @@ export default function Cadastro() {
     if (enviando) return
     setErro('')
 
-    if (!firebaseConfigured) {
+    if (!supabaseConfigured) {
       setErro(
         'O cadastro ainda não está disponível. A empresa precisa concluir a ativação do serviço.'
       )
@@ -148,7 +148,7 @@ export default function Cadastro() {
       setDados(atual => ({ ...atual, senha: '', confirmarSenha: '' }))
       navigate('/verificar-email', { replace: true })
     } catch (error) {
-      setErro(traduzirErroFirebase(error))
+      setErro(traduzirErroSupabase(error))
     } finally {
       setEnviando(false)
     }
