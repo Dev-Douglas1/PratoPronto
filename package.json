@@ -1,22 +1,15 @@
 {
   "name": "prato-pronto-react",
   "private": true,
-  "version": "2.0.0",
+  "version": "3.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "prebuild": "npm test",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "node --test tests/orders.test.mjs tests/entrega.test.mjs tests/render.test.mjs tests/identity-client.test.mjs tests/catalog.test.mjs tests/integration-config.test.mjs",
-    "test:rules": "firebase emulators:exec --config firebase.test.json --only firestore --project demo-pratopronto \"node --test tests/firestore.rules.test.mjs\"",
-    "test:server": "npm --prefix functions test",
-    "test:auth": "firebase emulators:exec --config firebase.auth.test.json --only auth,firestore --project demo-pratopronto \"node --test --test-concurrency=1 functions/test/auth/*.test.js tests/firestore.rules.test.mjs\"",
-    "test:integration": "firebase emulators:exec --config firebase.test.json --only firestore --project demo-pratopronto \"npm --prefix functions run test:integration\"",
-    "check:production": "node scripts/check-production-env.mjs",
-    "check:worker": "node --check worker/src/domain.js && node --check worker/src/security.js && node --check worker/src/firestore.js && node --check worker/src/index.js",
-    "worker:dev": "npx wrangler@latest dev --config worker/wrangler.toml",
-    "worker:deploy": "npx wrangler@latest deploy --config worker/wrangler.toml"
+    "test": "node --test tests/orders.test.mjs tests/entrega.test.mjs tests/render.test.mjs tests/catalog.test.mjs tests/integration-config.test.mjs tests/supabase-architecture.test.mjs",
+    "check:production": "node scripts/check-production-env.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.57.4",
