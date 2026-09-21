@@ -13,9 +13,7 @@ export default function AdminRoute({ children }) {
   if (!usuario) return <Navigate to="/login" replace />
   if (usuario.emailVerificado !== true) return <Navigate to="/verificar-email" replace />
 
-  // usuario.admin mantém compatibilidade com a administração antiga enquanto
-  // o restaurante principal é migrado para companyMembers.
-  if (!usuario.admin && !staffCompanies.length) {
+  if (!staffCompanies.length) {
     return <div className="app-shell"><div className="app-screen"><div className="light-card"><h1>Acesso da empresa</h1><p>{error || 'Esta conta ainda não faz parte da equipe de nenhuma empresa.'}</p><a className="btn btn-primary" href="/">Voltar ao início</a></div></div></div>
   }
 
