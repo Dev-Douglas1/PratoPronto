@@ -8,7 +8,7 @@ import { accountDestination } from '../utils/access.js'
 
 export default function Login() {
   const navigate = useNavigate()
-  const { entrar, firebaseConfigured } = useUser()
+  const { entrar, supabaseConfigured } = useUser()
   const [usuario, setUsuario] = useState('')
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState('')
@@ -18,8 +18,8 @@ export default function Login() {
     event.preventDefault()
     setErro('')
 
-    if (!firebaseConfigured) {
-      setErro('Configure o Firebase no arquivo .env antes de usar contas reais.')
+    if (!supabaseConfigured) {
+      setErro('Configure o Supabase no arquivo .env antes de usar contas reais.')
       return
     }
 
