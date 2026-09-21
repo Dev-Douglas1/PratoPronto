@@ -24,6 +24,7 @@ const CompanyDashboard = lazy(() => import('./pages/CompanyDashboard.jsx'))
 const CompanyOnboarding = lazy(() => import('./pages/CompanyOnboarding.jsx'))
 const MarketplaceStore = lazy(() => import('./pages/MarketplaceStore.jsx'))
 const PilotPartner = lazy(() => import('./pages/PilotPartner.jsx'))
+const PilotSignup = lazy(() => import('./pages/PilotSignup.jsx'))
 
 function protectedPage(element) {
   return <ProtectedRoute>{element}</ProtectedRoute>
@@ -48,6 +49,7 @@ export default function App() {
         <Route path="/privacidade" element={protectedPage(<PrivacidadeDados />)} />
         <Route path="/loja/:companyId" element={<MarketplaceStore />} />
         <Route path="/empresa/nova" element={protectedPage(<CompanyOnboarding />)} />
+        <Route path="/piloto/cadastro" element={protectedPage(<PilotSignup />)} />
         <Route path="/piloto" element={<PilotRoute><PilotPartner /></PilotRoute>} />
         <Route path="/admin" element={<Navigate to="/empresa/pedidos" replace />} />
         <Route path="/empresa/:aba?" element={<AdminRoute><CompanyDashboard /></AdminRoute>} />
