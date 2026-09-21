@@ -7,6 +7,7 @@ import { useCompany } from '../context/CompanyContext.jsx'
 import InstallApp from '../components/InstallApp.jsx'
 import { searchMarketplace } from '../services/marketplace.js'
 import { formatarMoeda as money } from '../utils/moeda.js'
+import { DEFAULT_COMPANY_ID } from '../config/marketplace.js'
 
 export default function Home() {
   const { autenticado } = useUser()
@@ -55,14 +56,14 @@ export default function Home() {
         {search.trim().length >= 2 && !loading && !error && <section className="marketplace-results" aria-label="Resultados da busca">
           <div className="section-heading"><h2>Empresas</h2><span>{results.companies.length}</span></div>
           <div className="marketplace-company-grid">
-            {results.companies.map(company => <Link className="light-card marketplace-company-card" key={company.id} to={'/loja/' + company.id}><strong>{company.name}</strong><small>Ver cardápio →</small></Link>)}
+            {results.companies.map(company => <Link className="light-card marketplace-company-card" key={company.id} to={company.id === DEFAULT_COMPANY_ID ? '/pizzas' : '/loja/' + company.id}><strong>{company.name}</strong><small>Ver cardápio →</small></Link>)}
             {!results.companies.length && <p className="muted">Nenhuma empresa com esse nome.</p>}
           </div>
           <div className="section-heading"><h2>Pratos</h2><span>{results.products.length}</span></div>
           <div className="marketplace-product-list">
-            {results.products.slice(0, 30).map(product => <Link className="light-card marketplace-product-result" key={(product.companyId || '') + ':' + product.id} to={'/loja/' + product.companyId}>
+            {results.products.slice(0, 30).map(product => <Link className="light-card marketplace-product-result" key={(product.companyId || '') + ':' + product.id} to={product.companyId === DEFAULT_COMPANY_ID ? '/pizzas' : '/loja/' + product.companyId}>
               <span>{product.imagem ? <img src={product.imagem} alt="" width="56" height="56" loading="lazy" /> : '🍽️'}</span>
-              <div><strong>{product.nome}</strong><small>{product.categoria || 'Prato'} · {product.preco ? money(Number(product.preco)) : 'Preço na loja'}</small></div>
+              <div><strong>{product.nome}</strong><small>{product.companyName || product.companyId} · {product.categoria || 'Prato'} · {product.preco ? money(Number(product.preco)) : 'Preço na loja'}</small></div>
             </Link>)}
             {!results.products.length && <p className="muted">Nenhum prato encontrado.</p>}
           </div>
