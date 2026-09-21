@@ -5,30 +5,34 @@ import { timestampMillis } from '../utils/pedido.js'
 import { assertRespectful, validateName } from '../../functions/src/input-policy.js'
 import { validatePromotion } from '../../functions/src/promotions.js'
 import { produtos } from '../data/produtos.js'
+import { DEFAULT_COMPANY_ID } from '../config/marketplace.js'
 
 function ready() {
   if (!firebaseConfigured || !db || !auth?.currentUser) throw new Error('Entre na sua conta para continuar.')
 }
 const records = snapshot => snapshot.docs.map(item => ({ ...item.data(), id: item.id }))
 
-export function subscribeCompany(name, onChange, onError) {
+export function subscribeCompany(name, companyId = DEFAULT_COMPANY_ID, onChange, onError) {
   ready()
-  if (name === 'orders' || name === 'refundRequests') {
-    let active = null
-    let recent = null
-    let activeFromCache = true
-    let recentFromCache = true
-    const emit = () => {
-      if (active && recent) onChange([...new Map([...recent, ...active].map(item => [item.id, item])).values()].sort((a, b) => timestampMillis(b.createdAt) - timestampMillis(a.createdAt)), { fromCache: activeFromCache || recentFromCache })
-    }
-    const activeStatuses = name === 'orders' ? ['aguardando_pagamento', 'confirmado', 'preparando', 'pronto', 'saiu_entrega', 'Pedido confirmado • preparando', 'Pedido confirmado • pagamento na entrega'] : ['pendente', 'reembolso_pendente', 'reembolso_manual_pendente']
-    const activeQuery = query(collection(db, name), where('status', 'in', activeStatuses))
-    const stopActive = onSnapshot(activeQuery, { includeMetadataChanges: true }, snap => { active = records(snap); activeFromCache = snap.metadata.fromCache; emit() }, onError)
-    const stopRecent = onSnapshot(query(collection(db, name), orderBy('createdAt', 'desc'), limit(200)), { includeMetadataChanges: true }, snap => { recent = records(snap); recentFromCache = snap.metadata.fromCache; emit() }, onError)
-    return () => { stopActive(); stopRecent() }
+  const cid = companyId || DEFAULT_COMPANY_ID
+  const emitSorted = snapshot => onChange(
+    records(snapshot).sort((a, b) => timestampMillis(b.createdAt || b.updatedAt) - timestampMillis(a.createdAt || a.updatedAt)),
+    { fromCache: snapshot.metadata.fromCache },
+  )
+
+  if (name === 'productSettings') {
+    const ref = cid === DEFAULT_COMPANY_ID
+      ? collection(db, 'productSettings')
+      : collection(db, 'companies', cid, 'products')
+    return onSnapshot(ref, { includeMetadataChanges: true }, snap => onChange(records(snap), { fromCache: snap.metadata.fromCache }), onError)
   }
-  const q = name === 'productSettings' ? collection(db, name) : query(collection(db, name), orderBy('createdAt', 'desc'), limit(200))
-  return onSnapshot(q, { includeMetadataChanges: true }, snap => onChange(records(snap), { fromCache: snap.metadata.fromCache }), onError)
+
+  if (['orders', 'refundRequests', 'reviews'].includes(name)) {
+    const q = query(collection(db, name), where('companyId', '==', cid), limit(300))
+    return onSnapshot(q, { includeMetadataChanges: true }, emitSorted, onError)
+  }
+
+  return onSnapshot(query(collection(db, name), orderBy('createdAt', 'desc'), limit(200)), { includeMetadataChanges: true }, emitSorted, onError)
 }
 export function subscribeCustomerOrders(uid, onChange, onError) {
   ready()
@@ -57,9 +61,9 @@ export async function decideRefund(orderId, approve, resposta) {
   return callServer('appRefundDecision', { orderId, approve, answer: resposta })
 }
 
-export async function submitReview({ orderId, userId, nome, notaComida, notaEntrega, comentario }) {
+export async function submitReview({ companyId = DEFAULT_COMPANY_ID, orderId, userId, nome, notaComida, notaEntrega, comentario }) {
   ready()
-  const payload = { orderId, userId, nome: validateName(nome), notaComida: Number(notaComida), notaEntrega: Number(notaEntrega), comentario: assertRespectful(comentario.trim(), 'o comentário'), createdAt: serverTimestamp() }
+  const payload = { companyId, orderId, userId, nome: validateName(nome), notaComida: Number(notaComida), notaEntrega: Number(notaEntrega), comentario: assertRespectful(comentario.trim(), 'o comentário'), createdAt: serverTimestamp() }
   if (![payload.notaComida, payload.notaEntrega].every(n => Number.isInteger(n) && n >= 1 && n <= 5) || payload.comentario.length > 1000) throw new Error('Escolha notas de 1 a 5 e um comentário com até 1.000 caracteres.')
   await runTransaction(db, async tx => {
     const ref = doc(db, 'reviews', orderId)
