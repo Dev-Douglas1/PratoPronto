@@ -5,9 +5,44 @@ service cloud.firestore {
     function sameUser(uid) { return logged() && request.auth.uid == uid; }
     function owner(uid) { return verified() && sameUser(uid); }
     function verified() { return logged() && request.auth.token.email_verified == true; }
-    function admin() {
+    function legacyAdmin() {
       return verified() && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
         && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == 'restaurant_admin';
+    }
+    function admin() { return legacyAdmin(); }
+    function companyId(data) { return data.get('companyId', 'pratopronto'); }
+    function memberPath(cid) { return /databases/$(database)/documents/companyMembers/$(cid + '_' + request.auth.uid); }
+    function companyMember(cid) {
+      return verified() && exists(memberPath(cid))
+        && get(memberPath(cid)).data.companyId == cid
+        && get(memberPath(cid)).data.userId == request.auth.uid
+        && get(memberPath(cid)).data.get('active', true) == true;
+    }
+    function companyRole(cid) { return companyMember(cid) ? get(memberPath(cid)).data.role : ''; }
+    function companyStaff(cid) {
+      return (cid == 'pratopronto' && legacyAdmin())
+        || (companyMember(cid) && companyRole(cid) in ['owner','admin','member','kitchen','support']);
+    }
+    function companyManager(cid) {
+      return (cid == 'pratopronto' && legacyAdmin())
+        || (companyMember(cid) && companyRole(cid) in ['owner','admin']);
+    }
+    function companyOrderOperator(cid) {
+      return (cid == 'pratopronto' && legacyAdmin())
+        || (companyMember(cid) && companyRole(cid) in ['owner','admin','member','kitchen']);
+    }
+    function companyReviewer(cid) {
+      return (cid == 'pratopronto' && legacyAdmin())
+        || (companyMember(cid) && companyRole(cid) in ['owner','admin','member','support']);
+    }
+    function companySupport(cid) {
+      return (cid == 'pratopronto' && legacyAdmin())
+        || (companyMember(cid) && companyRole(cid) in ['owner','admin','member','support']);
+    }
+    function assignedPilot(data) {
+      let cid = companyId(data);
+      return companyMember(cid) && companyRole(cid) == 'pilot'
+        && data.get('assignedCourier', '') == request.auth.uid;
     }
     function text(value, max) { return value is string && value.size() <= max; }
     // BEGIN CONTENT FILTER
@@ -46,41 +81,67 @@ service cloud.firestore {
       allow get: if owner(uid);
       allow write, list: if false;
     }
+    match /companies/{companyId} {
+      allow read: if resource.data.get('active', false) == true || companyMember(companyId);
+      allow write: if false;
+
+      match /settings/{settingId} {
+        allow read: if companyStaff(companyId);
+        allow write: if false;
+      }
+      match /products/{productId} {
+        allow read: if (resource.data.get('public', false) == true && resource.data.get('disponivel', true) == true)
+          || companyStaff(companyId);
+        allow write: if false;
+      }
+    }
+    match /companyMembers/{membershipId} {
+      allow get: if verified() && (resource.data.userId == request.auth.uid || companyManager(resource.data.companyId));
+      allow list: if verified() && (resource.data.userId == request.auth.uid || companyManager(resource.data.companyId));
+      allow write: if false;
+    }
     match /orders/{orderId} {
-      allow read: if admin() || owner(resource.data.userId);
-      // Only Admin SDK services price orders, confirm payments and move stages.
-      // Neither a client nor a restaurant browser can forge a paid order.
+      allow read: if owner(resource.data.userId) || companyStaff(companyId(resource.data)) || assignedPilot(resource.data);
+      // Pedidos e etapas são alterados somente pelo backend validado.
       allow write: if false;
       match /events/{eventId} {
-        allow read: if admin() || owner(get(/databases/$(database)/documents/orders/$(orderId)).data.userId);
+        function parentOrder() { return get(/databases/$(database)/documents/orders/$(orderId)).data; }
+        allow read: if owner(parentOrder().userId) || companyStaff(companyId(parentOrder())) || assignedPilot(parentOrder());
+        allow write: if false;
+      }
+      match /private/{secretId} {
+        function parentOrder() { return get(/databases/$(database)/documents/orders/$(orderId)).data; }
+        allow read: if secretId == 'delivery' && owner(parentOrder().userId);
         allow write: if false;
       }
     }
     match /refundRequests/{orderId} {
-      allow get: if admin() || owner(get(/databases/$(database)/documents/orders/$(orderId)).data.userId);
-      allow list: if admin() || owner(resource.data.userId);
+      function refundOrder() { return get(/databases/$(database)/documents/orders/$(orderId)).data; }
+      allow get: if owner(refundOrder().userId) || companySupport(companyId(refundOrder()));
+      allow list: if owner(resource.data.userId) || companySupport(companyId(resource.data));
       allow write: if false;
     }
     match /reviews/{orderId} {
       function order() { return get(/databases/$(database)/documents/orders/$(orderId)).data; }
-      allow get: if admin() || owner(order().userId);
-      allow list: if admin() || owner(resource.data.userId);
+      allow get: if owner(order().userId) || companyStaff(companyId(order()));
+      allow list: if owner(resource.data.userId) || companyStaff(companyId(resource.data));
       allow delete: if false;
       allow create: if verified() && owner(order().userId) && owner(request.resource.data.userId)
         && order().status == 'entregue' && request.resource.data.orderId == orderId
-        && request.resource.data.keys().hasOnly(['orderId','userId','nome','notaComida','notaEntrega','comentario','createdAt'])
+        && request.resource.data.get('companyId', companyId(order())) == companyId(order())
+        && request.resource.data.keys().hasOnly(['companyId','orderId','userId','nome','notaComida','notaEntrega','comentario','createdAt'])
         && name(request.resource.data.nome)
         && request.resource.data.notaComida is int && request.resource.data.notaComida >= 1 && request.resource.data.notaComida <= 5
         && request.resource.data.notaEntrega is int && request.resource.data.notaEntrega >= 1 && request.resource.data.notaEntrega <= 5
         && text(request.resource.data.comentario,1000) && respectful(request.resource.data.comentario) && request.resource.data.createdAt == request.time;
-      allow update: if admin()
+      allow update: if companyReviewer(companyId(resource.data))
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['resposta','respondidoEm','respondidoPor'])
         && text(request.resource.data.resposta,1000) && respectful(request.resource.data.resposta) && request.resource.data.resposta.size() >= 3
         && request.resource.data.respondidoPor == request.auth.uid && request.resource.data.respondidoEm == request.time;
     }
     match /productSettings/{productId} {
       allow read: if verified();
-      allow create, update: if admin()
+      allow create, update: if companyManager('pratopronto')
         && productId in ['calabresa','quatro-queijos','estrogonofe','frango-catupiry','mussarela','lombo-canadense','coca-cola','guarana','fanta','sprite','monster','red-bull']
         && request.resource.data.keys().hasOnly(['disponivel','preco','promocao','updatedAt'])
         && (!('promocao' in request.resource.data) || promotion(request.resource.data.promocao))
@@ -89,10 +150,10 @@ service cloud.firestore {
         && (productId in ['coca-cola','guarana','fanta','sprite','monster','red-bull'] || request.resource.data.preco > 12)
         && request.resource.data.updatedAt == request.time;
     }
-    match /settings/{id} { allow read: if admin(); allow write: if false; }
-    match /operations/{id} { allow read: if admin(); allow write: if false; }
-    match /operationAlerts/{id} { allow read: if admin(); allow write: if false; }
-    match /privacyRequests/{uid} { allow read: if owner(uid) || admin(); allow write: if false; }
+    match /settings/{id} { allow read: if companyStaff('pratopronto'); allow write: if false; }
+    match /operations/{id} { allow read: if companyManager('pratopronto'); allow write: if false; }
+    match /operationAlerts/{id} { allow read: if companyManager('pratopronto'); allow write: if false; }
+    match /privacyRequests/{uid} { allow read: if owner(uid) || companyManager('pratopronto'); allow write: if false; }
     // Quotes, provider payments, webhook jobs, limits and secrets are server-only.
     match /{document=**} { allow read, write: if false; }
   }
