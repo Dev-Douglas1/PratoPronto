@@ -4,6 +4,7 @@ import { productPrice } from '../utils/productPrice.js'
 import useStorefront from '../hooks/useStorefront.js'
 import { useUser } from './UserContext.jsx'
 import { estimarEntrega } from '../utils/entrega.js'
+import { DEFAULT_COMPANY_ID } from '../config/marketplace.js'
 
 const CartContext = createContext(null)
 const STORAGE_KEY = 'prato-pronto:carrinho'
@@ -23,22 +24,37 @@ function carregarCarrinho() {
 
 export function CartProvider({ children }) {
   const { usuario } = useUser()
-  const { store } = useStorefront()
   const { catalog } = useCatalog(usuario?.emailVerificado === true)
   const [itens, setItens] = useState(carregarCarrinho)
+  const companyId = Object.values(itens)[0]?.produto?.companyId || DEFAULT_COMPANY_ID
+  const { store } = useStorefront(companyId)
 
   useEffect(() => {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(itens)) } catch { /* O carrinho continua disponível em memória. */ }
   }, [itens])
 
   function adicionar(produto) {
-    setItens((atual) => ({
-      ...atual,
-      [produto.id]: {
-        produto,
-        quantidade: Math.min(50, (atual[produto.id]?.quantidade ?? 0) + 1),
-      },
-    }))
+    const incomingCompanyId = produto.companyId || DEFAULT_COMPANY_ID
+    let blocked = false
+    setItens((atual) => {
+      const currentCompanyId = Object.values(atual)[0]?.produto?.companyId || DEFAULT_COMPANY_ID
+      if (Object.keys(atual).length && currentCompanyId !== incomingCompanyId) {
+        blocked = true
+        return atual
+      }
+      return {
+        ...atual,
+        [produto.id]: {
+          produto: { ...produto, companyId: incomingCompanyId },
+          quantidade: Math.min(50, (atual[produto.id]?.quantidade ?? 0) + 1),
+        },
+      }
+    })
+    if (blocked) {
+      const error = new Error('Seu carrinho já tem produtos de outra empresa. Finalize ou limpe o carrinho antes de comprar em outra loja.')
+      error.code = 'different-company'
+      throw error
+    }
   }
 
   function remover(produtoId) {
@@ -66,6 +82,7 @@ export function CartProvider({ children }) {
   const lista = Object.values(itens).map(item => {
     const [baseId, tamanho, borda, additions] = item.produto.id.split('--')
     const opcoes = item.produto.opcoes || (tamanho ? { tamanho, borda, extras: additions && additions !== 'sem-extra' ? additions.split('.') : [] } : {})
+    if ((item.produto.companyId || DEFAULT_COMPANY_ID) !== DEFAULT_COMPANY_ID) return item
     const base = catalog.find(product => product.id === (item.produto.produtoBaseId || baseId))
     if (!base) return item
     return { ...item, produto: { ...item.produto, opcoes, ...productPrice(base, opcoes), disponivel: base.disponivel } }
@@ -79,8 +96,8 @@ export function CartProvider({ children }) {
   const total = subtotal + (taxaEntrega ?? 0)
 
   const valor = useMemo(
-    () => ({ itens, lista, quantidadeTotal, subtotal, taxaEntrega, total, adicionar, remover, limpar }),
-    [itens, lista, quantidadeTotal, subtotal, taxaEntrega, total],
+    () => ({ itens, lista, companyId, quantidadeTotal, subtotal, taxaEntrega, total, adicionar, remover, limpar }),
+    [itens, lista, companyId, quantidadeTotal, subtotal, taxaEntrega, total],
   )
 
   return <CartContext.Provider value={valor}>{children}</CartContext.Provider>
