@@ -6,8 +6,13 @@ export function maintenance({ db, authAdmin, config, credential, now = () => new
     const ref = db.doc('privacyRequests/' + uid)
     const request = (await ref.get()).data()
     if (!request || request.status === 'concluido') return
-    // The last administrator must transfer access before closing this account.
+    // Proprietários precisam transferir a empresa antes de encerrar a conta.
     if ((await db.doc('admins/' + uid).get()).exists) {
+      await ref.update({ status: 'transferir_administracao', updatedAt: now() }); return
+    }
+    const memberships = await db.collection('companyMembers').where('userId','==',uid).get()
+    const activeMemberships = memberships.docs.filter(doc => doc.data().active !== false)
+    if (activeMemberships.some(doc => doc.data().role === 'owner')) {
       await ref.update({ status: 'transferir_administracao', updatedAt: now() }); return
     }
     const orders = await db.collection('orders').where('userId','==',uid).get()
@@ -18,13 +23,17 @@ export function maintenance({ db, authAdmin, config, credential, now = () => new
     if (unsettled) { await ref.update({ status: 'aguardando_pedidos', updatedAt: now() }); return }
     // Backend jobs finish this workflow even if the user closes their browser.
     // Keep only the minimal transaction record; remove delivery and contact data.
-    for (const doc of orders.docs) await doc.ref.update({ cliente: { nome: 'Conta excluída', email: '', telefone: '' }, entrega: { endereco: '', numero: '', bairro: '', complemento: '', cep: '', cidade: '', uf: '' }, observacao: '', redacted: true })
+    for (const doc of orders.docs) {
+      await doc.ref.update({ cliente: { nome: 'Conta excluída', email: '', telefone: '' }, entrega: { endereco: '', numero: '', bairro: '', complemento: '', cep: '', cidade: '', uf: '' }, observacao: '', redacted: true })
+      await doc.ref.collection('private').doc('delivery').delete().catch(() => undefined)
+    }
     for (const name of ['reviews','quotes']) {
       const rows = await db.collection(name).where('userId','==',uid).get()
       for (const doc of rows.docs) await doc.ref.delete()
     }
     const refunds = await db.collection('refundRequests').where('userId','==',uid).get()
     for (const doc of refunds.docs) await doc.ref.update({ motivo: 'Dados pessoais removidos a pedido do titular.', resposta: '', redacted: true })
+    for (const membership of activeMemberships) await membership.ref.set({ active: false, updatedAt: now() }, { merge: true })
     await db.doc('users/' + uid).delete()
     await db.doc('emailChallenges/' + uid).delete()
     const loginEmails = await db.collection('loginEmailJobs').where('uid','==',uid).get()
@@ -51,6 +60,7 @@ export function maintenance({ db, authAdmin, config, credential, now = () => new
       if (order.redacted || !['entregue','cancelado'].includes(order.status) || ['reembolso_pendente','reembolso_manual_pendente','reembolso_parcial','contestado'].includes(order.pagamento.status)) continue
       if (time(order.updatedAt) + (order.retentionDays || 3650) * 86400000 > now().getTime()) continue
       await doc.ref.update({ cliente: { nome: 'Dados removidos por retenção', email: '', telefone: '' }, entrega: { endereco: '', numero: '', bairro: '', complemento: '', cep: '', cidade: '', uf: '' }, observacao: '', redacted: true })
+      await doc.ref.collection('private').doc('delivery').delete().catch(() => undefined)
     }
     await cursorRef.set({ cursor: page.size < 200 ? '' : page.docs.at(-1).id, updatedAt: now() })
     await db.doc('operations/health').set({ lastMaintenanceAt: now() }, { merge: true })
