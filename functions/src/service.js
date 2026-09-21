@@ -210,6 +210,10 @@ export function createService({ db, config, mp, authAdmin, now = () => new Date(
       requireThat(order, 'Pedido não encontrado.', 'not-found')
       await companyAccess(context, order.companyId || DEFAULT_COMPANY_ID, 'orders:advance', tx)
       requireThat(NEXT[order.status] === data.next, 'O pedido mudou de etapa. Confira a atualização.', 'failed-precondition')
+      if (order.deliveryVerificationRequired === true && data.next === 'saiu_entrega') {
+        requireThat(order.assignedCourier, 'Atribua um Piloto Parceiro antes de despachar o pedido.', 'failed-precondition')
+        throw new DomainError('failed-precondition', 'O Piloto Parceiro atribuído deve iniciar a entrega na área dele.')
+      }
       requireThat(!(data.next === 'entregue' && order.deliveryVerificationRequired === true), 'A entrega deve ser confirmada pelo Piloto Parceiro com a senha do cliente.', 'failed-precondition')
       requireThat(['aprovado','pendente_entrega','recebido_entrega'].includes(order.pagamento.status), 'Resolva o pagamento antes de avançar o pedido.', 'failed-precondition')
       let payment = { ...order.pagamento }
