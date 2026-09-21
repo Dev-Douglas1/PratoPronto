@@ -8,7 +8,7 @@ import { submitRefund, submitReview, subscribeCustomerOrders, subscribeOrderReco
 import { formatarMoeda as money } from '../utils/moeda.js'
 import { normalizeOrderStatus, orderStatusLabel, ORDER_STATUS_OPTIONS } from '../config/orderStatus.js'
 import { paymentLabel, paymentStatusLabel, timestampMillis } from '../utils/pedido.js'
-import { traduzirErroFirebase } from '../utils/firebaseError.js'
+import { traduzirErroSupabase } from '../utils/supabaseError.js'
 import { subscribeDeliverySecret } from '../services/marketplace.js'
 import { DEFAULT_COMPANY_ID } from '../config/marketplace.js'
 
@@ -31,7 +31,7 @@ export default function Acompanhamento() {
   const [deliverySecret, setDeliverySecret] = useState(null)
   const selectedId = params.get('pedido') || location.state?.pedidoId
   const order = selectedId ? orders.find(item => item.id === selectedId) : orders[0]
-  function showError(err) { setError(err.code ? traduzirErroFirebase(err) : err.message) }
+  function showError(err) { setError(err.code ? traduzirErroSupabase(err) : err.message) }
   useEffect(() => {
     return subscribeCustomerOrders(usuario.uid, list => { setOrders(list); setLoading(false) }, err => { showError(err); setLoading(false) })
   }, [usuario.uid])
