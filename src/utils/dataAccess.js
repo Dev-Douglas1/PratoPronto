@@ -18,7 +18,7 @@ export function initialSources(demo = false) {
 }
 
 export function companyTabState(sources, tab) {
-  const keys = { pedidos: ['orders'], entregas: ['orders'], concluidos: ['orders'], avaliacoes: ['reviews'], cardapio: ['settings'], promocoes: ['settings'], atendimento: ['orders', 'refunds'], configuracoes: [] }[tab] || []
+  const keys = { pedidos: ['orders'], entregas: ['orders'], concluidos: ['orders'], avaliacoes: ['reviews'], cardapio: ['settings'], promocoes: ['settings'], atendimento: ['orders', 'refunds'], equipe: [], configuracoes: [] }[tab] || []
   const values = keys.map(key => sources[key])
   return { loading: values.some(value => value.loading), error: values.map(value => value.error).filter(Boolean).join(' '), fromCache: values.some(value => value.fromCache) }
 }
