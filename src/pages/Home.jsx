@@ -77,7 +77,7 @@ export default function Home() {
           {!autenticado && <Link className="btn btn-outline" to="/cadastro">Criar minha conta</Link>}
           {autenticado && <Link className="btn btn-outline" to="/empresa/nova">Cadastrar uma empresa</Link>}
           {!!staffCompanies.length && <Link className="btn btn-outline" to="/empresa/pedidos">Área da empresa</Link>}
-          {autenticado && <Link className="btn btn-outline" to="/piloto">{pilotProfile ? 'Área Piloto Parceiro' : 'Quero ser Piloto Parceiro'}</Link>}
+          {autenticado && pilotProfile && <Link className="btn btn-outline" to="/piloto">Área Piloto Parceiro</Link>}
           {!autenticado && <Link className="btn btn-outline" to="/demo/empresa/pedidos">Conhecer a área da empresa 2.0 →</Link>}
         </div>
 
