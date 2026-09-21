@@ -63,14 +63,14 @@ export default function useCompanyData(demo, companyId = DEFAULT_COMPANY_ID) {
     setData(current => ({ ...current, reviews: current.reviews.map(item => item.id === id ? { ...item, resposta: resposta.trim() } : item) }))
   }
   async function product(id, settings) {
-    if (!demo) return saveProduct(id, settings)
+    if (!demo) return saveProduct(id, settings, companyId)
     const preco = Math.round(Number(settings.preco) * 100) / 100
     if (!(preco > 0 && preco <= 2000)) throw new Error('Confira o preço informado.')
     setData(current => ({ ...current, settings: [...current.settings.filter(item => item.id !== id), { ...current.settings.find(item => item.id === id), id, disponivel: settings.disponivel, preco }] }))
   }
   async function promotion(id, input) {
     const promocao = validatePromotion(input)
-    if (!demo) return savePromotion(id, promocao)
+    if (!demo) return savePromotion(id, promocao, companyId)
     const base = produtos.find(item => item.id === id)
     if (!base) throw new Error('Escolha um produto do cardápio.')
     setData(current => ({ ...current, settings: [...current.settings.filter(item => item.id !== id), { preco: base.preco, disponivel: true, ...current.settings.find(item => item.id === id), id, promocao }] }))
