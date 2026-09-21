@@ -74,15 +74,23 @@ export function isOpen(settings, now = new Date()) {
   const minute = Number(parts.hour) * 60 + Number(parts.minute)
   return (settings.hours?.[day] || []).some(slot => minute >= slot.start && minute < slot.end)
 }
-export function normalizeItems(input) {
+export function normalizeItemShape(input) {
   requireThat(Array.isArray(input) && input.length > 0 && input.length <= 50, 'Use de 1 a 50 tipos de itens por pedido.')
-  const items = input.map(item => {
-    const base = produtos.find(p => p.id === item?.id)
-    requireThat(base, 'Há um produto desconhecido no carrinho. Adicione novamente pelo cardápio.')
+  return input.map(item => {
+    requireThat(typeof item?.id === 'string' && /^[a-zA-Z0-9_-]{1,96}$/.test(item.id), 'Há um produto inválido no carrinho.')
     requireThat(Number.isInteger(item.quantidade) && item.quantidade >= 1 && item.quantidade <= 50, 'Use de 1 a 50 unidades de cada item.')
+    const options = item.opcoes && typeof item.opcoes === 'object' ? item.opcoes : {}
+    return { id: item.id, quantidade: item.quantidade, opcoes: options }
+  })
+}
+export function normalizeItems(input, catalogProducts = produtos) {
+  const shaped = normalizeItemShape(input)
+  const items = shaped.map(item => {
+    const base = catalogProducts.find(p => p.id === item.id)
+    requireThat(base, 'Há um produto desconhecido no carrinho. Adicione novamente pelo cardápio.')
     const options = item.opcoes || {}
     if (!base.personalizavel) {
-      requireThat(!options.tamanho && !options.borda && (!options.extras || options.extras.length === 0), 'Opções inválidas para a bebida.')
+      requireThat(!options.tamanho && !options.borda && (!options.extras || options.extras.length === 0), 'Opções inválidas para este produto.')
       return { id: base.id, quantidade: item.quantidade, opcoes: {} }
     }
     const size = tamanhos.find(o => o.id === (options.tamanho || 'grande'))
@@ -94,15 +102,15 @@ export function normalizeItems(input) {
   requireThat(new Set(items.map(item => hash([item.id, item.opcoes]))).size === items.length, 'Agrupe os itens iguais no carrinho.')
   return items
 }
-export function priceOrder({ items, delivery, settings, productSettings = {}, now = new Date() }) {
+export function priceOrder({ items, delivery, settings, productSettings = {}, catalogProducts = produtos, now = new Date() }) {
   requireThat(settings?.address && isOpen(settings, now), 'O restaurante está fechado para novos pedidos neste horário.', 'failed-precondition')
   const entrega = address(delivery)
   requireThat(normalize(entrega.cidade) === normalize(settings.address.cidade) && entrega.uf === settings.address.uf, 'Este endereço está fora da cidade atendida.', 'failed-precondition')
   const zone = settings.zones.find(z => normalize(z.bairro) === normalize(entrega.bairro))
   requireThat(zone, 'Ainda não entregamos neste bairro.', 'failed-precondition')
-  const normalizedItems = normalizeItems(items)
+  const normalizedItems = normalizeItems(items, catalogProducts)
   const itens = normalizedItems.map(item => {
-    const base = produtos.find(p => p.id === item.id)
+    const base = catalogProducts.find(p => p.id === item.id)
     const setting = productSettings[item.id]
     requireThat(setting?.disponivel !== false, base.nome + ' está indisponível.', 'failed-precondition')
     let unit = cents(setting?.preco ?? base.preco)
