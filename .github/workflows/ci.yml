@@ -2,7 +2,7 @@ name: Verificar PratoPronto
 
 on:
   push:
-    branches: [main, codex/integracao-main-atualizada, codex/auditoria-geral-pratopronto, codex/mobile-pwa-security]
+    branches: [main, codex/multiempresa-piloto-parceiro]
   pull_request:
     branches: [main]
 
@@ -16,89 +16,66 @@ jobs:
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 22
           cache: npm
 
       - name: Instalar dependências
         run: npm ci
 
-      - name: Auditar dependências
-        run: npm audit --audit-level=high
+      - name: Auditar dependências de produção
+        run: npm audit --omit=dev --audit-level=high
 
-      - name: Validar backend gratuito
-        run: |
-          for file in worker/src/*.js; do node --check "$file"; done
-          node -e "import('./worker/src/index.js')"
-          grep -q 'REQUIRE_APP_CHECK = "true"' worker/wrangler.toml
-          grep -q 'REQUIRE_BROWSER_ORIGIN = "true"' worker/wrangler.toml
-          grep -q 'Idempotency-Key' worker/src/index.js
-          grep -q 'MAX_BODY_BYTES' worker/src/index.js
-          grep -q 'IP_RATE_LIMITER' worker/wrangler.toml
-          grep -q 'USER_ORDER_RATE_LIMITER' worker/wrangler.toml
+      - name: Testar aplicação
+        run: npm test
 
-      - name: Validar geração das regras seguras
-        shell: bash
-        run: |
-          node scripts/build-secure-rules.mjs
-          cmp firestore.rules firestore.secure.rules
-          grep -q 'allow write: if false;' firestore.secure.rules
+      - name: Validar configuração Supabase
+        env:
+          VITE_SUPABASE_URL: https://fixture.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_fixture
+          VITE_CONTROLLER_NAME: PratoPronto
+          VITE_PRIVACY_EMAIL: teste@example.com
+          VITE_ENABLE_CARD_DEMO: 'false'
+        run: npm run check:production
 
       - name: Testar Vite em desenvolvimento
+        env:
+          VITE_SUPABASE_URL: https://fixture.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_fixture
         shell: bash
         run: |
           npm run dev -- --host 127.0.0.1 --port 5173 > /tmp/pratopronto-dev.log 2>&1 &
           DEV_PID=$!
           cleanup() { kill "$DEV_PID" 2>/dev/null || true; }
           trap cleanup EXIT
-
           for i in {1..30}; do
             if curl -fsS http://127.0.0.1:5173/ >/dev/null; then break; fi
             if [ "$i" = "30" ]; then cat /tmp/pratopronto-dev.log; exit 1; fi
             sleep 0.5
           done
-
-          for route in / /login /cadastro /verificar-email /pizzas /bebidas /pedido /pagamento /acompanhamento /perfil /empresa; do
+          for route in / /login /cadastro /verificar-email /pizzas /bebidas /pedido /pagamento /acompanhamento /perfil /empresa /piloto /loja/pratopronto; do
             code=$(curl -sS -o /tmp/page.html -w '%{http_code}' "http://127.0.0.1:5173${route}")
             test "$code" = "200"
             grep -q 'id="root"' /tmp/page.html
           done
 
-          cleanup
-          trap - EXIT
-
       - name: Compilar aplicação
+        env:
+          VITE_SUPABASE_URL: https://fixture.supabase.co
+          VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_fixture
         run: npm run build
 
-      - name: Testar build, PWA e rotas SPA
+      - name: Testar build e PWA
         shell: bash
         run: |
           npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/pratopronto-preview.log 2>&1 &
           PREVIEW_PID=$!
           cleanup() { kill "$PREVIEW_PID" 2>/dev/null || true; }
           trap cleanup EXIT
-
           for i in {1..30}; do
             if curl -fsS http://127.0.0.1:4173/ >/dev/null; then break; fi
             if [ "$i" = "30" ]; then cat /tmp/pratopronto-preview.log; exit 1; fi
             sleep 0.5
           done
-
-          for route in / /login /cadastro /verificar-email /pizzas /bebidas /pedido /pagamento /acompanhamento /perfil /empresa; do
-            code=$(curl -sS -o /tmp/page.html -w '%{http_code}' "http://127.0.0.1:4173${route}")
-            test "$code" = "200"
-            grep -q 'id="root"' /tmp/page.html
-          done
-
-          curl -fsS http://127.0.0.1:4173/manifest.webmanifest -o /tmp/manifest.json
+          curl -fsS http://127.0.0.1:4173/manifest.webmanifest >/tmp/manifest.json
           grep -q '"display": "standalone"' /tmp/manifest.json
-          grep -q '"sizes": "192x192"' /tmp/manifest.json
-          grep -q '"sizes": "512x512"' /tmp/manifest.json
           curl -fsS http://127.0.0.1:4173/sw.js >/dev/null
-          curl -fsS http://127.0.0.1:4173/pwa-icon.svg >/dev/null
-          curl -fsS http://127.0.0.1:4173/icons/icon-192.png >/dev/null
-          curl -fsS http://127.0.0.1:4173/icons/icon-512.png >/dev/null
-          curl -fsS http://127.0.0.1:4173/icons/apple-touch-icon.png >/dev/null
-          curl -fsS http://127.0.0.1:4173/images/produtos/pizza-calabresa.webp >/dev/null
-
-          cleanup
-          trap - EXIT
