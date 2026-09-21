@@ -7,9 +7,10 @@ import { accessError, COMPANY_SOURCES, initialSources } from '../utils/dataAcces
 import { assertRespectful } from '../../functions/src/input-policy.js'
 import { validatePromotion } from '../../functions/src/promotions.js'
 import { produtos } from '../data/produtos.js'
+import { DEFAULT_COMPANY_ID } from '../config/marketplace.js'
 
 const empty = { orders: [], refunds: [], reviews: [], settings: [], events: {} }
-export default function useCompanyData(demo) {
+export default function useCompanyData(demo, companyId = DEFAULT_COMPANY_ID) {
   const [data, setData] = useState(() => demo ? makeCompanyDemo() : empty)
   const [sources, setSources] = useState(() => initialSources(demo))
   const [attempt, setAttempt] = useState(0)
@@ -26,7 +27,7 @@ export default function useCompanyData(demo) {
         setSources(current => ({ ...current, [key]: { loading: false, error: accessError(err, COMPANY_SOURCES[key], true), fromCache: true } }))
       }
       try {
-        unsubscribe.push(subscribeCompany(name, (values, metadata) => {
+        unsubscribe.push(subscribeCompany(name, companyId, (values, metadata) => {
           if (!live) return
           setData(current => ({ ...current, [key]: values }))
           setSources(current => ({ ...current, [key]: { loading: false, error: '', fromCache: metadata?.fromCache !== false } }))
@@ -34,7 +35,7 @@ export default function useCompanyData(demo) {
       } catch (err) { fail(err) }
     }
     return () => { live = false; unsubscribe.forEach(fn => fn()) }
-  }, [demo, attempt])
+  }, [demo, attempt, companyId])
 
   async function advance(id, next, received) {
     if (!demo) return advanceOrder(id, next, received)
