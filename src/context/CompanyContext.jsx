@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { useUser } from './UserContext.jsx'
-import { loadMyCompanies, loadPilotProfile } from '../services/marketplace.js'
+import { isPlatformAdmin, loadMyCompanies, loadPilotProfile } from '../services/marketplace.js'
 import { COMPANY_STAFF_ROLES, DEFAULT_COMPANY_ID } from '../config/marketplace.js'
 
 const CompanyContext = createContext(null)
@@ -10,6 +10,7 @@ export function CompanyProvider({ children }) {
   const { usuario } = useUser()
   const [companies, setCompanies] = useState([])
   const [pilotProfile, setPilotProfile] = useState(null)
+  const [platformAdmin, setPlatformAdmin] = useState(false)
   const [activeCompanyId, setActiveCompanyId] = useState(() => {
     try { return localStorage.getItem(STORAGE_KEY) || DEFAULT_COMPANY_ID } catch { return DEFAULT_COMPANY_ID }
   })
@@ -18,14 +19,15 @@ export function CompanyProvider({ children }) {
 
   async function refresh() {
     if (!usuario?.emailVerificado) {
-      setCompanies([]); setPilotProfile(null); return []
+      setCompanies([]); setPilotProfile(null); setPlatformAdmin(false); return []
     }
     setLoading(true); setError('')
     try {
-      const [values, pilot] = await Promise.all([loadMyCompanies(), loadPilotProfile()])
+      const [values, pilot, isAdmin] = await Promise.all([loadMyCompanies(), loadPilotProfile(), isPlatformAdmin()])
       const list = Array.isArray(values) ? values : []
       setCompanies(list)
       setPilotProfile(pilot)
+      setPlatformAdmin(isAdmin === true)
       setActiveCompanyId(current => {
         const valid = list.some(item => item.companyId === current)
         const next = valid ? current : list[0]?.companyId || DEFAULT_COMPANY_ID
@@ -36,6 +38,7 @@ export function CompanyProvider({ children }) {
     } catch (err) {
       setError(err.message || 'Não foi possível carregar suas empresas.')
       setCompanies([])
+      setPlatformAdmin(false)
       return []
     } finally { setLoading(false) }
   }
@@ -53,9 +56,9 @@ export function CompanyProvider({ children }) {
   const staffCompanies = companies.filter(item => COMPANY_STAFF_ROLES.includes(item.role))
 
   const value = useMemo(() => ({
-    companies, staffCompanies, pilotProfile, activeCompanyId, activeCompany,
+    companies, staffCompanies, pilotProfile, platformAdmin, activeCompanyId, activeCompany,
     loading, error, refresh, selectCompany,
-  }), [companies, pilotProfile, activeCompanyId, activeCompany, loading, error])
+  }), [companies, pilotProfile, platformAdmin, activeCompanyId, activeCompany, loading, error])
 
   return <CompanyContext.Provider value={value}>{children}</CompanyContext.Provider>
 }
