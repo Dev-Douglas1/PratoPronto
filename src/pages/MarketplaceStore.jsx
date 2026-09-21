@@ -23,7 +23,7 @@ export default function MarketplaceStore() {
     return products
       .filter(item => item.disponivel !== false)
       .filter(item => !needle || [item.nome, item.descricao, item.categoria].some(value => String(value || '').toLowerCase().includes(needle)))
-      .map(item => ({ ...item, companyId }))
+      .map(item => ({ ...item, companyId, imagem: item.imagem || '/icons/app-icon.svg' }))
   }, [products, search, companyId])
 
   return <AppScreen className="menu-screen marketplace-store">
@@ -37,7 +37,8 @@ export default function MarketplaceStore() {
       <label className="search-box"><span aria-hidden="true">⌕</span><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar prato nesta empresa..." /></label>
       {(error || storeError) && <p className="form-error" role="alert">{error || storeError}</p>}
       {!storeLoading && store && <div className="light-card"><strong>{store.name}</strong>{store.address && <p>{store.address.endereco}, {store.address.numero} · {store.address.bairro} · {store.address.cidade}/{store.address.uf}</p>}<small>Previsão informada: {store.estimateMinutes || '—'} min</small></div>}
-      <ProductGrid produtos={filtered} readOnly={!store?.open} />
+      {company?.active === false && <p className="catalog-notice">Esta empresa está pausada e não recebe pedidos agora.</p>}
+      <ProductGrid produtos={filtered} readOnly={!store?.open || company?.active === false} />
       <BottomActions>
         <Link className="btn btn-secondary" to="/">Buscar outra empresa</Link>
         <Link className="btn btn-primary" to="/pedido">Ver carrinho</Link>
