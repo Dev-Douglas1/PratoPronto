@@ -1,215 +1,261 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
-import {
-  EmailAuthProvider, getIdToken,
-  onAuthStateChanged, reload, sendPasswordResetEmail, signInWithEmailAndPassword,
-  signOut, reauthenticateWithCredential,
-} from 'firebase/auth'
-import { auth, authReady, firebaseConfigured } from '../firebase.js'
+import { getSupabase, supabaseConfigured } from '../lib/supabase.js'
 import {
   deleteUserData, getAdminStatus, getUserProfile, PRIVACY_POLICY_VERSION,
-  saveUserProfile, TERMS_VERSION, updateUserProfile,
+  TERMS_VERSION, updateUserProfile,
 } from '../services/storage.js'
-import { callIdentity } from '../services/identity.js'
-import { registerPendingAccount } from '../services/registration.js'
-import { refreshEmailVerification, sendVerificationLink } from '../services/email-verification.js'
-import { criarErroFirebase } from '../utils/firebaseError.js'
+import { validateName, validatePassword, validatePhone } from '../../functions/src/input-policy.js'
+import { criarErroSupabase } from '../utils/supabaseError.js'
 
 const UserContext = createContext(null)
-const pendingAccount = user => ({ uid: user.uid, email: user.email, nome: user.displayName || '', emailVerificado: false, admin: false })
+const PENDING_EMAIL_KEY = 'pratopronto:pending-email'
+
+function verified(user) {
+  return Boolean(user?.email_confirmed_at || user?.confirmed_at)
+}
+
+function pendingAccount(userOrEmail) {
+  const user = typeof userOrEmail === 'string' ? null : userOrEmail
+  const email = typeof userOrEmail === 'string' ? userOrEmail : user?.email
+  return {
+    uid: user?.id || '',
+    email: email || '',
+    nome: user?.user_metadata?.nome || '',
+    emailVerificado: false,
+    admin: false,
+  }
+}
 
 async function readAccount(user) {
-  if (!user.emailVerified) return pendingAccount(user)
-  await getIdToken(user, true)
-  const [profile, admin] = await Promise.all([getUserProfile(user.uid), getAdminStatus(user.uid)])
-  return { ...profile, uid: user.uid, email: user.email, nome: profile?.nome || user.displayName || '', emailVerificado: true, admin }
+  if (!verified(user)) return pendingAccount(user)
+  const [profile, admin] = await Promise.all([getUserProfile(user.id), getAdminStatus(user.id)])
+  return {
+    ...profile,
+    uid: user.id,
+    email: user.email || profile?.email || '',
+    nome: profile?.nome || user.user_metadata?.nome || '',
+    emailVerificado: true,
+    admin,
+  }
 }
 
 export function UserProvider({ children }) {
   const [usuario, setUsuario] = useState(null)
-  const [loading, setLoading] = useState(firebaseConfigured)
+  const [loading, setLoading] = useState(supabaseConfigured)
   const [verificacao, setVerificacao] = useState({ sent: false, error: '', retryAt: 0 })
   const [avisoLogin, setAvisoLogin] = useState('')
   const sendInFlight = useRef(null)
   const checkInFlight = useRef(null)
-  const nextEmailAt = useRef({ uid: null, time: 0 })
+  const nextEmailAt = useRef({ email: null, time: 0 })
 
   useEffect(() => {
-    if (!firebaseConfigured || !auth) { setLoading(false); return undefined }
-    let disposed = false, unsubscribe, generation = 0
-    authReady.then(() => {
-      if (disposed) return
-      unsubscribe = onAuthStateChanged(auth, async firebaseUser => {
-        const current = ++generation
-        if (!firebaseUser) { setUsuario(null); setLoading(false); return }
-        try {
-          await reload(firebaseUser)
-          const account = await readAccount(firebaseUser)
-          if (!disposed && current === generation && auth.currentUser?.uid === account.uid) setUsuario(account)
-        } catch {
-          if (!disposed && current === generation) { setUsuario(null); setAvisoLogin('Não foi possível carregar sua conta. Entre novamente em instantes.') }
-        } finally { if (!disposed && current === generation) setLoading(false) }
-      })
-    }).catch(() => { if (!disposed) { setLoading(false); setAvisoLogin('Não foi possível iniciar uma sessão segura. Reabra o aplicativo.') } })
-    // Discard the session even if the page enters the back/forward cache.
-    const closeSession = () => {
-      generation++
-      setUsuario(null)
-      signOut(auth).catch(() => undefined)
+    if (!supabaseConfigured) { setLoading(false); return undefined }
+    const supabase = getSupabase()
+    let alive = true
+    let generation = 0
+
+    async function applySession(session) {
+      const current = ++generation
+      const user = session?.user
+      if (!user) {
+        if (alive && current === generation) {
+          const pendingEmail = sessionStorage.getItem(PENDING_EMAIL_KEY)
+          setUsuario(pendingEmail ? pendingAccount(pendingEmail) : null)
+          setLoading(false)
+        }
+        return
+      }
+      try {
+        const account = await readAccount(user)
+        if (alive && current === generation) {
+          setUsuario(account)
+          if (account.emailVerificado) sessionStorage.removeItem(PENDING_EMAIL_KEY)
+        }
+      } catch {
+        if (alive && current === generation) {
+          setUsuario(null)
+          setAvisoLogin('Não foi possível carregar sua conta no Supabase. Entre novamente em instantes.')
+        }
+      } finally {
+        if (alive && current === generation) setLoading(false)
+      }
     }
-    window.addEventListener('pagehide', closeSession)
-    return () => { disposed = true; generation++; unsubscribe?.(); window.removeEventListener('pagehide', closeSession) }
+
+    supabase.auth.getSession().then(({ data }) => applySession(data.session)).catch(() => {
+      if (alive) { setLoading(false); setAvisoLogin('Não foi possível iniciar a sessão segura.') }
+    })
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      queueMicrotask(() => applySession(session))
+    })
+    return () => { alive = false; generation++; listener.subscription.unsubscribe() }
   }, [])
 
-  async function ready() {
-    if (!firebaseConfigured || !auth) throw new Error('O login ainda não foi ativado pela empresa.')
-    await authReady
+  function ready() {
+    if (!supabaseConfigured) throw new Error('O Supabase ainda não foi configurado no ambiente.')
+    return getSupabase()
   }
 
   async function enviarVerificacaoEmail() {
-    if (!auth?.currentUser) throw new Error('Entre novamente para confirmar seu e-mail.')
-    const uid = auth.currentUser.uid
-    if (sendInFlight.current?.uid === uid) return sendInFlight.current.promise
-    if (nextEmailAt.current.uid === uid && nextEmailAt.current.time > Date.now()) {
-      setVerificacao(atual => ({ ...atual, retryAt: nextEmailAt.current.time }))
+    const supabase = ready()
+    const email = usuario?.email?.trim().toLowerCase()
+    if (!email) throw new Error('Informe o e-mail da conta para reenviar a confirmação.')
+    if (sendInFlight.current?.email === email) return sendInFlight.current.promise
+    if (nextEmailAt.current.email === email && nextEmailAt.current.time > Date.now()) {
+      setVerificacao(current => ({ ...current, retryAt: nextEmailAt.current.time }))
       throw new Error('Aguarde um minuto antes de reenviar o e-mail.')
     }
-    nextEmailAt.current = { uid, time: Date.now() + 60000 }
+    nextEmailAt.current = { email, time: Date.now() + 60000 }
     const promise = (async () => {
-      try {
-        const result = await sendVerificationLink(auth)
-        if (result.verified) await conferirVerificacaoEmail()
-        if (auth.currentUser?.uid === uid) setVerificacao({ ...result, error: '', retryAt: Date.now() + (result.retryAfterSeconds || 60) * 1000 })
-        return result
-      } catch (error) {
-        const translated = criarErroFirebase(error)
-        if (auth.currentUser?.uid === uid) setVerificacao({ sent: false, error: translated.message, retryAt: Date.now() + 60000 })
-        throw translated
-      }
-    })()
-    sendInFlight.current = { uid, promise }
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: { emailRedirectTo: window.location.origin + '/verificar-email' },
+      })
+      if (error) throw error
+      const result = { sent: true, retryAfterSeconds: 60 }
+      setVerificacao({ ...result, error: '', retryAt: Date.now() + 60000 })
+      return result
+    })().catch(error => {
+      const translated = criarErroSupabase(error)
+      setVerificacao({ sent: false, error: translated.message, retryAt: Date.now() + 60000 })
+      throw translated
+    })
+    sendInFlight.current = { email, promise }
     try { return await promise } finally {
       if (sendInFlight.current?.promise === promise) sendInFlight.current = null
     }
   }
 
   async function entrar(email, senha) {
-    await ready()
+    const supabase = ready()
+    const normalized = email.trim().toLowerCase()
     setAvisoLogin('')
     setVerificacao({ sent: false, error: '', retryAt: 0 })
-    let user
-    try {
-      user = (await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), senha)).user
-      await reload(user)
-      const account = await readAccount(user)
-      if (auth.currentUser?.uid !== account.uid) throw new Error('A sessão foi encerrada. Entre novamente.')
-      setUsuario(account)
-      if (!account.emailVerificado) {
-        // Delivery errors remain visible on the blocking confirmation screen.
-        await enviarVerificacaoEmail().catch(() => undefined)
-      } else {
-        try { await callIdentity('appLoginNotice') }
-        catch { setAvisoLogin('Você entrou, mas não foi possível solicitar o aviso de login por e-mail. A empresa precisa verificar o serviço de envio.') }
+    const { data, error } = await supabase.auth.signInWithPassword({ email: normalized, password: senha })
+    if (error) {
+      if (String(error.message).toLowerCase().includes('email not confirmed')) {
+        sessionStorage.setItem(PENDING_EMAIL_KEY, normalized)
+        const account = pendingAccount(normalized)
+        setUsuario(account)
+        await supabase.auth.resend({ type: 'signup', email: normalized, options: { emailRedirectTo: window.location.origin + '/verificar-email' } }).catch(() => undefined)
+        return account
       }
-      if (auth.currentUser?.uid !== account.uid) throw new Error('A sessão foi encerrada. Entre novamente.')
-      return account
-    } catch (error) {
-      if (user) { await signOut(auth).catch(() => undefined); setUsuario(null) }
-      throw criarErroFirebase(error)
+      throw criarErroSupabase(error)
     }
+    const account = await readAccount(data.user)
+    setUsuario(account)
+    return account
   }
 
   async function cadastrar(dados) {
-    await ready()
-    setAvisoLogin('')
-    setVerificacao({ sent: false, error: '', retryAt: 0 })
-    let user
-    try {
-      user = await registerPendingAccount({
-        auth, data: dados,
-        saveProfile: async user => {
-          // Passwords and verification links never enter a profile.
-          await saveUserProfile(user.uid, {
-            nome: dados.nome, email: user.email, telefone: dados.telefone,
-            endereco: dados.endereco, numero: dados.numero, bairro: dados.bairro,
-            cep: dados.cep, cidade: dados.cidade, uf: dados.uf, complemento: dados.complemento,
-            aceitarMarketing: dados.aceitarMarketing, privacyPolicyVersion: PRIVACY_POLICY_VERSION,
-            termsVersion: TERMS_VERSION, consentTimestamp: new Date().toISOString(),
-          })
-        },
-      })
-    } catch (error) {
-      throw criarErroFirebase(error)
+    const supabase = ready()
+    validateName(dados.nome)
+    validatePhone(dados.telefone)
+    validatePassword(dados.senha)
+    const email = dados.email.trim().toLowerCase()
+    const metadata = {
+      nome: dados.nome.trim(),
+      telefone: String(dados.telefone).replace(/\D/g, ''),
+      endereco: dados.endereco.trim(),
+      numero: dados.numero.trim(),
+      bairro: dados.bairro.trim(),
+      complemento: dados.complemento.trim(),
+      cep: String(dados.cep || '').replace(/\D/g, ''),
+      cidade: dados.cidade.trim(),
+      uf: dados.uf.trim().toUpperCase(),
+      aceitar_marketing: Boolean(dados.aceitarMarketing),
+      privacy_policy_version: PRIVACY_POLICY_VERSION,
+      terms_version: TERMS_VERSION,
     }
-    if (auth.currentUser?.uid !== user.uid) throw new Error('Sua sessão terminou. Entre novamente para confirmar seu e-mail.')
-    const account = pendingAccount(user)
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password: dados.senha,
+      options: {
+        data: metadata,
+        emailRedirectTo: window.location.origin + '/verificar-email',
+      },
+    })
+    if (error) throw criarErroSupabase(error)
+    if (!data.user) throw new Error('O Supabase não retornou a conta criada.')
+    sessionStorage.setItem(PENDING_EMAIL_KEY, email)
+    const account = verified(data.user) ? await readAccount(data.user) : pendingAccount(data.user)
     setUsuario(account)
-    // Keep a pending registration for retry; never grant access on send failure.
-    await enviarVerificacaoEmail().catch(() => undefined)
-    if (auth.currentUser?.uid !== user.uid) throw new Error('Sua sessão terminou. Entre novamente para confirmar seu e-mail.')
+    setVerificacao({ sent: !verified(data.user), error: '', retryAt: Date.now() + 60000 })
     return account
   }
 
   async function conferirVerificacaoEmail() {
-    const user = auth?.currentUser
-    if (!user) throw new Error('Sua sessão terminou. Entre novamente para confirmar seu e-mail.')
-    if (checkInFlight.current?.uid === user.uid) return checkInFlight.current.promise
+    const supabase = ready()
+    const key = usuario?.uid || usuario?.email || 'pending'
+    if (checkInFlight.current?.key === key) return checkInFlight.current.promise
     const promise = (async () => {
-      try {
-        if (!await refreshEmailVerification(auth)) return null
-        const account = await readAccount(user)
-        if (auth.currentUser?.uid !== account.uid) throw new Error('Sua sessão terminou. Entre novamente.')
-        setUsuario(account)
-        setVerificacao({ sent: false, error: '', retryAt: 0 })
-        return account
-      } catch (error) { throw criarErroFirebase(error) }
-    })()
-    checkInFlight.current = { uid: user.uid, promise }
+      const { data: sessionData } = await supabase.auth.getSession()
+      if (!sessionData.session) return null
+      const { data, error } = await supabase.auth.getUser()
+      if (error) throw error
+      if (!data.user || !verified(data.user)) return null
+      const account = await readAccount(data.user)
+      setUsuario(account)
+      sessionStorage.removeItem(PENDING_EMAIL_KEY)
+      setVerificacao({ sent: false, error: '', retryAt: 0 })
+      return account
+    })().catch(error => { throw criarErroSupabase(error) })
+    checkInFlight.current = { key, promise }
     try { return await promise } finally {
       if (checkInFlight.current?.promise === promise) checkInFlight.current = null
     }
   }
 
   async function atualizar(dados) {
-    if (!usuario?.emailVerificado) throw new Error('Confirme seu e-mail antes de alterar o perfil.')
+    if (!usuario?.uid || !usuario.emailVerificado) throw new Error('Confirme seu e-mail antes de alterar o perfil.')
     try {
       const profile = await updateUserProfile(usuario.uid, dados)
-      const finalUser = { ...usuario, ...profile, uid: usuario.uid, admin: usuario.admin, email: usuario.email, emailVerificado: true }
+      const finalUser = { ...usuario, ...profile, uid: usuario.uid, email: usuario.email, emailVerificado: true }
       setUsuario(finalUser)
       return finalUser
-    } catch (error) { throw criarErroFirebase(error) }
+    } catch (error) { throw criarErroSupabase(error) }
   }
+
   async function sair() {
     setUsuario(null)
     setAvisoLogin('')
     setVerificacao({ sent: false, error: '', retryAt: 0 })
-    if (auth) await signOut(auth)
+    sessionStorage.removeItem(PENDING_EMAIL_KEY)
+    if (supabaseConfigured) await getSupabase().auth.signOut()
   }
+
   async function enviarRecuperacaoSenha(email) {
-    await ready()
-    if (!email?.trim()) throw new Error('Digite o e-mail da sua conta.')
-    try {
-      auth.languageCode = 'pt-BR'
-      await sendPasswordResetEmail(auth, email.trim().toLowerCase())
-    } catch (error) {
-      if (error?.code === 'auth/user-not-found') return
-      throw criarErroFirebase(error)
-    }
+    const supabase = ready()
+    const normalized = email?.trim().toLowerCase()
+    if (!normalized) throw new Error('Digite o e-mail da sua conta.')
+    const { error } = await supabase.auth.resetPasswordForEmail(normalized, {
+      redirectTo: window.location.origin + '/perfil',
+    })
+    if (error) throw criarErroSupabase(error)
   }
+
   async function excluirConta(senha) {
-    if (!auth?.currentUser || !usuario?.emailVerificado) throw new Error('Entre e confirme seu e-mail para continuar.')
+    const supabase = ready()
+    if (!usuario?.emailVerificado || !usuario.email) throw new Error('Entre e confirme seu e-mail para continuar.')
     if (!senha) throw new Error('Digite sua senha para confirmar a exclusão.')
+    const { error } = await supabase.auth.signInWithPassword({ email: usuario.email, password: senha })
+    if (error) throw criarErroSupabase(error)
     try {
-      await reauthenticateWithCredential(auth.currentUser, EmailAuthProvider.credential(auth.currentUser.email, senha))
-      await getIdToken(auth.currentUser, true)
-      return await deleteUserData(auth.currentUser.uid)
-    } catch (error) { throw criarErroFirebase(error) }
+      await deleteUserData()
+      await sair()
+      return true
+    } catch (error2) { throw criarErroSupabase(error2) }
   }
-  const value = useMemo(() => ({ usuario, loading, autenticado: usuario?.emailVerificado === true,
-    firebaseConfigured, verificacao, avisoLogin, entrar, cadastrar, atualizar, sair,
+
+  const value = useMemo(() => ({
+    usuario, loading, autenticado: usuario?.emailVerificado === true,
+    supabaseConfigured, verificacao, avisoLogin, entrar, cadastrar, atualizar, sair,
     enviarRecuperacaoSenha, enviarVerificacaoEmail, conferirVerificacaoEmail, excluirConta,
   }), [usuario, loading, verificacao, avisoLogin])
+
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>
 }
+
 export function useUser() {
   const context = useContext(UserContext)
   if (!context) throw new Error('useUser deve ser usado dentro de UserProvider')
