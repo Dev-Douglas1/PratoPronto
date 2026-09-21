@@ -4,8 +4,8 @@ import { advanceOrder, decideRefund, replyReview, saveProduct, savePromotion, su
 import { canAdvanceOrder } from '../config/orderStatus.js'
 import { accessError, COMPANY_SOURCES, initialSources } from '../utils/dataAccess.js'
 
-import { assertRespectful } from '../../functions/src/input-policy.js'
-import { validatePromotion } from '../../functions/src/promotions.js'
+import { assertRespectful } from '../shared/input-policy.js'
+import { validatePromotion } from '../shared/promotions.js'
 import { produtos } from '../data/produtos.js'
 import { DEFAULT_COMPANY_ID } from '../config/marketplace.js'
 
