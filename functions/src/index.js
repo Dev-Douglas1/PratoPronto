@@ -55,7 +55,7 @@ function callable(method, publicAccess = false) {
   return onCall({ ...options, secrets, enforceAppCheck: publicAccess ? false : enforceAppCheck }, async request => {
     try {
       const context = publicAccess ? null : await contextFor(request)
-      return await runtime().service[method](...(publicAccess ? [] : [context, request.data || {}]))
+      return await runtime().service[method](...(publicAccess ? [request.data || {}] : [context, request.data || {}]))
     } catch (error) {
       if (error instanceof DomainError) throw new HttpsError(error.code, error.message, error.restartCheckout ? { restartCheckout: true } : undefined)
       logger.error('callable_failed', { method, code: error.code || 'internal' })
@@ -74,6 +74,14 @@ export const appConfirmManualRefund = callable('confirmManualRefund')
 export const appSaveSettings = callable('saveSettings')
 export const appReadiness = callable('readiness')
 export const appPrivacyRequest = callable('privacyRequest')
+export const appMyCompanies = callable('listMyCompanies')
+export const appCreateCompany = callable('createCompany')
+export const appSaveCompanyMember = callable('saveCompanyMember')
+export const appRemoveCompanyMember = callable('removeCompanyMember')
+export const appSaveCompanyProduct = callable('saveCompanyProduct')
+export const appAssignPilot = callable('assignPilot')
+export const appPilotStartDelivery = callable('pilotStartDelivery')
+export const appPilotConfirmDelivery = callable('pilotConfirmDelivery')
 export const appRetryPayment = onCall({ ...options, secrets, enforceAppCheck }, async request => {
   const { service, processor } = runtime()
   try {
