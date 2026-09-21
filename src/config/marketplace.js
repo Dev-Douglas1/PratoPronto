@@ -3,13 +3,11 @@ export const DEFAULT_COMPANY_ID = 'pratopronto'
 export const COMPANY_ROLE_LABELS = {
   owner: 'Proprietário',
   admin: 'Administrador',
-  member: 'Membro da empresa',
+  attendant: 'Atendente',
   kitchen: 'Cozinha',
-  support: 'Atendimento',
-  pilot: 'Piloto Parceiro',
 }
 
-export const COMPANY_STAFF_ROLES = ['owner', 'admin', 'member', 'kitchen', 'support']
+export const COMPANY_STAFF_ROLES = ['owner', 'admin', 'attendant', 'kitchen']
 
 export function roleLabel(role) {
   return COMPANY_ROLE_LABELS[role] || role || 'Membro'
