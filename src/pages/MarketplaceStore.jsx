@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, Navigate, useParams } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
 import TopBar from '../components/TopBar.jsx'
 import ProductGrid from '../components/ProductGrid.jsx'
 import BottomActions from '../components/BottomActions.jsx'
 import useStorefront from '../hooks/useStorefront.js'
 import { subscribeCompany, subscribeCompanyProducts } from '../services/marketplace.js'
+import { DEFAULT_COMPANY_ID } from '../config/marketplace.js'
 
 export default function MarketplaceStore() {
   const { companyId } = useParams()
@@ -14,6 +15,8 @@ export default function MarketplaceStore() {
   const [search, setSearch] = useState('')
   const [error, setError] = useState('')
   const { store, loading: storeLoading, error: storeError } = useStorefront(companyId)
+
+  if (companyId === DEFAULT_COMPANY_ID) return <Navigate to="/pizzas" replace />
 
   useEffect(() => subscribeCompany(companyId, setCompany, err => setError(err.message || 'Esta empresa não está disponível.')), [companyId])
   useEffect(() => subscribeCompanyProducts(companyId, setProducts, err => setError(err.message || 'Não foi possível carregar o cardápio.')), [companyId])
