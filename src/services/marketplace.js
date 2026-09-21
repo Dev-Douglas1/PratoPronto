@@ -97,19 +97,16 @@ export async function saveCompanyProduct(input) {
 }
 
 export async function loadPilotProfile() {
-  const supabase = ready()
-  const { data: userData } = await supabase.auth.getUser()
-  if (!userData.user) return null
-  const { data, error } = await supabase.from('pilot_profiles').select('*').eq('profile_id', userData.user.id).maybeSingle()
+  const { data, error } = await ready().rpc('get_my_pilot_profile')
   if (error) throw error
-  return data
+  return data || null
 }
 
-export async function savePilotProfile({ displayName, vehicleType, city, acceptingOffers }) {
+export async function savePilotProfile({ vehiclePlate, motorcycleType, vehicleColor, acceptingOffers }) {
   const { data, error } = await ready().rpc('save_pilot_profile', {
-    p_display_name: displayName,
-    p_vehicle_type: vehicleType,
-    p_city: city || '',
+    p_vehicle_plate: vehiclePlate,
+    p_motorcycle_type: motorcycleType,
+    p_vehicle_color: vehicleColor,
     p_accepting: acceptingOffers !== false,
   })
   if (error) throw error
@@ -117,7 +114,7 @@ export async function savePilotProfile({ displayName, vehicleType, city, accepti
 }
 
 export async function listAvailablePilots() {
-  const { data, error } = await ready().from('pilot_profiles').select('*').eq('accepting_offers', true).order('display_name').limit(100)
+  const { data, error } = await ready().rpc('list_available_pilots')
   if (error) throw error
   return data || []
 }
