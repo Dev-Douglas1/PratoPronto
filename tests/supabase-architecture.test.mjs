@@ -36,7 +36,7 @@ test('fluxos críticos apontam para Supabase e RLS/RPC', async () => {
   assert.match(server, /checkout_order/)
   assert.match(company, /from\('orders'\)/)
   assert.match(marketplace, /respond_order_delivery_offer/)
-  assert.match(marketplace, /pilot_confirm_delivery/)
+  assert.match(server, /pilot_confirm_delivery/)
 })
 
 test('papéis internos não incluem piloto e entregas usam ofertas separadas', async () => {
