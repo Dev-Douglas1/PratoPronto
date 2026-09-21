@@ -3,12 +3,12 @@ import { amountToCollect, paymentLabel, paymentStatusLabel, timestampMillis } fr
 import Modal from './Modal.jsx'
 import Icon from './Icon.jsx'
 
-export default function PrintTicket({ order, kind, onClose }) {
+export default function PrintTicket({ order, kind, companyName = 'PratoPronto', onClose }) {
   const delivery = kind === 'entrega'
   return <Modal title={'Comanda de ' + (delivery ? 'entrega' : 'cozinha')} onClose={onClose} className="ticket-dialog">
     <p className="muted no-print">Formato 80 mm. No celular, use a impressão do sistema ou salve em PDF.</p>
     <article className="print-ticket">
-      <h2>PRATO PRONTO</h2>
+      <h2>{String(companyName || 'PratoPronto').toUpperCase()}</h2><small>via PRATOPRONTO</small>
       <p>COMANDA DE {delivery ? 'ENTREGA' : 'COZINHA'}<br />DOCUMENTO NÃO FISCAL</p>
       {order.pagamento.ambiente !== 'producao' && <strong className="ticket-demo">TESTE · SEM COBRANÇA REAL</strong>}
       <h3>#{order.id}</h3>
