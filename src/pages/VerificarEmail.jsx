@@ -39,8 +39,8 @@ export default function VerificarEmail() {
   useEffect(() => {
     mounted.current = true
     const aoVoltar = () => { if (document.visibilityState === 'visible') conferir(true) }
-    // A return from the mail app checks Firebase once. It never resends mail
-    // automatically or trusts a local "confirmed" flag.
+    // Ao voltar do app de e-mail, a sessão do Supabase é conferida uma vez.
+    // O app não concede acesso com uma confirmação apenas local.
     aoVoltar()
     window.addEventListener('focus', aoVoltar)
     document.addEventListener('visibilitychange', aoVoltar)
