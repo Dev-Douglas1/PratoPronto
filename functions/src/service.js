@@ -351,6 +351,7 @@ export function createService({ db, config, mp, authAdmin, now = () => new Date(
         name: company?.name || (member.companyId === DEFAULT_COMPANY_ID ? 'PratoPronto' : member.companyId),
         role: member.role,
         permissions: permissionsForRole(member.role),
+        legacy: member.legacy === true,
       }
     }))
   }
