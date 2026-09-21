@@ -1,5 +1,5 @@
 import PasswordField from '../components/PasswordField.jsx'
-import { validateName, validatePassword, validatePhone, phoneInput, normalizeName } from '../../functions/src/input-policy.js'
+import { validateName, validatePassword, validatePhone, phoneInput, normalizeName } from '../shared/input-policy.js'
 import AddressFields from '../components/AddressFields.jsx'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
