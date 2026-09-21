@@ -1,2 +1,0 @@
-export const POLICY_VERSION = '2026-09-15'
-export const TERMS_VERSION = '2026-09-09'
