@@ -38,9 +38,10 @@ export function CompanyProvider({ children }) {
   useEffect(() => { refresh() }, [usuario?.uid, usuario?.emailVerificado])
 
   function selectCompany(companyId) {
-    if (!companies.some(item => item.companyId === companyId)) return
-    setActiveCompanyId(companyId)
-    try { localStorage.setItem(STORAGE_KEY, companyId) } catch {}
+    const next = String(companyId || '').trim()
+    if (!next) return
+    setActiveCompanyId(next)
+    try { localStorage.setItem(STORAGE_KEY, next) } catch {}
   }
 
   const activeCompany = companies.find(item => item.companyId === activeCompanyId) || null
