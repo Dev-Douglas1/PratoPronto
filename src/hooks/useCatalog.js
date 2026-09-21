@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { promotionStatus } from '../../functions/src/promotions.js'
+import { promotionStatus } from '../shared/promotions.js'
 import { getSupabase, supabaseConfigured } from '../lib/supabase.js'
 import { DEFAULT_COMPANY_ID } from '../config/marketplace.js'
 
