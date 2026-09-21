@@ -101,6 +101,6 @@ export default function PilotPartner() {
         {!!history.length && <section className="company-panel"><h2>Entregas recentes</h2>{history.map(order => <p key={order.id}><b>#{order.id.slice(-8)}</b> · {orderStatusLabel(order.status)} · {new Date(timestampMillis(order.createdAt)).toLocaleString('pt-BR')}</p>)}</section>}
       </main>
     </div>
-    {ticket && <PrintTicket order={ticket} kind="entrega" onClose={() => setTicket(null)} />}
+    {ticket && <PrintTicket order={ticket} kind="entrega" companyName={companyName} onClose={() => setTicket(null)} />}
   </div>
 }
