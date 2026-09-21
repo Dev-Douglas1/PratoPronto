@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
 import TopBar from '../components/TopBar.jsx'
 import BottomNav from '../components/BottomNav.jsx'
@@ -18,6 +18,8 @@ const futureDate = value => {
 
 export default function PilotSignup() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const editingApproved = searchParams.get('editar') === '1'
   const { usuario, loading } = useUser()
   const { pilotProfile, refresh } = useCompany()
   const [vehiclePlate, setVehiclePlate] = useState('')
@@ -56,9 +58,8 @@ export default function PilotSignup() {
   if (loading) return <AppScreen><div className="light-card">Carregando...</div></AppScreen>
   if (!usuario) return <Navigate to="/login" replace />
   if (usuario.emailVerificado !== true) return <Navigate to="/verificar-email" replace />
-  if (pilotProfile?.approval_status === 'approved' || pilotProfile?.approval_status === 'pending') {
-    return <Navigate to="/piloto" replace />
-  }
+  if (pilotProfile?.approval_status === 'pending') return <Navigate to="/piloto" replace />
+  if (pilotProfile?.approval_status === 'approved' && !editingApproved) return <Navigate to="/piloto" replace />
 
   async function submit(event) {
     event.preventDefault()
@@ -147,7 +148,7 @@ export default function PilotSignup() {
     <TopBar titulo="Piloto Parceiro" />
     <div className="page-heading">
       <span className="eyebrow">SE TORNE UM PILOTO DAS ENTREGAS</span>
-      <h1>Cadastro para análise</h1>
+      <h1>{editingApproved ? 'Atualizar cadastro de piloto' : 'Cadastro para análise'}</h1>
       <p>O PratoPronto usa seus dados do perfil e solicita os dados da moto e a documentação necessária antes de liberar ofertas de entrega.</p>
     </div>
 
@@ -224,7 +225,7 @@ export default function PilotSignup() {
       {progress && <p className="success-note" role="status">{progress}</p>}
       {error && <p className="form-error dark-error" role="alert">{error}</p>}
       <button className="btn btn-primary" type="submit" disabled={busy || !canSubmit}>
-        {busy ? 'Enviando para análise…' : pilotProfile?.approval_status === 'rejected' ? 'Reenviar para análise' : 'Enviar cadastro para análise'}
+        {busy ? 'Enviando para análise…' : pilotProfile?.approval_status === 'rejected' || editingApproved ? 'Reenviar para análise' : 'Enviar cadastro para análise'}
       </button>
       <button className="btn ghost-button" type="button" onClick={() => navigate('/perfil')}>Voltar ao perfil</button>
     </form>
