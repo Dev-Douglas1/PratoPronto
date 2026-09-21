@@ -35,26 +35,19 @@ export function CartProvider({ children }) {
 
   function adicionar(produto) {
     const incomingCompanyId = produto.companyId || DEFAULT_COMPANY_ID
-    let blocked = false
-    setItens((atual) => {
-      const currentCompanyId = Object.values(atual)[0]?.produto?.companyId || DEFAULT_COMPANY_ID
-      if (Object.keys(atual).length && currentCompanyId !== incomingCompanyId) {
-        blocked = true
-        return atual
-      }
-      return {
-        ...atual,
-        [produto.id]: {
-          produto: { ...produto, companyId: incomingCompanyId },
-          quantidade: Math.min(50, (atual[produto.id]?.quantidade ?? 0) + 1),
-        },
-      }
-    })
-    if (blocked) {
+    const currentCompanyId = Object.values(itens)[0]?.produto?.companyId || DEFAULT_COMPANY_ID
+    if (Object.keys(itens).length && currentCompanyId !== incomingCompanyId) {
       const error = new Error('Seu carrinho já tem produtos de outra empresa. Finalize ou limpe o carrinho antes de comprar em outra loja.')
       error.code = 'different-company'
       throw error
     }
+    setItens((atual) => ({
+      ...atual,
+      [produto.id]: {
+        produto: { ...produto, companyId: incomingCompanyId },
+        quantidade: Math.min(50, (atual[produto.id]?.quantidade ?? 0) + 1),
+      },
+    }))
   }
 
   function remover(produtoId) {
