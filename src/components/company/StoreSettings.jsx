@@ -3,6 +3,7 @@ import { collection, doc, limit, onSnapshot, query, where } from 'firebase/fires
 import { db } from '../../firebase.js'
 import { callServer } from '../../services/server.js'
 import AddressFields from '../AddressFields.jsx'
+import { DEFAULT_COMPANY_ID } from '../../config/marketplace.js'
 
 const days = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado']
 const empty = () => ({ name: '', legalName: '', document: '', phone: '', privacyEmail: '', address: { endereco: '', numero: '', bairro: '', complemento: '', cep: '', cidade: '', uf: '' }, timezone: 'America/Sao_Paulo', estimateMinutes: 45, retentionDays: 90, acceptingOrders: false, methods: ['maquina_entrega'], hours: days.map(() => []), zones: [{ bairro: '', fee: '', min: '', freeAbove: '' }] })
@@ -10,7 +11,7 @@ const clock = minutes => String(Math.floor(minutes / 60)).padStart(2,'0') + ':' 
 const minutes = value => { const [h,m] = value.split(':').map(Number); return h * 60 + m }
 const fromStored = data => ({ ...empty(), ...data, hours: days.map((_,index) => data.hours?.[index] || []), zones: data.zones.map(zone => ({ bairro: zone.bairro, fee: zone.feeCents / 100, min: zone.minCents / 100, freeAbove: zone.freeAboveCents === null ? '' : zone.freeAboveCents / 100 })) })
 
-export default function StoreSettings({ demo }) {
+export default function StoreSettings({ demo, companyId = DEFAULT_COMPANY_ID }) {
   const [form, setForm] = useState(empty)
   const [ready, setReady] = useState(null)
   const [alerts, setAlerts] = useState([])
@@ -24,26 +25,33 @@ export default function StoreSettings({ demo }) {
   async function refresh() {
     if (demo) return
     setBusy(true); setError('')
-    try { setReady(await callServer('appReadiness')) } catch (err) { setError(err.message) } finally { setBusy(false) }
+    try { setReady(await callServer('appReadiness', { companyId })) } catch (err) { setError(err.message) } finally { setBusy(false) }
   }
   useEffect(() => {
     if (demo) return
     refresh()
     const fail = () => setError('Não foi possível ler as configurações. Confira o acesso da empresa e as regras do banco.')
+    const settingsRef = companyId === DEFAULT_COMPANY_ID
+      ? doc(db,'settings','restaurant')
+      : doc(db,'companies',companyId,'settings','store')
     const stops = [
-      onSnapshot(doc(db,'settings','restaurant'), snapshot => { if (snapshot.exists()) setForm(fromStored(snapshot.data())) }, fail),
-      onSnapshot(doc(db,'operations','backup'), snapshot => setBackup(snapshot.data() || null), fail),
-      onSnapshot(query(collection(db,'operationAlerts'), where('state','==','open'), limit(50)), snapshot => setAlerts(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }))), fail),
-      onSnapshot(query(collection(db,'privacyRequests'), where('status','!=','concluido'), limit(50)), snapshot => setRequests(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }))), fail),
+      onSnapshot(settingsRef, snapshot => { if (snapshot.exists()) setForm(fromStored(snapshot.data())) }, fail),
     ]
+    if (companyId === DEFAULT_COMPANY_ID) {
+      stops.push(
+        onSnapshot(doc(db,'operations','backup'), snapshot => setBackup(snapshot.data() || null), fail),
+        onSnapshot(query(collection(db,'operationAlerts'), where('state','==','open'), limit(50)), snapshot => setAlerts(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }))), fail),
+        onSnapshot(query(collection(db,'privacyRequests'), where('status','!=','concluido'), limit(50)), snapshot => setRequests(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }))), fail),
+      )
+    }
     return () => stops.forEach(stop => stop())
-  }, [demo])
+  }, [demo, companyId])
   async function save(event) {
     event.preventDefault(); setBusy(true); setError(''); setNotice('')
     try {
-      if (!demo) await callServer('appSaveSettings', form)
+      if (!demo) await callServer('appSaveSettings', { ...form, companyId })
       setNotice(demo ? 'Configuração de demonstração alterada nesta tela. Nenhuma loja real foi aberta.' : 'Configurações salvas. Os próximos pedidos usarão estes horários e valores.')
-      if (!demo) setReady(await callServer('appReadiness'))
+      if (!demo) setReady(await callServer('appReadiness', { companyId }))
     } catch (err) { setError(err.message) } finally { setBusy(false) }
   }
   function slot(day, index, key, value) { setForm(current => ({ ...current, hours: current.hours.map((slots,d) => d !== day ? slots : slots.map((slot,i) => i === index ? { ...slot, [key]: value } : slot)) })) }
@@ -68,7 +76,7 @@ export default function StoreSettings({ demo }) {
       <label className="company-checkbox"><input name="acceptingOrders" type="checkbox" checked={form.acceptingOrders} onChange={change} />Receber pedidos nos horários configurados</label>
       <button className="company-button primary" disabled={busy} type="submit">{busy ? 'Salvando…' : 'Salvar configurações'}</button>
     </form>
-    {!demo && <section className="company-panel"><h2>Ocorrências operacionais</h2>{!alerts.length ? <p>Nenhuma ocorrência registrada.</p> : alerts.map(alert => <div className="operation-row" key={alert.id}><p><b>Pedido #{alert.orderId?.slice(-8)}</b><br />{alert.kind} · {alert.code}</p><button className="company-button secondary" disabled={busy} onClick={async () => { setBusy(true); setError(''); try { await callServer('appRetryPayment',{ orderId: alert.orderId }); setNotice('Consulta realizada. Acompanhe o status do pedido; a devolução precisa da confirmação do provedor.') } catch (err) { setError(err.message) } finally { setBusy(false) } }}>Reconsultar pagamento</button></div>)}</section>}
-    {!demo && <section className="company-panel"><h2>Solicitações de privacidade</h2>{!requests.length ? <p>Nenhuma solicitação pendente.</p> : requests.map(request => <p key={request.id}>Conta {request.userId.slice(-8)} · {({ pendente: 'Exclusão em processamento', aguardando_pedidos: 'Aguardando concluir pedidos ou devoluções', transferir_administracao: 'Transfira a administração antes de encerrar esta conta' })[request.status] || request.status}</p>)}</section>}
+    {!demo && companyId === DEFAULT_COMPANY_ID && <section className="company-panel"><h2>Ocorrências operacionais</h2>{!alerts.length ? <p>Nenhuma ocorrência registrada.</p> : alerts.map(alert => <div className="operation-row" key={alert.id}><p><b>Pedido #{alert.orderId?.slice(-8)}</b><br />{alert.kind} · {alert.code}</p><button className="company-button secondary" disabled={busy} onClick={async () => { setBusy(true); setError(''); try { await callServer('appRetryPayment',{ orderId: alert.orderId }); setNotice('Consulta realizada. Acompanhe o status do pedido; a devolução precisa da confirmação do provedor.') } catch (err) { setError(err.message) } finally { setBusy(false) } }}>Reconsultar pagamento</button></div>)}</section>}
+    {!demo && companyId === DEFAULT_COMPANY_ID && <section className="company-panel"><h2>Solicitações de privacidade</h2>{!requests.length ? <p>Nenhuma solicitação pendente.</p> : requests.map(request => <p key={request.id}>Conta {request.userId.slice(-8)} · {({ pendente: 'Exclusão em processamento', aguardando_pedidos: 'Aguardando concluir pedidos ou devoluções', transferir_administracao: 'Transfira a administração antes de encerrar esta conta' })[request.status] || request.status}</p>)}</section>}
   </div>
 }
