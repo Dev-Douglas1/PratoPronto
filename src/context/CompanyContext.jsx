@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { useUser } from './UserContext.jsx'
-import { loadMyCompanies } from '../services/marketplace.js'
+import { loadMyCompanies, loadPilotProfile } from '../services/marketplace.js'
 import { COMPANY_STAFF_ROLES, DEFAULT_COMPANY_ID } from '../config/marketplace.js'
 
 const CompanyContext = createContext(null)
@@ -9,6 +9,7 @@ const STORAGE_KEY = 'pratopronto:empresa-ativa'
 export function CompanyProvider({ children }) {
   const { usuario } = useUser()
   const [companies, setCompanies] = useState([])
+  const [pilotProfile, setPilotProfile] = useState(null)
   const [activeCompanyId, setActiveCompanyId] = useState(() => {
     try { return localStorage.getItem(STORAGE_KEY) || DEFAULT_COMPANY_ID } catch { return DEFAULT_COMPANY_ID }
   })
@@ -16,18 +17,22 @@ export function CompanyProvider({ children }) {
   const [error, setError] = useState('')
 
   async function refresh() {
-    if (!usuario?.emailVerificado) { setCompanies([]); return [] }
+    if (!usuario?.emailVerificado) {
+      setCompanies([]); setPilotProfile(null); return []
+    }
     setLoading(true); setError('')
     try {
-      const values = await loadMyCompanies()
-      setCompanies(Array.isArray(values) ? values : [])
+      const [values, pilot] = await Promise.all([loadMyCompanies(), loadPilotProfile()])
+      const list = Array.isArray(values) ? values : []
+      setCompanies(list)
+      setPilotProfile(pilot)
       setActiveCompanyId(current => {
-        const valid = values?.some(item => item.companyId === current)
-        const next = valid ? current : values?.[0]?.companyId || DEFAULT_COMPANY_ID
+        const valid = list.some(item => item.companyId === current)
+        const next = valid ? current : list[0]?.companyId || DEFAULT_COMPANY_ID
         try { localStorage.setItem(STORAGE_KEY, next) } catch {}
         return next
       })
-      return values
+      return list
     } catch (err) {
       setError(err.message || 'Não foi possível carregar suas empresas.')
       setCompanies([])
@@ -46,12 +51,11 @@ export function CompanyProvider({ children }) {
 
   const activeCompany = companies.find(item => item.companyId === activeCompanyId) || null
   const staffCompanies = companies.filter(item => COMPANY_STAFF_ROLES.includes(item.role))
-  const pilotCompanies = companies.filter(item => item.role === 'pilot')
 
   const value = useMemo(() => ({
-    companies, staffCompanies, pilotCompanies, activeCompanyId, activeCompany,
+    companies, staffCompanies, pilotProfile, activeCompanyId, activeCompany,
     loading, error, refresh, selectCompany,
-  }), [companies, activeCompanyId, activeCompany, loading, error])
+  }), [companies, pilotProfile, activeCompanyId, activeCompany, loading, error])
 
   return <CompanyContext.Provider value={value}>{children}</CompanyContext.Provider>
 }
