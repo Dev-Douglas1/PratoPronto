@@ -11,7 +11,7 @@ import { DEFAULT_COMPANY_ID } from '../config/marketplace.js'
 
 export default function Home() {
   const { autenticado } = useUser()
-  const { staffCompanies, pilotCompanies } = useCompany()
+  const { staffCompanies, pilotProfile } = useCompany()
   const [search, setSearch] = useState('')
   const [results, setResults] = useState({ companies: [], products: [] })
   const [loading, setLoading] = useState(false)
@@ -77,7 +77,7 @@ export default function Home() {
           {!autenticado && <Link className="btn btn-outline" to="/cadastro">Criar minha conta</Link>}
           {autenticado && <Link className="btn btn-outline" to="/empresa/nova">Cadastrar uma empresa</Link>}
           {!!staffCompanies.length && <Link className="btn btn-outline" to="/empresa/pedidos">Área da empresa</Link>}
-          {!!pilotCompanies.length && <Link className="btn btn-outline" to="/piloto">Piloto Parceiro</Link>}
+          {autenticado && <Link className="btn btn-outline" to="/piloto">{pilotProfile ? 'Área Piloto Parceiro' : 'Quero ser Piloto Parceiro'}</Link>}
           {!autenticado && <Link className="btn btn-outline" to="/demo/empresa/pedidos">Conhecer a área da empresa 2.0 →</Link>}
         </div>
 
