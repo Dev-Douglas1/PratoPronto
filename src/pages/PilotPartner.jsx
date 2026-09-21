@@ -138,7 +138,7 @@ export default function PilotPartner() {
               <input type="checkbox" checked={pilotProfile.accepting_offers === true} disabled={busy === 'availability'} onChange={toggleAvailability} />
               Disponível para receber novas ofertas de entrega
             </label>
-            <Link className="company-button secondary" to="/piloto/cadastro">Atualizar dados ou documentos</Link>
+            <Link className="company-button secondary" to="/piloto/cadastro?editar=1">Atualizar dados ou documentos</Link>
           </>}
         </section>
 
