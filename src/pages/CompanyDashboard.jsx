@@ -18,9 +18,9 @@ import Modal from '../components/company/Modal.jsx'
 import PrintTicket from '../components/company/PrintTicket.jsx'
 import CompanyTeam from '../components/company/CompanyTeam.jsx'
 import CompanyCatalogManager from '../components/company/CompanyCatalogManager.jsx'
+import CompanyPilotContacts from '../components/company/CompanyPilotContacts.jsx'
 import PilotAssignment from '../components/company/PilotAssignment.jsx'
 import { DEFAULT_COMPANY_ID, roleLabel } from '../config/marketplace.js'
-import { migrateDefaultCompany } from '../services/marketplace.js'
 import '../company.css'
 import InstallApp from '../components/InstallApp.jsx'
 
@@ -29,7 +29,7 @@ const tabs = [
   ['promocoes', 'Ofertas', 'tag'], ['avaliacoes', 'Avaliações', 'star'], ['cardapio', 'Cardápio', 'menu'], ['equipe', 'Equipe', 'orders'], ['atendimento', 'Atendimento', 'chat'], ['configuracoes', 'Configurações', 'menu'],
 ]
 const mobileTabs = ['pedidos', 'entregas', 'promocoes', 'cardapio']
-const headings = { promocoes: ['Descontos e campanhas do restaurante', 'Ofertas e promoções'], configuracoes: ['Horários, entrega e pagamentos', 'Configurações da empresa'], pedidos: ['Acompanhe e atualize cada etapa', 'Pedidos em processo'], entregas: ['Organize a saída dos pedidos', 'Central de entregas'], concluidos: ['Histórico do restaurante', 'Pedidos concluídos'], avaliacoes: ['Opinião dos seus clientes', 'Avaliações dos clientes'], cardapio: ['Preços e itens disponíveis', 'Produtos e disponibilidade'], equipe: ['Acessos, funções e pilotos', 'Equipe da empresa'], atendimento: ['Cancelamentos e reembolsos', 'Central de atendimento'] }
+const headings = { promocoes: ['Descontos e campanhas do restaurante', 'Ofertas e promoções'], configuracoes: ['Horários, entrega e pagamentos', 'Configurações da empresa'], pedidos: ['Acompanhe e atualize cada etapa', 'Pedidos em processo'], entregas: ['Organize a saída dos pedidos', 'Central de entregas'], concluidos: ['Histórico do restaurante', 'Pedidos concluídos'], avaliacoes: ['Opinião dos seus clientes', 'Avaliações dos clientes'], cardapio: ['Preços e itens disponíveis', 'Produtos e disponibilidade'], equipe: ['Equipe interna e contatos de entrega', 'Equipe da empresa'], atendimento: ['Cancelamentos e reembolsos', 'Central de atendimento'] }
 const hour = value => new Date(timestampMillis(value)).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 const date = value => new Date(timestampMillis(value)).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
 function Status({ value }) { return <span className={'company-status status-' + normalizeOrderStatus(value)}><i />{orderStatusLabel(value)}</span> }
@@ -60,7 +60,7 @@ function OrderDetails({ order, demo, data, companyId, canPrint, canAdvance, canA
     {error && <p className="company-alert" role="alert">{error}</p>}
     {canPrint && <div className="inline-actions"><button className="company-button secondary" onClick={() => onPrint(order.id, 'cozinha')}><Icon name="print" />Cozinha</button><button className="company-button secondary" onClick={() => onPrint(order.id, 'entrega')}><Icon name="print" />Entrega</button></div>}
     {canAdvance && NEXT_STATUS[status] && !(order.deliveryVerificationRequired && ['pronto','saiu_entrega'].includes(status)) && <button className="company-button primary wide" disabled={busy} onClick={() => onAdvance(order)}>{NEXT_ACTION[status]}<Icon name="arrow" /></button>}
-    {status === 'pronto' && order.deliveryVerificationRequired && <p className="company-notice">{order.assignedCourier ? 'Piloto atribuído. Ele deve iniciar a entrega na área Piloto Parceiro.' : 'Atribua um Piloto Parceiro para liberar a saída do pedido.'}</p>}
+    {status === 'pronto' && order.deliveryVerificationRequired && <p className="company-notice">{order.assignedCourier ? 'Piloto atribuído. Ele deve iniciar a entrega na área Piloto Parceiro.' : 'Envie uma oferta para um Piloto Parceiro para liberar a saída do pedido.'}</p>}
     {status === 'saiu_entrega' && order.deliveryVerificationRequired && <p className="company-notice">Aguardando o Piloto Parceiro confirmar a senha de entrega informada pelo cliente.</p>}
   </Modal>
 }
@@ -87,7 +87,7 @@ export default function CompanyDashboard({ demo = false }) {
   const { aba = 'pedidos' } = useParams()
   const navigate = useNavigate()
   const { usuario, sair, conferirVerificacaoEmail } = useUser()
-  const { staffCompanies, activeCompanyId, activeCompany, selectCompany, refresh: refreshCompanies } = useCompany()
+  const { staffCompanies, activeCompanyId, activeCompany, selectCompany } = useCompany()
   const companyId = demo ? DEFAULT_COMPANY_ID : activeCompanyId
   const permissions = demo ? ['company:manage','team:manage','catalog:manage','orders:read','orders:advance','orders:print','reviews:reply','refunds:manage','pilots:assign'] : (activeCompany?.permissions || [])
   const can = permission => demo || permissions.includes(permission)
@@ -164,18 +164,6 @@ export default function CompanyDashboard({ demo = false }) {
     const ok = await act(() => confirm.type === 'delivery' ? data.advance(confirm.id, 'entregue', received) : data.decide(confirm.id, confirm.approve, response), confirm.type === 'delivery' ? 'Entrega concluída. O cliente já pode avaliar.' : 'Solicitação respondida.')
     if (ok) setConfirm(null)
   }
-  async function migrateLegacyCompany() {
-    if (busy) return
-    setBusy(true); setNotice(null)
-    try {
-      const result = await migrateDefaultCompany()
-      await refreshCompanies()
-      data.retry()
-      setNotice({ text: `Migração concluída. ${result.changed || 0} registros antigos foram vinculados ao PratoPronto.` })
-    } catch (error) {
-      setNotice({ error: true, text: error.message || 'Não foi possível migrar os dados antigos.' })
-    } finally { setBusy(false) }
-  }
   function print(id, kind) { setTicket({ id, kind }); setSelected(null) }
   if (!headings[aba] || !visibleTabs.some(([id]) => id === aba)) return <Navigate to={base + '/' + (visibleTabs[0]?.[0] || 'pedidos')} replace />
   return <div className="company-app">
@@ -190,16 +178,15 @@ export default function CompanyDashboard({ demo = false }) {
       <header className="company-topbar"><Link className="company-store-link" to={demo ? '/' : companyId === DEFAULT_COMPANY_ID ? '/pizzas' : '/loja/' + companyId}>Ver loja <span aria-hidden="true">↗</span></Link><span className={'connection ' + (!demo && (!online || data.error || data.fromCache) ? 'is-offline' : '')} role="status"><i />{connectionLabel}</span></header>
       {demo && <div className="company-demo-banner"><span><b>Você está em uma demonstração.</b> Pedidos e clientes fictícios. Nenhuma cobrança é realizada.</span><button type="button" onClick={() => { data.reset(); setNotice({ text: 'Demonstração reiniciada.' }) }}>Reiniciar teste ↻</button></div>}
       {!demo && <div className="company-live-note">Confira o ambiente e os serviços em Configurações antes de receber pedidos reais.</div>}
-      {!demo && activeCompany?.legacy && <div className="company-alert"><b>Migração multiempresa pendente.</b> Vincule os pedidos e avaliações antigos ao PratoPronto antes de cadastrar outras empresas. <button className="company-button secondary" type="button" disabled={busy} onClick={migrateLegacyCompany}>{busy ? 'Migrando…' : 'Migrar dados antigos'}</button></div>}
       {!online && !demo && <p className="company-alert" role="alert">Sem conexão. Os dados podem estar desatualizados. Reconecte para alterar pedidos.</p>}
       <main className="company-content">
         <div className="company-page-heading"><div><p>{headings[aba][0]}</p><h1>{headings[aba][1]}</h1></div>{demo && ['pedidos', 'entregas', 'concluidos'].includes(aba) ? <button className="company-button primary" type="button" onClick={() => { data.simulate(); navigate(base + '/pedidos'); setNotice({ text: 'Novo pedido fictício recebido.' }) }}>+ Simular novo pedido</button> : <span className="today-label">{new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</span>}</div>
         {['pedidos', 'entregas', 'concluidos'].includes(aba) && <section className="company-stats" aria-label="Resumo dos pedidos carregados"><div className="stat-highlight"><span>Novos pedidos<Icon name="orders" /></span><strong>{count(pending)}</strong><small>Aguardando aceite</small></div><div><span>Na cozinha<Icon name="clock" /></span><strong>{count(preparing)}</strong><small>Em preparo</small></div><div><span>Para entregar<Icon name="delivery" /></span><strong>{count(deliveries)}</strong><small>Prontos ou a caminho</small></div><div><span>Avaliações<Icon name="star" /></span><strong>{!fresh('reviews') ? '—' : rating}<em> / 5</em></strong><small>{count(data.reviews.length, 'reviews')} recebidas</small></div></section>}
         {notice && <div className={notice.error ? 'company-alert' : 'company-notice'} role={notice.error ? 'alert' : 'status'}>{notice.text}</div>}
-        {tabState.error ? <div className="company-empty" role="alert"><h2>Não foi possível carregar esta área</h2><p>{tabState.error}</p><div className="inline-actions"><button className="company-button primary" type="button" onClick={refreshSession} disabled={busy}>{busy ? 'Atualizando…' : 'Atualizar acesso'}</button><Link className="company-button secondary" to={base + '/configuracoes'}>Abrir configurações</Link></div><details className="company-permission-help"><summary>Como conferir as permissões do Firebase</summary><p>Confirme que sua conta está com e-mail verificado e cadastrada em <code>restaurant_members</code> na empresa correta. As permissões desta área são aplicadas pelas políticas RLS do Supabase.</p><p>Se o acesso continuar bloqueado, atualize a sessão e confira a função do membro.</p></details></div> : tabState.loading ? <div className="company-empty" role="status">Carregando esta área…</div> : <>
+        {tabState.error ? <div className="company-empty" role="alert"><h2>Não foi possível carregar esta área</h2><p>{tabState.error}</p><div className="inline-actions"><button className="company-button primary" type="button" onClick={refreshSession} disabled={busy}>{busy ? 'Atualizando…' : 'Atualizar acesso'}</button><Link className="company-button secondary" to={base + '/configuracoes'}>Abrir configurações</Link></div><details className="company-permission-help"><summary>Como conferir as permissões do Supabase</summary><p>Confirme que sua conta está com e-mail verificado e cadastrada em <code>restaurant_members</code> na empresa correta. As permissões desta área são aplicadas pelas políticas RLS do Supabase.</p><p>Se o acesso continuar bloqueado, atualize a sessão e confira a função do membro.</p></details></div> : tabState.loading ? <div className="company-empty" role="status">Carregando esta área…</div> : <>
           {aba === 'promocoes' && (companyId === DEFAULT_COMPANY_ID || demo ? <Promotions settings={data.settings} now={now} demo={demo} busy={blocked} feedback={notice?.error ? notice.text : ''} onSave={(id, offer) => act(() => data.promotion(id, offer), 'Promoção salva. A validade e o desconto serão aplicados no cardápio.')} /> : <div className="company-panel"><h2>Ofertas da empresa</h2><p>O cardápio multiempresa já aceita produtos próprios. A edição de promoções personalizadas será ligada a esses produtos em uma próxima etapa.</p></div>)}
           {aba === 'configuracoes' && <StoreSettings demo={demo} companyId={companyId} />}
-          {aba === 'equipe' && !demo && <CompanyTeam companyId={companyId} />}
+          {aba === 'equipe' && !demo && <div className="company-team"><CompanyTeam companyId={companyId} /><CompanyPilotContacts companyId={companyId} /></div>}
           {['pedidos', 'entregas', 'concluidos'].includes(aba) && <>
             <div className="company-toolbar"><label className="company-search"><Icon name="search" /><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar pedido, cliente ou bairro" aria-label="Buscar pedido, cliente ou bairro" /></label><select aria-label="Filtrar por etapa" value={status} onChange={event => setStatus(event.target.value)}><option value="todos">Todas as etapas</option>{ORDER_STATUS_OPTIONS.filter(s => aba === 'concluidos' ? ['entregue', 'cancelado'].includes(s.id) : aba === 'entregas' ? ['pronto', 'saiu_entrega'].includes(s.id) : ['aguardando_pagamento', 'confirmado', 'preparando', 'pronto'].includes(s.id)).map(s => <option key={s.id} value={s.id}>{s.label}</option>)}</select><span className="results-count">{currentOrders.length} pedidos</span></div>
             <section className="company-orders" aria-label="Lista de pedidos">{currentOrders.map(order => {
@@ -215,7 +202,7 @@ export default function CompanyDashboard({ demo = false }) {
                 {late && <p className="order-attention">Há mais de 30 min · confira o andamento</p>}
                 <div className="order-card-actions"><button className="company-button subtle" onClick={() => setSelected(order.id)}>Ver detalhes</button>{can('orders:print') && <button className="icon-button" aria-label={'Imprimir comanda do pedido ' + order.id} onClick={() => print(order.id, aba === 'entregas' ? 'entrega' : 'cozinha')}><Icon name="print" /></button>}</div>
                 {can('orders:advance') && NEXT_STATUS[stage] && !(order.deliveryVerificationRequired && ['pronto','saiu_entrega'].includes(stage)) && <button className={'company-button wide ' + (stage === 'confirmado' ? 'primary' : 'dark')} disabled={blocked} onClick={() => advance(order)}>{NEXT_ACTION[stage]}<Icon name="arrow" size={18} /></button>}
-                {stage === 'pronto' && order.deliveryVerificationRequired && <p className="order-attention">{order.assignedCourier ? 'Piloto atribuído · aguardando início da rota.' : 'Atribua um Piloto Parceiro nos detalhes.'}</p>}
+                {stage === 'pronto' && order.deliveryVerificationRequired && <p className="order-attention">{order.assignedCourier ? 'Piloto atribuído · aguardando início da rota.' : 'Envie uma oferta para um Piloto Parceiro nos detalhes.'}</p>}
                 {stage === 'saiu_entrega' && order.deliveryVerificationRequired && <p className="order-attention">Aguardando senha de entrega pelo Piloto Parceiro.</p>}
               </article>
             })}</section>
