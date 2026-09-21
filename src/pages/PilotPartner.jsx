@@ -13,7 +13,7 @@ import PrintTicket from '../components/company/PrintTicket.jsx'
 import Icon from '../components/company/Icon.jsx'
 import '../company.css'
 
-const emptyPilot = { displayName: '', vehicleType: 'moto', city: '', acceptingOffers: true }
+const emptyPilot = { vehiclePlate: '', motorcycleType: '', vehicleColor: '', acceptingOffers: true }
 
 export default function PilotPartner() {
   const { usuario, sair } = useUser()
@@ -28,17 +28,14 @@ export default function PilotPartner() {
   const [ticket, setTicket] = useState(null)
 
   useEffect(() => {
-    if (!pilotProfile) {
-      setProfileForm(current => ({ ...current, displayName: current.displayName || usuario?.nome || '', city: current.city || usuario?.cidade || '' }))
-      return
-    }
+    if (!pilotProfile) return
     setProfileForm({
-      displayName: pilotProfile.display_name || usuario?.nome || '',
-      vehicleType: pilotProfile.vehicle_type || 'moto',
-      city: pilotProfile.city || usuario?.cidade || '',
+      vehiclePlate: pilotProfile.vehicle_plate || '',
+      motorcycleType: pilotProfile.motorcycle_type || '',
+      vehicleColor: pilotProfile.vehicle_color || '',
       acceptingOffers: pilotProfile.accepting_offers !== false,
     })
-  }, [pilotProfile, usuario?.nome, usuario?.cidade])
+  }, [pilotProfile])
 
   useEffect(() => {
     if (!usuario?.uid || !pilotProfile) { setOffers([]); setOrders([]); return }
@@ -69,7 +66,7 @@ export default function PilotPartner() {
     try {
       await savePilotProfile(profileForm)
       await refresh()
-      setNotice({ text: pilotProfile ? 'Perfil de Piloto Parceiro atualizado.' : 'Cadastro de Piloto Parceiro concluído. Agora você pode receber ofertas de empresas.' })
+      setNotice({ text: 'Cadastro de Piloto Parceiro atualizado.' })
     } catch (err) { setNotice({ error: true, text: err.message || 'Não foi possível salvar o perfil de piloto.' }) }
     finally { setBusy('') }
   }
@@ -107,8 +104,8 @@ export default function PilotPartner() {
       <Link className="company-brand" to="/piloto"><img src="/icons/app-icon.svg" alt="" width="42" height="42" /><span>Prato<span>Pronto</span><small>PILOTO PARCEIRO</small></span></Link>
       <div className="workspace-label">ENTREGAS <span>PARCEIRAS</span></div>
       <div className="company-selector">
-        <b>{pilotProfile ? 'Perfil ativo' : 'Cadastro de piloto'}</b>
-        <small>{pilotProfile ? 'Você pode receber ofertas de várias empresas.' : 'Cadastre-se como piloto para começar a receber ofertas.'}</small>
+        <b>Perfil ativo</b>
+        <small>Você pode receber ofertas de várias empresas.</small>
       </div>
       <div className="sidebar-bottom">
         <div className="company-account"><span>{usuario?.nome?.slice(0, 2).toUpperCase() || 'PP'}</span><div><strong>{usuario?.nome || 'Piloto Parceiro'}</strong><small>{pilotProfile?.vehicle_type || 'Conta PratoPronto'}</small></div></div>
@@ -124,16 +121,21 @@ export default function PilotPartner() {
         {notice && <div className={notice.error ? 'company-alert' : 'company-notice'} role={notice.error ? 'alert' : 'status'}>{notice.text}</div>}
 
         <section className="company-panel">
-          <h2>{pilotProfile ? 'Meu cadastro de piloto' : 'Quero ser Piloto Parceiro'}</h2>
-          <p>O piloto é independente das funções internas das empresas. Você escolhe se está disponível e decide aceitar ou recusar cada oferta.</p>
+          <h2>Meu cadastro de piloto</h2>
+          <p>Nome, telefone e cidade continuam vindo do seu perfil PratoPronto. Aqui você pode atualizar os dados da sua moto e sua disponibilidade.</p>
+          <div className="settings-grid">
+            <div><small>Nome</small><strong>{usuario?.nome || '—'}</strong></div>
+            <div><small>Telefone</small><strong>{usuario?.telefone || '—'}</strong></div>
+            <div><small>Cidade</small><strong>{usuario?.cidade || '—'}</strong></div>
+          </div>
           <form className="settings-form" onSubmit={saveProfileForm}>
             <div className="settings-grid">
-              <label>Nome exibido<input required minLength="2" maxLength="100" value={profileForm.displayName} onChange={event => setProfileForm(value => ({ ...value, displayName: event.target.value }))} /></label>
-              <label>Veículo<select value={profileForm.vehicleType} onChange={event => setProfileForm(value => ({ ...value, vehicleType: event.target.value }))}><option value="moto">Moto</option><option value="carro">Carro</option><option value="bicicleta">Bicicleta</option><option value="outro">Outro</option></select></label>
-              <label>Cidade<input maxLength="100" value={profileForm.city} onChange={event => setProfileForm(value => ({ ...value, city: event.target.value }))} /></label>
+              <label>Placa da moto<input required maxLength="7" autoCapitalize="characters" value={profileForm.vehiclePlate} onChange={event => setProfileForm(value => ({ ...value, vehiclePlate: event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7) }))} /></label>
+              <label>Tipo ou modelo da moto<input required minLength="2" maxLength="60" value={profileForm.motorcycleType} onChange={event => setProfileForm(value => ({ ...value, motorcycleType: event.target.value }))} /></label>
+              <label>Cor da moto<input required minLength="2" maxLength="40" value={profileForm.vehicleColor} onChange={event => setProfileForm(value => ({ ...value, vehicleColor: event.target.value }))} /></label>
             </div>
             <label className="company-checkbox"><input type="checkbox" checked={profileForm.acceptingOffers} onChange={event => setProfileForm(value => ({ ...value, acceptingOffers: event.target.checked }))} />Aceitar novas ofertas de entrega</label>
-            <button className="company-button primary" disabled={busy === 'profile'}>{busy === 'profile' ? 'Salvando…' : pilotProfile ? 'Atualizar perfil' : 'Cadastrar como Piloto Parceiro'}</button>
+            <button className="company-button primary" disabled={busy === 'profile'}>{busy === 'profile' ? 'Salvando…' : 'Atualizar cadastro'}</button>
           </form>
         </section>
 
