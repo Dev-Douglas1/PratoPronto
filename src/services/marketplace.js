@@ -5,6 +5,8 @@ import { db } from '../firebase.js'
 import { callServer } from './server.js'
 import { normalizeSearch } from '../config/marketplace.js'
 import { timestampMillis } from '../utils/pedido.js'
+import { produtos as defaultProducts } from '../data/produtos.js'
+import { DEFAULT_COMPANY_ID } from '../config/marketplace.js'
 
 const records = snapshot => snapshot.docs.map(item => ({ ...item.data(), id: item.id }))
 
@@ -85,8 +87,14 @@ export async function searchMarketplace(term = '') {
     getDocs(query(collectionGroup(db, 'products'), where('public', '==', true), where('disponivel', '==', true), limit(250))),
   ])
   const needle = normalizeSearch(term)
-  const companies = records(companiesSnap).filter(company => !needle || normalizeSearch(company.name).includes(needle))
-  const products = records(productsSnap).filter(product => {
+  const fetchedCompanies = records(companiesSnap)
+  const defaultCompany = { id: DEFAULT_COMPANY_ID, name: 'PratoPronto', active: true }
+  const companyMap = new Map([[DEFAULT_COMPANY_ID, defaultCompany], ...fetchedCompanies.map(company => [company.id, company])])
+  const companies = [...companyMap.values()].filter(company => !needle || normalizeSearch(company.name).includes(needle))
+  const activeCompanyIds = new Set([...companyMap.values()].filter(company => company.active !== false).map(company => company.id))
+  const remoteProducts = records(productsSnap).filter(product => activeCompanyIds.has(product.companyId))
+  const legacyProducts = defaultProducts.map(product => ({ ...product, companyId: DEFAULT_COMPANY_ID, categoria: product.personalizavel ? 'Pizzas' : 'Bebidas', public: true, disponivel: true }))
+  const products = [...legacyProducts, ...remoteProducts].filter(product => {
     if (!needle) return true
     return [product.nome, product.descricao, product.categoria].some(value => normalizeSearch(value).includes(needle))
   })
