@@ -1,4 +1,4 @@
-import { validateName, validatePhone, phoneInput } from '../../functions/src/input-policy.js'
+import { validateName, validatePhone, phoneInput } from '../shared/input-policy.js'
 import AddressFields from '../components/AddressFields.jsx'
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
