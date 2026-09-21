@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
 import { CartProvider } from './context/CartContext.jsx'
 import { UserProvider } from './context/UserContext.jsx'
+import { CompanyProvider } from './context/CompanyContext.jsx'
 import AppErrorBoundary from './components/AppErrorBoundary.jsx'
 import './index.css'
 import './mobile-responsive.css'
@@ -20,10 +21,12 @@ createRoot(document.getElementById('root')).render(
     <AppErrorBoundary>
     <BrowserRouter>
       <UserProvider>
+        <CompanyProvider>
         <CartProvider>
           <App />
           <StartupReady />
         </CartProvider>
+        </CompanyProvider>
       </UserProvider>
     </BrowserRouter>
     </AppErrorBoundary>
