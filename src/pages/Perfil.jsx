@@ -102,7 +102,9 @@ export default function Perfil() {
         <button className="btn btn-primary" type="submit" disabled={salvando}>{salvando ? 'Salvando...' : 'Salvar dados'}</button>
         <button className="btn ghost-button" type="button" onClick={() => navigate('/privacidade')}>Privacidade e meus dados</button>
         {!!staffCompanies.length && <button className="btn admin-button" type="button" onClick={() => navigate('/empresa/pedidos')}>Área da empresa</button>}
-        <button className="btn ghost-button" type="button" onClick={() => navigate('/piloto')}>{pilotProfile ? 'Área Piloto Parceiro' : 'Quero ser Piloto Parceiro'}</button>
+        <button className="btn ghost-button" type="button" onClick={() => navigate(pilotProfile ? '/piloto' : '/piloto/cadastro')}>
+          {pilotProfile ? 'Área Piloto Parceiro' : 'Se torne um piloto das entregas'}
+        </button>
         <button className="btn btn-secondary" type="button" onClick={async () => { await sair(); navigate('/login') }}>Sair</button>
       </form>
       <BottomNav />
