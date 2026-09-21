@@ -113,6 +113,97 @@ export async function savePilotProfile({ vehiclePlate, motorcycleType, vehicleCo
   return data
 }
 
+
+const PILOT_BUCKET = 'pilot-documents'
+const PILOT_ALLOWED_TYPES = new Set(['image/jpeg','image/png','image/webp','application/pdf'])
+const PILOT_MAX_BYTES = 5 * 1024 * 1024
+
+function pilotFileExtension(file) {
+  const fromName = String(file?.name || '').split('.').pop()?.toLowerCase()
+  if (fromName && /^[a-z0-9]{2,5}$/.test(fromName)) return fromName
+  const byType = { 'image/jpeg':'jpg', 'image/png':'png', 'image/webp':'webp', 'application/pdf':'pdf' }
+  return byType[file?.type] || 'bin'
+}
+
+export async function uploadPilotDocument(file, kind) {
+  if (!file) throw new Error('Selecione o arquivo obrigatório.')
+  if (!PILOT_ALLOWED_TYPES.has(file.type)) throw new Error('Use JPG, PNG, WEBP ou PDF.')
+  if (file.size > PILOT_MAX_BYTES) throw new Error('Cada arquivo pode ter no máximo 5 MB.')
+  if (!['profile','motorcycle','cnh-front','cnh-back'].includes(kind)) throw new Error('Tipo de documento inválido.')
+
+  const supabase = ready()
+  const { data: userData, error: userError } = await supabase.auth.getUser()
+  if (userError) throw userError
+  const uid = userData.user?.id
+  if (!uid) throw new Error('Entre novamente antes de enviar os documentos.')
+
+  const path = `${uid}/${kind}/${crypto.randomUUID()}.${pilotFileExtension(file)}`
+  const { error } = await supabase.storage.from(PILOT_BUCKET).upload(path, file, {
+    cacheControl: '3600',
+    contentType: file.type,
+    upsert: false,
+  })
+  if (error) throw error
+  return path
+}
+
+export async function removePilotDocuments(paths = []) {
+  const clean = paths.filter(Boolean)
+  if (!clean.length) return
+  const { error } = await ready().storage.from(PILOT_BUCKET).remove(clean)
+  if (error) throw error
+}
+
+export async function submitPilotApplication({
+  cnhCategory, cnhExpiry, profilePhotoPath, motorcyclePhotoPath, cnhFrontPath, cnhBackPath,
+}) {
+  const { data, error } = await ready().rpc('submit_pilot_application', {
+    p_cnh_category: cnhCategory,
+    p_cnh_expiry: cnhExpiry,
+    p_profile_photo_path: profilePhotoPath,
+    p_motorcycle_photo_path: motorcyclePhotoPath,
+    p_cnh_front_path: cnhFrontPath,
+    p_cnh_back_path: cnhBackPath,
+  })
+  if (error) throw error
+  return data
+}
+
+export async function setPilotAvailability(accepting) {
+  const { data, error } = await ready().rpc('set_pilot_availability', { p_accepting: accepting === true })
+  if (error) throw error
+  return data
+}
+
+export async function isPlatformAdmin() {
+  const { data, error } = await ready().rpc('is_platform_admin')
+  if (error) throw error
+  return data === true
+}
+
+export async function listPilotApplications(status = 'pending') {
+  const { data, error } = await ready().rpc('list_pilot_applications', { p_status: status || null })
+  if (error) throw error
+  return data || []
+}
+
+export async function reviewPilotApplication(profileId, approve, reason = '') {
+  const { data, error } = await ready().rpc('review_pilot_application', {
+    p_profile_id: profileId,
+    p_approve: approve === true,
+    p_reason: reason,
+  })
+  if (error) throw error
+  return data
+}
+
+export async function pilotDocumentUrl(path, expiresIn = 600) {
+  if (!path) return ''
+  const { data, error } = await ready().storage.from(PILOT_BUCKET).createSignedUrl(path, expiresIn)
+  if (error) throw error
+  return data?.signedUrl || ''
+}
+
 export async function listAvailablePilots() {
   const { data, error } = await ready().rpc('list_available_pilots')
   if (error) throw error
