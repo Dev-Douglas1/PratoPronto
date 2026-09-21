@@ -59,7 +59,7 @@ test('cadastro de piloto nasce no perfil e exige dados da moto', async () => {
   ])
   assert.match(profile, /Se torne um piloto das entregas/)
   assert.match(profile, /\/piloto\/cadastro/)
-  assert.match(signup, /Dados do seu perfil/)
+  assert.match(signup, /Dados vindos do seu perfil/)
   assert.match(signup, /Placa da moto/)
   assert.match(signup, /Tipo ou modelo da moto/)
   assert.match(signup, /Cor da moto/)
@@ -70,4 +70,28 @@ test('cadastro de piloto nasce no perfil e exige dados da moto', async () => {
   assert.match(marketplace, /p_vehicle_plate/)
   assert.match(marketplace, /p_motorcycle_type/)
   assert.match(marketplace, /p_vehicle_color/)
+  assert.match(signup, /CNH — frente/)
+  assert.match(signup, /CNH — verso/)
+  assert.match(signup, /Foto atual do piloto/)
+  assert.match(signup, /Foto da moto/)
+  assert.match(signup, /submitPilotApplication/)
+  assert.match(marketplace, /pilot-documents/)
+  assert.match(marketplace, /submit_pilot_application/)
+})
+
+test('ofertas de entrega ficam bloqueadas até aprovação manual do piloto', async () => {
+  const [pilot, review, route, marketplace] = await Promise.all([
+    readFile('src/pages/PilotPartner.jsx', 'utf8'),
+    readFile('src/pages/PilotReview.jsx', 'utf8'),
+    readFile('src/components/PlatformAdminRoute.jsx', 'utf8'),
+    readFile('src/services/marketplace.js', 'utf8'),
+  ])
+  assert.match(pilot, /approval_status === 'approved'/)
+  assert.match(pilot, /Em análise/)
+  assert.match(pilot, /Cadastro precisa de correção/)
+  assert.match(review, /Aprovar Piloto Parceiro/)
+  assert.match(review, /Reprovar e pedir correção/)
+  assert.match(route, /platformAdmin/)
+  assert.match(marketplace, /review_pilot_application/)
+  assert.match(marketplace, /list_pilot_applications/)
 })
