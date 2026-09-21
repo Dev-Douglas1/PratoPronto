@@ -7,17 +7,21 @@ import { renderToString } from 'react-dom/server'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { accountDestination } from '../src/utils/access.js'
 
-let server, UserProvider, CartProvider, useCart
+let server, UserProvider, CompanyProvider, CartProvider, useCart
 before(async () => {
   // No browser, external requests, real accounts or listening HTTP server.
   server = await createServer({ configFile: false, plugins: [react()], server: { middlewareMode: true, hmr: false },
-    define: Object.fromEntries(['API_KEY', 'AUTH_DOMAIN', 'PROJECT_ID', 'APP_ID', 'APPCHECK_SITE_KEY'].map(key => ['import.meta.env.VITE_FIREBASE_' + key, '""'])) })
+    define: {
+      'import.meta.env.VITE_SUPABASE_URL': '"https://fixture.supabase.co"',
+      'import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY': '"sb_publishable_fixture"',
+    } })
   ;({ UserProvider } = await server.ssrLoadModule('/src/context/UserContext.jsx'))
+  ;({ CompanyProvider } = await server.ssrLoadModule('/src/context/CompanyContext.jsx'))
   ;({ CartProvider, useCart } = await server.ssrLoadModule('/src/context/CartContext.jsx'))
 })
 after(async () => { await server?.close() })
-const render = (Page, props = {}, route = '/') => renderToString(h(MemoryRouter, { initialEntries: [route] }, h(UserProvider, null, h(CartProvider, null,
-  route.startsWith('/demo/empresa') ? h(Routes, null, h(Route, { path: '/demo/empresa/:aba?', element: h(Page, props) })) : h(Page, props)))))
+const render = (Page, props = {}, route = '/') => renderToString(h(MemoryRouter, { initialEntries: [route] }, h(UserProvider, null, h(CompanyProvider, null, h(CartProvider, null,
+  route.startsWith('/demo/empresa') ? h(Routes, null, h(Route, { path: '/demo/empresa/:aba?', element: h(Page, props) })) : h(Page, props))))))
 
 test('árvore real do aplicativo abre antes de login e carregamento da loja', () => {
   function Summary() { const cart = useCart(); return h('p', null, cart.quantidadeTotal + ' produtos; entrega ' + (cart.taxaEntrega ?? 'a confirmar')) }
