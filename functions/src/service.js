@@ -311,6 +311,27 @@ export function createService({ db, config, mp, authAdmin, now = () => new Date(
       health: metrics.data() || null,
     }
   }
+  async function migrateDefaultCompany(context) {
+    const actor = await admin(context)
+    const refs = [db.collection('orders'), db.collection('refundRequests'), db.collection('reviews')]
+    let changed = 0
+    for (const collectionRef of refs) {
+      const snapshot = await collectionRef.limit(1000).get()
+      const pending = snapshot.docs.filter(doc => !doc.data().companyId)
+      for (let offset = 0; offset < pending.length; offset += 400) {
+        const batch = db.batch()
+        for (const doc of pending.slice(offset, offset + 400)) {
+          batch.set(doc.ref, { companyId: DEFAULT_COMPANY_ID, updatedAt: now(), updatedBy: actor.uid }, { merge: true })
+          changed += 1
+        }
+        await batch.commit()
+      }
+    }
+    await companyRef(DEFAULT_COMPANY_ID).set({ id: DEFAULT_COMPANY_ID, name: 'PratoPronto', searchName: 'pratopronto', active: true, updatedAt: now() }, { merge: true })
+    await membershipRef(DEFAULT_COMPANY_ID, actor.uid).set({ companyId: DEFAULT_COMPANY_ID, userId: actor.uid, email: actor.email, role: 'owner', active: true, updatedAt: now() }, { merge: true })
+    return { companyId: DEFAULT_COMPANY_ID, changed }
+  }
+
   async function listMyCompanies(context) {
     const actor = user(context)
     const memberships = await db.collection('companyMembers').where('userId', '==', actor.uid).get()
@@ -458,6 +479,6 @@ export function createService({ db, config, mp, authAdmin, now = () => new Date(
     return { requested: true }
   }
   return { storefront, quote, checkout, resume, advance, requestRefund, decide, confirmManualRefund, saveSettings, readiness, privacyRequest,
-    listMyCompanies, createCompany, saveCompanyMember, removeCompanyMember, saveCompanyProduct, assignPilot, pilotStartDelivery, pilotConfirmDelivery,
+    migrateDefaultCompany, listMyCompanies, createCompany, saveCompanyMember, removeCompanyMember, saveCompanyProduct, assignPilot, pilotStartDelivery, pilotConfirmDelivery,
     admin, companyAccess, rate }
 }
