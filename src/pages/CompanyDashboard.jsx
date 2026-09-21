@@ -20,6 +20,7 @@ import CompanyTeam from '../components/company/CompanyTeam.jsx'
 import CompanyCatalogManager from '../components/company/CompanyCatalogManager.jsx'
 import PilotAssignment from '../components/company/PilotAssignment.jsx'
 import { DEFAULT_COMPANY_ID, roleLabel } from '../config/marketplace.js'
+import { migrateDefaultCompany } from '../services/marketplace.js'
 import '../company.css'
 import InstallApp from '../components/InstallApp.jsx'
 
@@ -85,7 +86,7 @@ export default function CompanyDashboard({ demo = false }) {
   const { aba = 'pedidos' } = useParams()
   const navigate = useNavigate()
   const { usuario, sair, conferirVerificacaoEmail } = useUser()
-  const { staffCompanies, activeCompanyId, activeCompany, selectCompany } = useCompany()
+  const { staffCompanies, activeCompanyId, activeCompany, selectCompany, refresh: refreshCompanies } = useCompany()
   const companyId = demo ? DEFAULT_COMPANY_ID : activeCompanyId
   const data = useCompanyData(demo, companyId)
   const tabState = companyTabState(data.sources, aba)
@@ -151,6 +152,18 @@ export default function CompanyDashboard({ demo = false }) {
     const ok = await act(() => confirm.type === 'delivery' ? data.advance(confirm.id, 'entregue', received) : data.decide(confirm.id, confirm.approve, response), confirm.type === 'delivery' ? 'Entrega concluída. O cliente já pode avaliar.' : 'Solicitação respondida.')
     if (ok) setConfirm(null)
   }
+  async function migrateLegacyCompany() {
+    if (busy) return
+    setBusy(true); setNotice(null)
+    try {
+      const result = await migrateDefaultCompany()
+      await refreshCompanies()
+      data.retry()
+      setNotice({ text: `Migração concluída. ${result.changed || 0} registros antigos foram vinculados ao PratoPronto.` })
+    } catch (error) {
+      setNotice({ error: true, text: error.message || 'Não foi possível migrar os dados antigos.' })
+    } finally { setBusy(false) }
+  }
   function print(id, kind) { setTicket({ id, kind }); setSelected(null) }
   if (!headings[aba]) return <Navigate to={base + '/pedidos'} replace />
   return <div className="company-app">
@@ -165,6 +178,7 @@ export default function CompanyDashboard({ demo = false }) {
       <header className="company-topbar"><Link className="company-store-link" to={demo ? '/' : companyId === DEFAULT_COMPANY_ID ? '/pizzas' : '/loja/' + companyId}>Ver loja <span aria-hidden="true">↗</span></Link><span className={'connection ' + (!demo && (!online || data.error || data.fromCache) ? 'is-offline' : '')} role="status"><i />{connectionLabel}</span></header>
       {demo && <div className="company-demo-banner"><span><b>Você está em uma demonstração.</b> Pedidos e clientes fictícios. Nenhuma cobrança é realizada.</span><button type="button" onClick={() => { data.reset(); setNotice({ text: 'Demonstração reiniciada.' }) }}>Reiniciar teste ↻</button></div>}
       {!demo && <div className="company-live-note">Confira o ambiente e os serviços em Configurações antes de receber pedidos reais.</div>}
+      {!demo && activeCompany?.legacy && <div className="company-alert"><b>Migração multiempresa pendente.</b> Vincule os pedidos e avaliações antigos ao PratoPronto antes de cadastrar outras empresas. <button className="company-button secondary" type="button" disabled={busy} onClick={migrateLegacyCompany}>{busy ? 'Migrando…' : 'Migrar dados antigos'}</button></div>}
       {!online && !demo && <p className="company-alert" role="alert">Sem conexão. Os dados podem estar desatualizados. Reconecte para alterar pedidos.</p>}
       <main className="company-content">
         <div className="company-page-heading"><div><p>{headings[aba][0]}</p><h1>{headings[aba][1]}</h1></div>{demo && ['pedidos', 'entregas', 'concluidos'].includes(aba) ? <button className="company-button primary" type="button" onClick={() => { data.simulate(); navigate(base + '/pedidos'); setNotice({ text: 'Novo pedido fictício recebido.' }) }}>+ Simular novo pedido</button> : <span className="today-label">{new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</span>}</div>
