@@ -11,7 +11,7 @@ import { NEXT_ACTION, NEXT_STATUS, normalizeOrderStatus, orderStatusLabel, ORDER
 import { amountToCollect, filterOrders, paymentLabel, paymentStatusLabel, timestampMillis } from '../utils/pedido.js'
 import { formatarMoeda as money } from '../utils/moeda.js'
 import { subscribeOrderEvents } from '../services/company.js'
-import { traduzirErroFirebase } from '../utils/firebaseError.js'
+import { traduzirErroSupabase } from '../utils/supabaseError.js'
 import { companyTabState } from '../utils/dataAccess.js'
 import Icon from '../components/company/Icon.jsx'
 import Modal from '../components/company/Modal.jsx'
@@ -41,7 +41,7 @@ function OrderDetails({ order, demo, data, companyId, canPrint, canAdvance, canA
   const [copied, setCopied] = useState(false)
   useEffect(() => {
     if (demo) return
-    return subscribeOrderEvents(order.id, setEvents, err => setError(traduzirErroFirebase(err)))
+    return subscribeOrderEvents(order.id, setEvents, err => setError(traduzirErroSupabase(err)))
   }, [order.id, demo])
   const history = demo ? data.events[order.id] || [] : events
   const address = [order.entrega.endereco + ', ' + order.entrega.numero, order.entrega.bairro, order.entrega.cidade, order.entrega.uf, order.entrega.cep, order.entrega.complemento].filter(Boolean).join(' · ')
@@ -148,7 +148,7 @@ export default function CompanyDashboard({ demo = false }) {
     if (!demo && (!online || tabState.loading || tabState.fromCache || tabState.error)) { setNotice({ error: true, text: 'Aguarde a conexão com o restaurante antes de salvar alterações.' }); return false }
     setBusy(true); setNotice(null)
     try { await action(); setNotice({ text: success }); return true }
-    catch (error) { setNotice({ error: true, text: error.code ? traduzirErroFirebase(error) : error.message || 'Não foi possível salvar. Tente novamente.' }); return false }
+    catch (error) { setNotice({ error: true, text: error.code ? traduzirErroSupabase(error) : error.message || 'Não foi possível salvar. Tente novamente.' }); return false }
     finally { setBusy(false) }
   }
   function advance(order) {
@@ -196,7 +196,7 @@ export default function CompanyDashboard({ demo = false }) {
         <div className="company-page-heading"><div><p>{headings[aba][0]}</p><h1>{headings[aba][1]}</h1></div>{demo && ['pedidos', 'entregas', 'concluidos'].includes(aba) ? <button className="company-button primary" type="button" onClick={() => { data.simulate(); navigate(base + '/pedidos'); setNotice({ text: 'Novo pedido fictício recebido.' }) }}>+ Simular novo pedido</button> : <span className="today-label">{new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</span>}</div>
         {['pedidos', 'entregas', 'concluidos'].includes(aba) && <section className="company-stats" aria-label="Resumo dos pedidos carregados"><div className="stat-highlight"><span>Novos pedidos<Icon name="orders" /></span><strong>{count(pending)}</strong><small>Aguardando aceite</small></div><div><span>Na cozinha<Icon name="clock" /></span><strong>{count(preparing)}</strong><small>Em preparo</small></div><div><span>Para entregar<Icon name="delivery" /></span><strong>{count(deliveries)}</strong><small>Prontos ou a caminho</small></div><div><span>Avaliações<Icon name="star" /></span><strong>{!fresh('reviews') ? '—' : rating}<em> / 5</em></strong><small>{count(data.reviews.length, 'reviews')} recebidas</small></div></section>}
         {notice && <div className={notice.error ? 'company-alert' : 'company-notice'} role={notice.error ? 'alert' : 'status'}>{notice.text}</div>}
-        {tabState.error ? <div className="company-empty" role="alert"><h2>Não foi possível carregar esta área</h2><p>{tabState.error}</p><div className="inline-actions"><button className="company-button primary" type="button" onClick={refreshSession} disabled={busy}>{busy ? 'Atualizando…' : 'Atualizar acesso'}</button><Link className="company-button secondary" to={base + '/configuracoes'}>Abrir configurações</Link></div><details className="company-permission-help"><summary>Como conferir as permissões do Firebase</summary><p>No projeto <b>pratopronto-d861d</b>, publique a versão atual de <code>firestore.rules</code> em Firestore Database → Regras. Confirme que sua conta tem e-mail verificado e que o documento <code>admins/UID_DA_CONTA</code> possui <code>role: restaurant_admin</code>.</p><p>Estas consultas ainda usam o Firebase. Alterar as tabelas do Supabase não libera este painel.</p></details></div> : tabState.loading ? <div className="company-empty" role="status">Carregando esta área…</div> : <>
+        {tabState.error ? <div className="company-empty" role="alert"><h2>Não foi possível carregar esta área</h2><p>{tabState.error}</p><div className="inline-actions"><button className="company-button primary" type="button" onClick={refreshSession} disabled={busy}>{busy ? 'Atualizando…' : 'Atualizar acesso'}</button><Link className="company-button secondary" to={base + '/configuracoes'}>Abrir configurações</Link></div><details className="company-permission-help"><summary>Como conferir as permissões do Firebase</summary><p>Confirme que sua conta está com e-mail verificado e cadastrada em <code>restaurant_members</code> na empresa correta. As permissões desta área são aplicadas pelas políticas RLS do Supabase.</p><p>Se o acesso continuar bloqueado, atualize a sessão e confira a função do membro.</p></details></div> : tabState.loading ? <div className="company-empty" role="status">Carregando esta área…</div> : <>
           {aba === 'promocoes' && (companyId === DEFAULT_COMPANY_ID || demo ? <Promotions settings={data.settings} now={now} demo={demo} busy={blocked} feedback={notice?.error ? notice.text : ''} onSave={(id, offer) => act(() => data.promotion(id, offer), 'Promoção salva. A validade e o desconto serão aplicados no cardápio.')} /> : <div className="company-panel"><h2>Ofertas da empresa</h2><p>O cardápio multiempresa já aceita produtos próprios. A edição de promoções personalizadas será ligada a esses produtos em uma próxima etapa.</p></div>)}
           {aba === 'configuracoes' && <StoreSettings demo={demo} companyId={companyId} />}
           {aba === 'equipe' && !demo && <CompanyTeam companyId={companyId} />}
