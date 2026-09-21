@@ -95,3 +95,27 @@ test('ofertas de entrega ficam bloqueadas até aprovação manual do piloto', as
   assert.match(marketplace, /review_pilot_application/)
   assert.match(marketplace, /list_pilot_applications/)
 })
+
+
+test('runtime não referencia tabelas e RPCs legadas removidas do Supabase', async () => {
+  const paths = await files('src')
+  const forbidden = [
+    'app_commit',
+    'app_rate',
+    'store_settings',
+    "from('pedidos')",
+    'pedido_itens',
+    "from('produtos')",
+    "from('enderecos')",
+    "from('favoritos')",
+    'restaurant_admins',
+  ]
+  const violations = []
+  for (const path of paths) {
+    const source = await readFile(path, 'utf8')
+    for (const token of forbidden) {
+      if (source.includes(token)) violations.push(path + ' -> ' + token)
+    }
+  }
+  assert.deepEqual(violations, [])
+})
