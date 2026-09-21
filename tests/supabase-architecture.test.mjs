@@ -48,3 +48,26 @@ test('papéis internos não incluem piloto e entregas usam ofertas separadas', a
   assert.match(pilot, /Aceitar entrega/)
   assert.match(pilot, /Recusar/)
 })
+
+
+test('cadastro de piloto nasce no perfil e exige dados da moto', async () => {
+  const [profile, signup, route, marketplace] = await Promise.all([
+    readFile('src/pages/Perfil.jsx', 'utf8'),
+    readFile('src/pages/PilotSignup.jsx', 'utf8'),
+    readFile('src/components/PilotRoute.jsx', 'utf8'),
+    readFile('src/services/marketplace.js', 'utf8'),
+  ])
+  assert.match(profile, /Se torne um piloto das entregas/)
+  assert.match(profile, /\/piloto\/cadastro/)
+  assert.match(signup, /Dados do seu perfil/)
+  assert.match(signup, /Placa da moto/)
+  assert.match(signup, /Tipo ou modelo da moto/)
+  assert.match(signup, /Cor da moto/)
+  assert.match(signup, /usuario\.telefone/)
+  assert.match(signup, /usuario\.cidade/)
+  assert.match(route, /!pilotProfile/)
+  assert.match(marketplace, /get_my_pilot_profile/)
+  assert.match(marketplace, /p_vehicle_plate/)
+  assert.match(marketplace, /p_motorcycle_type/)
+  assert.match(marketplace, /p_vehicle_color/)
+})
