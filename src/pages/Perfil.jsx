@@ -11,7 +11,7 @@ import BottomNav from '../components/BottomNav.jsx'
 export default function Perfil() {
   const navigate = useNavigate()
   const { usuario, loading, atualizar, sair, enviarVerificacaoEmail } = useUser()
-  const { staffCompanies, pilotProfile } = useCompany()
+  const { staffCompanies, pilotProfile, platformAdmin } = useCompany()
   const [form, setForm] = useState({})
   const [mensagem, setMensagem] = useState('')
   const [erro, setErro] = useState('')
@@ -102,6 +102,7 @@ export default function Perfil() {
         <button className="btn btn-primary" type="submit" disabled={salvando}>{salvando ? 'Salvando...' : 'Salvar dados'}</button>
         <button className="btn ghost-button" type="button" onClick={() => navigate('/privacidade')}>Privacidade e meus dados</button>
         {!!staffCompanies.length && <button className="btn admin-button" type="button" onClick={() => navigate('/empresa/pedidos')}>Área da empresa</button>}
+        {platformAdmin && <button className="btn admin-button" type="button" onClick={() => navigate('/plataforma/pilotos')}>Analisar cadastros de pilotos</button>}
         <button className="btn ghost-button" type="button" onClick={() => navigate(pilotProfile ? '/piloto' : '/piloto/cadastro')}>
           {pilotProfile ? 'Área Piloto Parceiro' : 'Se torne um piloto das entregas'}
         </button>
