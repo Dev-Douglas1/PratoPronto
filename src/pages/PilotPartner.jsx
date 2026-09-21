@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useUser } from '../context/UserContext.jsx'
 import { useCompany } from '../context/CompanyContext.jsx'
 import {
-  pilotConfirmDelivery, pilotStartDelivery, respondDeliveryOffer, savePilotProfile,
+  pilotConfirmDelivery, pilotStartDelivery, respondDeliveryOffer, setPilotAvailability,
   subscribePilotOffers, subscribePilotOrders,
 } from '../services/marketplace.js'
 import { amountToCollect, paymentLabel, paymentStatusLabel, timestampMillis } from '../utils/pedido.js'
@@ -13,12 +13,17 @@ import PrintTicket from '../components/company/PrintTicket.jsx'
 import Icon from '../components/company/Icon.jsx'
 import '../company.css'
 
-const emptyPilot = { vehiclePlate: '', motorcycleType: '', vehicleColor: '', acceptingOffers: true }
+const STATUS = {
+  draft: ['Cadastro incompleto', 'Finalize o envio dos documentos para análise.'],
+  pending: ['Em análise', 'Seu cadastro foi enviado e ainda não pode receber ofertas.'],
+  approved: ['Cadastro aprovado', 'Você pode receber ofertas de empresas quando estiver disponível.'],
+  rejected: ['Cadastro precisa de correção', 'Revise o motivo e envie a documentação novamente.'],
+}
 
 export default function PilotPartner() {
   const { usuario, sair } = useUser()
   const { pilotProfile, refresh } = useCompany()
-  const [profileForm, setProfileForm] = useState(emptyPilot)
+  const approved = pilotProfile?.approval_status === 'approved'
   const [offers, setOffers] = useState([])
   const [orders, setOrders] = useState([])
   const [codes, setCodes] = useState({})
@@ -28,23 +33,13 @@ export default function PilotPartner() {
   const [ticket, setTicket] = useState(null)
 
   useEffect(() => {
-    if (!pilotProfile) return
-    setProfileForm({
-      vehiclePlate: pilotProfile.vehicle_plate || '',
-      motorcycleType: pilotProfile.motorcycle_type || '',
-      vehicleColor: pilotProfile.vehicle_color || '',
-      acceptingOffers: pilotProfile.accepting_offers !== false,
-    })
-  }, [pilotProfile])
-
-  useEffect(() => {
-    if (!usuario?.uid || !pilotProfile) { setOffers([]); setOrders([]); return }
+    if (!usuario?.uid || !approved) { setOffers([]); setOrders([]); return }
     const stops = [
       subscribePilotOffers(usuario.uid, setOffers, err => setNotice({ error: true, text: err.message || 'Não foi possível carregar as ofertas.' })),
       subscribePilotOrders(usuario.uid, setOrders, err => setNotice({ error: true, text: err.message || 'Não foi possível carregar suas entregas.' })),
     ]
     return () => stops.forEach(stop => stop())
-  }, [usuario?.uid, pilotProfile?.profile_id])
+  }, [usuario?.uid, approved])
 
   const pendingOffers = useMemo(
     () => offers.filter(offer => offer.status === 'pending' && offer.order && !['entregue','cancelado'].includes(normalizeOrderStatus(offer.order.status))),
@@ -59,16 +54,17 @@ export default function PilotPartner() {
     [orders],
   )
 
-  async function saveProfileForm(event) {
-    event.preventDefault()
+  async function toggleAvailability(event) {
+    const next = event.target.checked
     if (busy) return
-    setBusy('profile'); setNotice(null)
+    setBusy('availability'); setNotice(null)
     try {
-      await savePilotProfile(profileForm)
+      await setPilotAvailability(next)
       await refresh()
-      setNotice({ text: 'Cadastro de Piloto Parceiro atualizado.' })
-    } catch (err) { setNotice({ error: true, text: err.message || 'Não foi possível salvar o perfil de piloto.' }) }
-    finally { setBusy('') }
+      setNotice({ text: next ? 'Você está disponível para novas ofertas.' : 'Novas ofertas foram pausadas.' })
+    } catch (err) {
+      setNotice({ error: true, text: err.message || 'Não foi possível alterar sua disponibilidade.' })
+    } finally { setBusy('') }
   }
 
   async function answerOffer(offer, accept) {
@@ -99,16 +95,18 @@ export default function PilotPartner() {
     setCodes(current => ({ ...current, [order.id]: '' }))
   }
 
+  const [statusTitle, statusText] = STATUS[pilotProfile?.approval_status] || STATUS.draft
+
   return <div className="company-app pilot-app">
     <aside className="company-sidebar">
       <Link className="company-brand" to="/piloto"><img src="/icons/app-icon.svg" alt="" width="42" height="42" /><span>Prato<span>Pronto</span><small>PILOTO PARCEIRO</small></span></Link>
       <div className="workspace-label">ENTREGAS <span>PARCEIRAS</span></div>
       <div className="company-selector">
-        <b>Perfil ativo</b>
-        <small>Você pode receber ofertas de várias empresas.</small>
+        <b>{statusTitle}</b>
+        <small>{statusText}</small>
       </div>
       <div className="sidebar-bottom">
-        <div className="company-account"><span>{usuario?.nome?.slice(0, 2).toUpperCase() || 'PP'}</span><div><strong>{usuario?.nome || 'Piloto Parceiro'}</strong><small>{pilotProfile?.vehicle_type || 'Conta PratoPronto'}</small></div></div>
+        <div className="company-account"><span>{usuario?.nome?.slice(0, 2).toUpperCase() || 'PP'}</span><div><strong>{usuario?.nome || 'Piloto Parceiro'}</strong><small>{pilotProfile?.motorcycle_type || 'Moto'}</small></div></div>
         <button onClick={() => sair()} className="sidebar-exit"><Icon name="exit" />Sair da conta</button>
       </div>
     </aside>
@@ -116,30 +114,35 @@ export default function PilotPartner() {
     <div className="company-main">
       <header className="company-topbar"><Link className="company-store-link" to="/">Área do cliente ↗</Link><span className="connection"><i />Supabase conectado</span></header>
       <main className="company-content">
-        <div className="company-page-heading"><div><p>Entregas oferecidas por empresas do PratoPronto</p><h1>Piloto Parceiro</h1></div>{pilotProfile && <span className="today-label">{activeOrders.length} entregas ativas</span>}</div>
+        <div className="company-page-heading"><div><p>Entregas oferecidas por empresas do PratoPronto</p><h1>Piloto Parceiro</h1></div>{approved && <span className="today-label">{activeOrders.length} entregas ativas</span>}</div>
         <div className="company-live-note">Nunca peça a senha antes de estar com o pedido no endereço. O cliente informa os 4 números somente no momento da entrega.</div>
         {notice && <div className={notice.error ? 'company-alert' : 'company-notice'} role={notice.error ? 'alert' : 'status'}>{notice.text}</div>}
 
         <section className="company-panel">
-          <h2>Meu cadastro de piloto</h2>
-          <p>Nome, telefone e cidade continuam vindo do seu perfil PratoPronto. Aqui você pode atualizar os dados da sua moto e sua disponibilidade.</p>
-          <div className="settings-grid">
-            <div><small>Nome</small><strong>{usuario?.nome || '—'}</strong></div>
-            <div><small>Telefone</small><strong>{usuario?.telefone || '—'}</strong></div>
-            <div><small>Cidade</small><strong>{usuario?.cidade || '—'}</strong></div>
-          </div>
-          <form className="settings-form" onSubmit={saveProfileForm}>
+          <h2>{statusTitle}</h2>
+          <p>{statusText}</p>
+          {pilotProfile?.approval_status === 'rejected' && <>
+            <p className="company-alert"><b>Motivo:</b> {pilotProfile.rejection_reason || 'Revise os documentos enviados.'}</p>
+            <Link className="company-button primary" to="/piloto/cadastro">Corrigir e reenviar cadastro</Link>
+          </>}
+          {pilotProfile?.approval_status === 'draft' && <Link className="company-button primary" to="/piloto/cadastro">Finalizar documentação</Link>}
+          {pilotProfile?.approval_status === 'pending' && <p className="company-notice">As empresas ainda não conseguem enviar ofertas para sua conta enquanto a análise não for concluída.</p>}
+          {approved && <>
             <div className="settings-grid">
-              <label>Placa da moto<input required maxLength="7" autoCapitalize="characters" value={profileForm.vehiclePlate} onChange={event => setProfileForm(value => ({ ...value, vehiclePlate: event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7) }))} /></label>
-              <label>Tipo ou modelo da moto<input required minLength="2" maxLength="60" value={profileForm.motorcycleType} onChange={event => setProfileForm(value => ({ ...value, motorcycleType: event.target.value }))} /></label>
-              <label>Cor da moto<input required minLength="2" maxLength="40" value={profileForm.vehicleColor} onChange={event => setProfileForm(value => ({ ...value, vehicleColor: event.target.value }))} /></label>
+              <div><small>Nome</small><strong>{usuario?.nome || '—'}</strong></div>
+              <div><small>Telefone</small><strong>{usuario?.telefone || '—'}</strong></div>
+              <div><small>Moto</small><strong>{pilotProfile.motorcycle_type || '—'} · {pilotProfile.vehicle_color || '—'}</strong></div>
+              <div><small>Placa</small><strong>{pilotProfile.vehicle_plate || '—'}</strong></div>
             </div>
-            <label className="company-checkbox"><input type="checkbox" checked={profileForm.acceptingOffers} onChange={event => setProfileForm(value => ({ ...value, acceptingOffers: event.target.checked }))} />Aceitar novas ofertas de entrega</label>
-            <button className="company-button primary" disabled={busy === 'profile'}>{busy === 'profile' ? 'Salvando…' : 'Atualizar cadastro'}</button>
-          </form>
+            <label className="company-checkbox">
+              <input type="checkbox" checked={pilotProfile.accepting_offers === true} disabled={busy === 'availability'} onChange={toggleAvailability} />
+              Disponível para receber novas ofertas de entrega
+            </label>
+            <Link className="company-button secondary" to="/piloto/cadastro">Atualizar dados ou documentos</Link>
+          </>}
         </section>
 
-        {pilotProfile && <>
+        {approved && <>
           <div className="company-page-heading pilot-section-heading"><div><p>Você decide antes de ficar responsável pelo pedido</p><h2>Ofertas de entrega</h2></div><span className="today-label">{pendingOffers.length} pendentes</span></div>
           <section className="company-orders">
             {pendingOffers.map(offer => {
