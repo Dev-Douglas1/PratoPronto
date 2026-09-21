@@ -9,6 +9,7 @@ export default function ProductCard({ produto, readOnly = false }) {
   const { adicionar } = useCart()
   const [adicionado, setAdicionado] = useState(false)
   const [personalizando, setPersonalizando] = useState(false)
+  const [cartError, setCartError] = useState('')
   const modal = useRef(null)
   useEffect(() => {
     const dialog = modal.current
@@ -33,9 +34,14 @@ export default function ProductCard({ produto, readOnly = false }) {
       setPersonalizando(true)
       return
     }
-    adicionar({ ...produto, preco: displayPrice.preco, precoOriginal: displayPrice.precoOriginal, oferta: displayPrice.oferta })
-    setAdicionado(true)
-    window.setTimeout(() => setAdicionado(false), 900)
+    try {
+      adicionar({ ...produto, preco: displayPrice.preco, precoOriginal: displayPrice.precoOriginal, oferta: displayPrice.oferta })
+      setCartError('')
+      setAdicionado(true)
+      window.setTimeout(() => setAdicionado(false), 900)
+    } catch (error) {
+      setCartError(error.message || 'Não foi possível adicionar este produto.')
+    }
   }
 
   function alternarAdicional(id) {
@@ -52,17 +58,23 @@ export default function ProductCard({ produto, readOnly = false }) {
       extrasAtuais.length ? `extras: ${extrasAtuais.map((item) => item.nome).join(', ')}` : '',
     ].filter(Boolean).join(' • ')
 
-    adicionar({
-      ...produto,
-      id: `${produto.id}--${tamanho}--${borda}--${[...adicionais].sort().join('.') || 'sem-extra'}`,
-      produtoBaseId: produto.id,
-      opcoes: { tamanho, borda, extras: [...adicionais].sort() },
-      preco: precoPersonalizado,
-      detalhes,
-    })
-    setPersonalizando(false)
-    setAdicionado(true)
-    window.setTimeout(() => setAdicionado(false), 900)
+    try {
+      adicionar({
+        ...produto,
+        id: `${produto.id}--${tamanho}--${borda}--${[...adicionais].sort().join('.') || 'sem-extra'}`,
+        produtoBaseId: produto.id,
+        opcoes: { tamanho, borda, extras: [...adicionais].sort() },
+        preco: precoPersonalizado,
+        detalhes,
+      })
+      setCartError('')
+      setPersonalizando(false)
+      setAdicionado(true)
+      window.setTimeout(() => setAdicionado(false), 900)
+    } catch (error) {
+      setCartError(error.message || 'Não foi possível adicionar este produto.')
+      setPersonalizando(false)
+    }
   }
 
   return (
@@ -86,6 +98,7 @@ export default function ProductCard({ produto, readOnly = false }) {
           </button>
         </div>
       </div>
+      {cartError && <p className="form-error" role="alert">{cartError}</p>}
       {personalizando && createPortal(
           <dialog ref={modal} className="customizer-modal" aria-labelledby={`customizer-${produto.id}`} onCancel={() => setPersonalizando(false)}>
             <div className="customizer-header">
