@@ -156,10 +156,10 @@ export function createService({ db, config, mp, authAdmin, now = () => new Date(
         status: q.method === 'maquina_entrega' ? 'confirmado' : 'aguardando_pagamento', createdAt: now(), updatedAt: now(),
         expiresAt: new Date(now().getTime() + 30 * 60000), checkout: { state: q.method === 'maquina_entrega' ? 'none' : 'reserved' },
         retentionDays: settings.retentionDays, consent: q.consent,
-        assignedCourier: '', deliveryVerificationRequired: true, deliveryCodeHash: deliveryCodeHash(ref.id, deliveryCode),
+        assignedCourier: '', deliveryVerificationRequired: true,
       }
       tx.create(ref, payload)
-      tx.create(ref.collection('private').doc('delivery'), { code: deliveryCode, userId: actor.uid, createdAt: now() })
+      tx.create(ref.collection('private').doc('delivery'), { code: deliveryCode, codeHash: deliveryCodeHash(ref.id, deliveryCode), userId: actor.uid, createdAt: now() })
       tx.update(quoteRef, { orderId: ref.id })
       tx.create(ref.collection('events').doc(), { status: payload.status, by: actor.uid, at: now() })
       if (q.method !== 'maquina_entrega') tx.set(db.doc('paymentWatches/' + ref.id), { orderId: ref.id, active: true, nextAttemptAt: new Date(now().getTime() + 60000), createdAt: now() })
@@ -460,7 +460,9 @@ export function createService({ db, config, mp, authAdmin, now = () => new Date(
       await pilotAccess(context, order.companyId || DEFAULT_COMPANY_ID, tx)
       requireThat(order.assignedCourier === actor.uid, 'Este pedido está atribuído a outro piloto.', 'permission-denied')
       requireThat(order.status === 'saiu_entrega', 'Este pedido não está em rota de entrega.', 'failed-precondition')
-      requireThat(order.deliveryVerificationRequired === true && verifyDeliveryCode(ref.id, data.code, order.deliveryCodeHash), 'Senha de entrega incorreta.', 'permission-denied')
+      const deliverySecretRef = ref.collection('private').doc('delivery')
+      const deliverySecret = (await tx.get(deliverySecretRef)).data()
+      requireThat(order.deliveryVerificationRequired === true && deliverySecret && verifyDeliveryCode(ref.id, data.code, deliverySecret.codeHash), 'Senha de entrega incorreta.', 'permission-denied')
       const payment = { ...order.pagamento }
       if (payment.status === 'pendente_entrega') {
         requireThat(data.received === true, 'Confirme o recebimento do pagamento na entrega.')
@@ -469,6 +471,7 @@ export function createService({ db, config, mp, authAdmin, now = () => new Date(
         payment.recebidoEm = now()
       }
       tx.update(ref, { status: 'entregue', pagamento: payment, deliveryConfirmedAt: now(), deliveryConfirmedBy: actor.uid, updatedAt: now(), updatedBy: actor.uid })
+      tx.delete(deliverySecretRef)
       tx.create(ref.collection('events').doc(), { status: 'entregue', kind: 'pilot_confirmed', by: actor.uid, at: now() })
       return { status: 'entregue' }
     })
