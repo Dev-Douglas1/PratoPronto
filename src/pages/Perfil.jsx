@@ -5,11 +5,13 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
 import TopBar from '../components/TopBar.jsx'
 import { useUser } from '../context/UserContext.jsx'
+import { useCompany } from '../context/CompanyContext.jsx'
 import BottomNav from '../components/BottomNav.jsx'
 
 export default function Perfil() {
   const navigate = useNavigate()
   const { usuario, loading, atualizar, sair, enviarVerificacaoEmail } = useUser()
+  const { staffCompanies, pilotProfile } = useCompany()
   const [form, setForm] = useState({})
   const [mensagem, setMensagem] = useState('')
   const [erro, setErro] = useState('')
@@ -99,7 +101,8 @@ export default function Perfil() {
         {erro && <p className="form-error dark-error" role="alert">{erro}</p>}
         <button className="btn btn-primary" type="submit" disabled={salvando}>{salvando ? 'Salvando...' : 'Salvar dados'}</button>
         <button className="btn ghost-button" type="button" onClick={() => navigate('/privacidade')}>Privacidade e meus dados</button>
-        {usuario.admin && <button className="btn admin-button" type="button" onClick={() => navigate('/admin')}>Painel do restaurante</button>}
+        {!!staffCompanies.length && <button className="btn admin-button" type="button" onClick={() => navigate('/empresa/pedidos')}>Área da empresa</button>}
+        <button className="btn ghost-button" type="button" onClick={() => navigate('/piloto')}>{pilotProfile ? 'Área Piloto Parceiro' : 'Quero ser Piloto Parceiro'}</button>
         <button className="btn btn-secondary" type="button" onClick={async () => { await sair(); navigate('/login') }}>Sair</button>
       </form>
       <BottomNav />
