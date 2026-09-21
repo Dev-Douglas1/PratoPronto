@@ -4,7 +4,7 @@ import {
   deleteUserData, getAdminStatus, getUserProfile, PRIVACY_POLICY_VERSION,
   TERMS_VERSION, updateUserProfile,
 } from '../services/storage.js'
-import { validateName, validatePassword, validatePhone } from '../../functions/src/input-policy.js'
+import { validateName, validatePassword, validatePhone } from '../shared/input-policy.js'
 import { criarErroSupabase } from '../utils/supabaseError.js'
 
 const UserContext = createContext(null)
