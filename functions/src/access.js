@@ -5,10 +5,8 @@ export const DEFAULT_COMPANY_ID = 'pratopronto'
 export const COMPANY_ROLE_PERMISSIONS = Object.freeze({
   owner: ['company:manage', 'team:manage', 'catalog:manage', 'orders:read', 'orders:advance', 'orders:print', 'reviews:reply', 'refunds:manage', 'pilots:assign'],
   admin: ['company:manage', 'team:manage', 'catalog:manage', 'orders:read', 'orders:advance', 'orders:print', 'reviews:reply', 'refunds:manage', 'pilots:assign'],
-  member: ['orders:read', 'orders:advance', 'orders:print', 'reviews:reply', 'refunds:manage', 'pilots:assign'],
+  attendant: ['orders:read', 'orders:advance', 'orders:print', 'reviews:reply', 'refunds:manage', 'pilots:assign'],
   kitchen: ['orders:read', 'orders:advance', 'orders:print'],
-  support: ['orders:read', 'orders:print', 'reviews:reply', 'refunds:manage'],
-  pilot: ['pilot:deliver'],
 })
 
 export function normalizeCompanyId(value) {
