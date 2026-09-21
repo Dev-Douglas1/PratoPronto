@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import AdminRoute from './components/AdminRoute.jsx'
+import PilotRoute from './components/PilotRoute.jsx'
 import SessionNotice from './components/SessionNotice.jsx'
 import './App.css'
 
@@ -20,6 +21,9 @@ const PoliticaPrivacidade = lazy(() => import('./pages/PoliticaPrivacidade.jsx')
 const TermosUso = lazy(() => import('./pages/TermosUso.jsx'))
 const PrivacidadeDados = lazy(() => import('./pages/PrivacidadeDados.jsx'))
 const CompanyDashboard = lazy(() => import('./pages/CompanyDashboard.jsx'))
+const CompanyOnboarding = lazy(() => import('./pages/CompanyOnboarding.jsx'))
+const MarketplaceStore = lazy(() => import('./pages/MarketplaceStore.jsx'))
+const PilotPartner = lazy(() => import('./pages/PilotPartner.jsx'))
 
 function protectedPage(element) {
   return <ProtectedRoute>{element}</ProtectedRoute>
@@ -42,6 +46,9 @@ export default function App() {
         <Route path="/acompanhamento" element={protectedPage(<Acompanhamento />)} />
         <Route path="/perfil" element={protectedPage(<Perfil />)} />
         <Route path="/privacidade" element={protectedPage(<PrivacidadeDados />)} />
+        <Route path="/loja/:companyId" element={<MarketplaceStore />} />
+        <Route path="/empresa/nova" element={protectedPage(<CompanyOnboarding />)} />
+        <Route path="/piloto" element={<PilotRoute><PilotPartner /></PilotRoute>} />
         <Route path="/admin" element={<Navigate to="/empresa/pedidos" replace />} />
         <Route path="/empresa/:aba?" element={<AdminRoute><CompanyDashboard /></AdminRoute>} />
         <Route path="/demo/empresa/:aba?" element={<CompanyDashboard demo />} />
