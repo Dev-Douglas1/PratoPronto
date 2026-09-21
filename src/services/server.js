@@ -1,4 +1,4 @@
-import { assertRespectful } from '../../functions/src/input-policy.js'
+import { assertRespectful } from '../shared/input-policy.js'
 import { getSupabase, supabaseConfigured } from '../lib/supabase.js'
 import { criarErroSupabase } from '../utils/supabaseError.js'
 
