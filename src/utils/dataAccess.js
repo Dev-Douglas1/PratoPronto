@@ -1,4 +1,4 @@
-import { traduzirErroFirebase } from './firebaseError.js'
+import { traduzirErroSupabase } from './supabaseError.js'
 
 export const COMPANY_SOURCES = { orders: 'pedidos', refunds: 'solicitações de atendimento', reviews: 'avaliações', settings: 'cardápio e ofertas' }
 
@@ -6,10 +6,10 @@ export function accessError(error, resource = 'dados', company = false) {
   const code = String(error?.code || '').replace(/^firestore\//, '')
   if (code === 'permission-denied') {
     return company
-      ? `O Firebase recusou a leitura de ${resource}. Entre novamente. Se continuar, confira as regras do Firestore e o acesso administrativo desta conta.`
+      ? `O Supabase recusou a leitura de ${resource}. Entre novamente. Se continuar, confira as políticas RLS e o vínculo desta conta com a empresa.`
       : 'Não foi possível atualizar preços e disponibilidade. Você pode consultar os produtos; adicionar ao pedido ficará disponível após reconectar.'
   }
-  return company ? `Não foi possível atualizar ${resource}. ${traduzirErroFirebase(error)}`
+  return company ? `Não foi possível atualizar ${resource}. ${traduzirErroSupabase(error)}`
     : 'Não foi possível atualizar o cardápio. Confira a conexão e tente novamente. Os preços abaixo precisam de confirmação.'
 }
 
