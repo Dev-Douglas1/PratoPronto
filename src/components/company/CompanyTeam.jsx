@@ -4,16 +4,14 @@ import { roleLabel } from '../../config/marketplace.js'
 
 const ROLES = [
   ['admin', 'Administrador'],
-  ['member', 'Membro da empresa'],
+  ['attendant', 'Atendente'],
   ['kitchen', 'Cozinha'],
-  ['support', 'Atendimento'],
-  ['pilot', 'Piloto Parceiro'],
 ]
 
 export default function CompanyTeam({ companyId }) {
   const [members, setMembers] = useState([])
   const [email, setEmail] = useState('')
-  const [role, setRole] = useState('member')
+  const [role, setRole] = useState('attendant')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -30,7 +28,7 @@ export default function CompanyTeam({ companyId }) {
     try {
       await saveCompanyMember({ companyId, email: email.trim().toLowerCase(), role })
       setEmail('')
-      setNotice(role === 'pilot' ? 'Piloto Parceiro adicionado à empresa.' : 'Membro adicionado à empresa.')
+      setNotice('Membro adicionado à empresa.')
     } catch (err) { setError(err.message || 'Não foi possível adicionar o membro.') }
     finally { setBusy(false) }
   }
@@ -48,7 +46,7 @@ export default function CompanyTeam({ companyId }) {
   return <div className="company-team">
     <section className="company-panel">
       <h2>Membros da empresa</h2>
-      <p>Adicione pessoas que podem acompanhar pedidos, imprimir comandas e atuar conforme a função escolhida. Pilotos recebem apenas os pedidos atribuídos a eles.</p>
+      <p>A equipe da empresa é formada por proprietário, administrador, atendente e cozinha. Piloto Parceiro é um cadastro separado e não faz parte dos membros internos da empresa.</p>
       {error && <p className="company-alert" role="alert">{error}</p>}
       {notice && <p className="company-notice" role="status">{notice}</p>}
       <form className="settings-grid" onSubmit={add}>
