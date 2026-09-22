@@ -239,14 +239,14 @@ export default function Cadastro() {
           name="senha"
           value={dados.senha}
           onChange={alterar}
-          placeholder="Mínimo de 12 caracteres"
+          placeholder="De 6 a 12 caracteres"
           autoComplete="new-password"
-          minLength={12}
-          maxLength={128}
+          minLength={6}
+          maxLength={12}
           disabled={enviando}
         />
 
-        <small className="field-help">De 12 a 128 caracteres, com minúscula, maiúscula, número e símbolo.</small>
+        <small className="field-help">De 6 a 12 caracteres, com minúscula, maiúscula e número. sem símbolo obrigatório.</small>
         <label htmlFor="confirmarSenha">Confirmar senha</label>
         <PasswordField
           id="confirmarSenha"
@@ -255,8 +255,8 @@ export default function Cadastro() {
           onChange={alterar}
           placeholder="Digite a senha novamente"
           autoComplete="new-password"
-          minLength={12}
-          maxLength={128}
+          minLength={6}
+          maxLength={12}
           disabled={enviando}
         />
 
