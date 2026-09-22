@@ -49,7 +49,7 @@ test('confirmação exige OTP de seis números e permite reenvio', async () => {
   const html = render(Page)
   assert.match(html, /Código de verificação/)
   assert.match(html, /one-time-code/)
-  assert.match(html, /pattern="[0-9]{6}"/)
+  assert.ok(html.includes('pattern="[0-9]{6}"'))
   assert.match(html, /Confirmar código/)
   assert.match(html, /Enviar código de confirmação/)
 })
