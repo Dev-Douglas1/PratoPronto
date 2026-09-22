@@ -133,7 +133,9 @@ export default function CompanyDashboard({ demo = false }) {
   const printOrder = data.orders.find(order => order.id === ticket?.id)
   const fresh = key => demo || (!data.sources[key].loading && !data.sources[key].error && !data.sources[key].fromCache)
   const badge = { pedidos: fresh('orders') ? pending + preparing : 0, entregas: fresh('orders') ? deliveries : 0, atendimento: fresh('refunds') ? support : 0 }
-  const blocked = busy || (!demo && (!online || tabState.loading || Boolean(tabState.error) || tabState.fromCache))
+  const companyOperationalStatus = demo ? 'active' : activeCompany?.accountStatus || 'active'
+  const companyOperationalLocked = !demo && companyOperationalStatus !== 'active'
+  const blocked = busy || companyOperationalLocked || (!demo && (!online || tabState.loading || Boolean(tabState.error) || tabState.fromCache))
   const connectionLabel = demo ? 'Demonstração' : !online ? 'Sem conexão' : data.error ? 'Atualização incompleta' : data.loading ? 'Carregando dados' : data.fromCache ? 'Dados locais' : 'Dados sincronizados'
   const count = (value, key = 'orders') => !fresh(key) ? '—' : String(value).padStart(2, '0')
   async function refreshSession() {
@@ -178,6 +180,7 @@ export default function CompanyDashboard({ demo = false }) {
       <header className="company-topbar"><Link className="company-store-link" to={demo ? '/' : companyId === DEFAULT_COMPANY_ID ? '/pizzas' : '/loja/' + companyId}>Ver loja <span aria-hidden="true">↗</span></Link><span className={'connection ' + (!demo && (!online || data.error || data.fromCache) ? 'is-offline' : '')} role="status"><i />{connectionLabel}</span></header>
       {demo && <div className="company-demo-banner"><span><b>Você está em uma demonstração.</b> Pedidos e clientes fictícios. Nenhuma cobrança é realizada.</span><button type="button" onClick={() => { data.reset(); setNotice({ text: 'Demonstração reiniciada.' }) }}>Reiniciar teste ↻</button></div>}
       {!demo && <div className="company-live-note">Confira o ambiente e os serviços em Configurações antes de receber pedidos reais.</div>}
+      {!demo && companyOperationalStatus !== 'active' && <div className="company-alert" role="alert"><b>{companyOperationalStatus === 'blocked' ? 'Empresa bloqueada pela plataforma.' : 'Empresa suspensa temporariamente.'}</b> {activeCompany?.blockedReason || 'As operações sensíveis permanecem pausadas até a reativação.'}</div>}
       {!online && !demo && <p className="company-alert" role="alert">Sem conexão. Os dados podem estar desatualizados. Reconecte para alterar pedidos.</p>}
       <main className="company-content">
         <div className="company-page-heading"><div><p>{headings[aba][0]}</p><h1>{headings[aba][1]}</h1></div>{demo && ['pedidos', 'entregas', 'concluidos'].includes(aba) ? <button className="company-button primary" type="button" onClick={() => { data.simulate(); navigate(base + '/pedidos'); setNotice({ text: 'Novo pedido fictício recebido.' }) }}>+ Simular novo pedido</button> : <span className="today-label">{new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</span>}</div>
