@@ -85,7 +85,7 @@ export default function RedefinirSenha() {
           <span className="eyebrow">NOVA SENHA</span>
           <h2>Crie uma nova senha</h2>
           <p className="auth-description">
-            Use de 12 a 128 caracteres, com minúscula, maiúscula, número e símbolo.
+            Use de 6 a 12 caracteres, com minúscula, maiúscula e número. O símbolo é opcional.
           </p>
 
           {!pronto && !erro && <p className="success-note">Validando seu link seguro...</p>}
@@ -98,8 +98,8 @@ export default function RedefinirSenha() {
                 value={senha}
                 onChange={(event) => setSenha(event.target.value)}
                 autoComplete="new-password"
-                minLength={12}
-                maxLength={128}
+                minLength={6}
+                maxLength={12}
                 required
                 disabled={salvando}
               />
@@ -110,8 +110,8 @@ export default function RedefinirSenha() {
                 value={confirmarSenha}
                 onChange={(event) => setConfirmarSenha(event.target.value)}
                 autoComplete="new-password"
-                minLength={12}
-                maxLength={128}
+                minLength={6}
+                maxLength={12}
                 required
                 disabled={salvando}
               />
