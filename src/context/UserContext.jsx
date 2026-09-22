@@ -4,14 +4,20 @@ import {
   deleteUserData, getAdminStatus, getUserProfile, PRIVACY_POLICY_VERSION,
   TERMS_VERSION, updateUserProfile,
 } from '../services/storage.js'
-import { validateCep, validateName, validatePassword, validatePhone } from '../shared/input-policy.js'
+import { normalizePhone, validateCep, validateName, validatePassword, validatePhone } from '../shared/input-policy.js'
 import { criarErroSupabase } from '../utils/supabaseError.js'
 
 const UserContext = createContext(null)
 const PENDING_EMAIL_KEY = 'pratopronto:pending-email'
 
 function verified(user) {
-  return Boolean(user?.email_confirmed_at || user?.confirmed_at)
+  return Boolean(user?.email_confirmed_at || user?.phone_confirmed_at || user?.confirmed_at)
+}
+
+function brazilPhone(value) {
+  const digits = normalizePhone(value)
+  if (!/^[1-9][0-9]{9,10}$/.test(digits)) throw new Error('Informe um telefone com DDD e 10 ou 11 números.')
+  return { digits, e164: '+55' + digits }
 }
 
 function pendingAccount(userOrEmail) {
@@ -33,7 +39,7 @@ async function readAccount(user) {
     ...profile,
     uid: user.id,
     email: user.email || profile?.email || '',
-    nome: profile?.nome || user.user_metadata?.nome || '',
+    nome: profile?.nome || user.user_metadata?.nome || user.user_metadata?.name || user.user_metadata?.full_name || '',
     emailVerificado: true,
     admin,
   }
@@ -142,6 +148,58 @@ export function UserProvider({ children }) {
       throw criarErroSupabase(error)
     }
     const account = await readAccount(data.user)
+    setUsuario(account)
+    return account
+  }
+
+
+  async function entrarComGoogle() {
+    const supabase = ready()
+    setAvisoLogin('')
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin + '/auth/callback',
+      },
+    })
+    if (error) throw criarErroSupabase(error)
+  }
+
+  async function finalizarOAuth(code) {
+    const supabase = ready()
+    if (!code) throw new Error('O Google não retornou um código de autenticação válido.')
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+    if (error) throw criarErroSupabase(error)
+    const user = data.user || data.session?.user
+    if (!user) throw new Error('Não foi possível concluir o login com Google.')
+    const account = await readAccount(user)
+    setUsuario(account)
+    return account
+  }
+
+  async function enviarCodigoTelefone(telefone) {
+    const supabase = ready()
+    const { e164 } = brazilPhone(telefone)
+    const { error } = await supabase.auth.signInWithOtp({ phone: e164 })
+    if (error) throw criarErroSupabase(error)
+    return { sent: true, phone: e164 }
+  }
+
+  async function confirmarCodigoTelefone(telefone, codigo) {
+    const supabase = ready()
+    const { e164 } = brazilPhone(telefone)
+    const token = String(codigo || '').replace(/\D/g, '')
+    if (!/^\d{6}$/.test(token)) throw new Error('Digite o código de 6 números enviado por SMS.')
+
+    const { data, error } = await supabase.auth.verifyOtp({
+      phone: e164,
+      token,
+      type: 'sms',
+    })
+    if (error) throw criarErroSupabase(error)
+    const user = data.user || data.session?.user
+    if (!user) throw new Error('Não foi possível concluir o login por telefone.')
+    const account = await readAccount(user)
     setUsuario(account)
     return account
   }
@@ -273,7 +331,8 @@ export function UserProvider({ children }) {
 
   const value = useMemo(() => ({
     usuario, loading, autenticado: usuario?.emailVerificado === true,
-    supabaseConfigured, verificacao, avisoLogin, entrar, cadastrar, atualizar, sair,
+    supabaseConfigured, verificacao, avisoLogin, entrar, entrarComGoogle, finalizarOAuth,
+    enviarCodigoTelefone, confirmarCodigoTelefone, cadastrar, atualizar, sair,
     enviarRecuperacaoSenha, enviarVerificacaoEmail, confirmarCodigoEmail, conferirVerificacaoEmail, excluirConta,
   }), [usuario, loading, verificacao, avisoLogin])
 

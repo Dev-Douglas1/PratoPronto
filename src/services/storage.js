@@ -108,6 +108,9 @@ export async function updateUserProfile(uid, partial) {
     uf: partial.uf?.trim().toUpperCase() || '',
     complemento: partial.complemento?.trim() || '',
     aceitar_marketing: Boolean(partial.aceitarMarketing),
+    privacy_policy_version: partial.privacyPolicyVersion || PRIVACY_POLICY_VERSION,
+    terms_version: partial.termsVersion || TERMS_VERSION,
+    consent_timestamp: partial.consentTimestamp || new Date().toISOString(),
   }
   const { data, error } = await supabase.from('profiles').update(payload).eq('id', uid).select().single()
   if (error) throw error

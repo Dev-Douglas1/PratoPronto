@@ -9,6 +9,8 @@ import './App.css'
 
 const Home = lazy(() => import('./pages/Home.jsx'))
 const Login = lazy(() => import('./pages/Login.jsx'))
+const LoginTelefone = lazy(() => import('./pages/LoginTelefone.jsx'))
+const AuthCallback = lazy(() => import('./pages/AuthCallback.jsx'))
 const Cadastro = lazy(() => import('./pages/Cadastro.jsx'))
 const RecuperarSenha = lazy(() => import('./pages/RecuperarSenha.jsx'))
 const RedefinirSenha = lazy(() => import('./pages/RedefinirSenha.jsx'))
@@ -41,6 +43,8 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/login-telefone" element={<LoginTelefone />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/cadastro" element={<Cadastro />} />
         <Route path="/recuperar-senha" element={<RecuperarSenha />} />
         <Route path="/redefinir-senha" element={<RedefinirSenha />} />

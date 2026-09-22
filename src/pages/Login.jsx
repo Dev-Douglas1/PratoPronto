@@ -9,11 +9,12 @@ import { accountDestination } from '../utils/access.js'
 export default function Login() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { entrar, supabaseConfigured } = useUser()
+  const { entrar, entrarComGoogle, supabaseConfigured } = useUser()
   const [usuario, setUsuario] = useState('')
   const [senha, setSenha] = useState('')
   const [erro, setErro] = useState('')
   const [enviando, setEnviando] = useState(false)
+  const [google, setGoogle] = useState(false)
 
   async function handleEntrar(event) {
     event.preventDefault()
@@ -38,6 +39,22 @@ export default function Login() {
       setErro(error.message)
     } finally {
       setEnviando(false)
+    }
+  }
+
+  async function handleGoogle() {
+    if (google || enviando) return
+    setErro('')
+    if (!supabaseConfigured) {
+      setErro('Configure o Supabase antes de usar o login com Google.')
+      return
+    }
+    try {
+      setGoogle(true)
+      await entrarComGoogle()
+    } catch (error) {
+      setErro(error.message)
+      setGoogle(false)
     }
   }
 
@@ -72,9 +89,13 @@ export default function Login() {
           <Link className="forgot-link" to="/recuperar-senha">Esqueci minha senha</Link>
           {location.state?.message && <p className="success-note" role="status">{location.state.message}</p>}
           {erro && <p className="form-error" role="alert">{erro}</p>}
-          <button className="btn btn-primary" type="submit" disabled={enviando}>
+          <button className="btn btn-primary" type="submit" disabled={enviando || google}>
             {enviando ? 'Entrando...' : 'Entrar'}
           </button>
+          <button className="btn btn-secondary" type="button" disabled={enviando || google} onClick={handleGoogle}>
+            {google ? 'Abrindo Google...' : 'Continuar com Google'}
+          </button>
+          <Link className="btn btn-secondary" to="/login-telefone">Entrar com telefone</Link>
           <p className="auth-switch">Ainda não tem uma conta? <Link to="/cadastro">Cadastre-se</Link></p>
           <Link className="text-link" to="/demo/empresa/pedidos">Conhecer o painel da empresa</Link>
           <div className="legal-links">

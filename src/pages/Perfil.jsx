@@ -1,12 +1,13 @@
 import { validateCep, validateName, validatePhone, phoneInput, normalizeCep } from '../shared/input-policy.js'
 import AddressFields from '../components/AddressFields.jsx'
 import { useEffect, useState } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
 import TopBar from '../components/TopBar.jsx'
 import { useUser } from '../context/UserContext.jsx'
 import { useCompany } from '../context/CompanyContext.jsx'
 import BottomNav from '../components/BottomNav.jsx'
+import { PRIVACY_POLICY_VERSION, TERMS_VERSION } from '../services/storage.js'
 
 export default function Perfil() {
   const navigate = useNavigate()
@@ -18,7 +19,13 @@ export default function Perfil() {
   const [salvando, setSalvando] = useState(false)
 
   useEffect(() => {
-    if (usuario) setForm(usuario)
+    if (usuario) {
+      setForm({
+        ...usuario,
+        aceitarPolitica: usuario.privacyPolicyVersion === PRIVACY_POLICY_VERSION,
+        aceitarTermos: usuario.termsVersion === TERMS_VERSION,
+      })
+    }
   }, [usuario])
 
   function handleChange(event) {
@@ -41,9 +48,22 @@ export default function Perfil() {
       setErro('Preencha rua, número e bairro para calcular e realizar a entrega.')
       return
     }
+    if (!form.aceitarPolitica) {
+      setErro('É necessário aceitar a Política de Privacidade para continuar.')
+      return
+    }
+    if (!form.aceitarTermos) {
+      setErro('É necessário aceitar os Termos de Uso para continuar.')
+      return
+    }
     try {
       setSalvando(true)
-      await atualizar(form)
+      await atualizar({
+        ...form,
+        privacyPolicyVersion: PRIVACY_POLICY_VERSION,
+        termsVersion: TERMS_VERSION,
+        consentTimestamp: form.consentTimestamp || new Date().toISOString(),
+      })
       setMensagem('Dados atualizados com sucesso.')
     } catch (error) {
       setErro(error.message)
@@ -68,7 +88,7 @@ export default function Perfil() {
       <TopBar titulo="Meu perfil" />
       <div className="profile-heading">
         <div className="profile-avatar">{(usuario.nome || usuario.email || 'U').charAt(0).toUpperCase()}</div>
-        <div><span className="eyebrow">MINHA CONTA</span><h1>{usuario.nome || 'Cliente PratoPronto'}</h1><p>{usuario.email}</p></div>
+        <div><span className="eyebrow">MINHA CONTA</span><h1>{usuario.nome || 'Cliente PratoPronto'}</h1><p>{usuario.email || usuario.telefone || 'Complete seus dados'}</p></div>
       </div>
       <form className="light-card form-card" onSubmit={salvar}>
         <div className={`account-badge ${usuario.emailVerificado ? 'is-verified' : ''}`}>
@@ -78,7 +98,7 @@ export default function Perfil() {
         <label htmlFor="perfil-nome">Nome (2 a 80 caracteres)</label>
         <input id="perfil-nome" minLength={2} maxLength={80} autoComplete="name" required name="nome" value={form.nome ?? ''} onChange={handleChange} />
         <label htmlFor="perfil-email">E-mail</label>
-        <input id="perfil-email" value={form.email ?? ''} disabled />
+        <input id="perfil-email" value={form.email || 'Conta criada por telefone'} disabled />
         <label htmlFor="perfil-telefone">Telefone com DDD (10 ou 11 números)</label>
         <input id="perfil-telefone" type="tel" inputMode="tel" maxLength={32} autoComplete="tel-national" required name="telefone" value={form.telefone ?? ''} onChange={handleChange} />
         <AddressFields data={form} onChange={handleChange} />
@@ -96,6 +116,8 @@ export default function Perfil() {
         </div>
         <label htmlFor="perfil-complemento">Complemento</label>
         <input id="perfil-complemento" maxLength={180} name="complemento" value={form.complemento ?? ''} onChange={handleChange} />
+        <label className="checkbox-line"><input type="checkbox" name="aceitarPolitica" checked={Boolean(form.aceitarPolitica)} onChange={handleChange} /> <span>Li e concordo com a <Link to="/politica-de-privacidade">Política de Privacidade</Link></span></label>
+        <label className="checkbox-line"><input type="checkbox" name="aceitarTermos" checked={Boolean(form.aceitarTermos)} onChange={handleChange} /> <span>Li e concordo com os <Link to="/termos-de-uso">Termos de Uso</Link></span></label>
         <label className="checkbox-line"><input type="checkbox" name="aceitarMarketing" checked={Boolean(form.aceitarMarketing)} onChange={handleChange} /> Receber promoções por e-mail</label>
         {mensagem && <p className="success-note">{mensagem}</p>}
         {erro && <p className="form-error dark-error" role="alert">{erro}</p>}

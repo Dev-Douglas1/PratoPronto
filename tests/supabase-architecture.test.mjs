@@ -239,3 +239,22 @@ test('cadastro usa OTP de seis dígitos e recuperação possui tela para nova se
   assert.match(reset, /exchangeCodeForSession/)
   assert.match(reset, /auth\.updateUser\(\{ password:/)
 })
+
+
+test('login social e telefone usam os fluxos oficiais do Supabase Auth', async () => {
+  const [user, login, phone, callback] = await Promise.all([
+    readFile('src/context/UserContext.jsx', 'utf8'),
+    readFile('src/pages/Login.jsx', 'utf8'),
+    readFile('src/pages/LoginTelefone.jsx', 'utf8'),
+    readFile('src/pages/AuthCallback.jsx', 'utf8'),
+  ])
+  assert.match(user, /signInWithOAuth/)
+  assert.match(user, /provider:\s*'google'/)
+  assert.match(user, /signInWithOtp\(\{ phone:/)
+  assert.match(user, /type:\s*'sms'/)
+  assert.match(user, /exchangeCodeForSession/)
+  assert.match(login, /Continuar com Google/)
+  assert.match(login, /Entrar com telefone/)
+  assert.match(phone, /one-time-code/)
+  assert.match(callback, /accountDestination/)
+})
