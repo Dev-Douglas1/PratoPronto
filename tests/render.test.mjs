@@ -87,3 +87,16 @@ test('falha no banco mantém nomes e imagens do cardápio, mas bloqueia preços 
   const online = render(CatalogResults, { produtos, confirmed: true, loading: false, error: '', retry() {} })
   assert.doesNotMatch(online, /disabled="" class="add-button/)
 })
+
+
+test('Piloto Parceiro explica a área antes de liberar o cadastro', async () => {
+  const { default: PilotIntroModal } = await server.ssrLoadModule('/src/components/PilotIntroModal.jsx')
+  const html = render(PilotIntroModal, { open: true, onClose() {}, onConfirm() {} })
+  assert.match(html, /role="dialog"/)
+  assert.match(html, /Quer fazer entregas pelo PratoPronto/)
+  assert.match(html, /Envie a documentação/)
+  assert.match(html, /Aguarde a análise/)
+  assert.match(html, /Fechar apresentação do Piloto Parceiro/)
+  assert.match(html, /Agora não/)
+  assert.match(html, /Entendi, continuar cadastro/)
+})

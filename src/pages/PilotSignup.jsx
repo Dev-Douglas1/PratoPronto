@@ -3,11 +3,14 @@ import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
 import TopBar from '../components/TopBar.jsx'
 import BottomNav from '../components/BottomNav.jsx'
+import PilotIntroModal from '../components/PilotIntroModal.jsx'
 import { useUser } from '../context/UserContext.jsx'
 import { useCompany } from '../context/CompanyContext.jsx'
 import {
   savePilotProfile, submitPilotApplication, uploadPilotDocument,
 } from '../services/marketplace.js'
+
+const PILOT_INTRO_KEY = 'pratopronto:pilot-intro-accepted'
 
 const normalizePlate = value => String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7)
 const futureDate = value => {
@@ -35,6 +38,15 @@ export default function PilotSignup() {
   const [busy, setBusy] = useState(false)
   const [progress, setProgress] = useState('')
   const [error, setError] = useState('')
+  const requiresIntro = !editingApproved && !['pending', 'approved', 'rejected'].includes(pilotProfile?.approval_status)
+  const [introAccepted, setIntroAccepted] = useState(() => {
+    if (!requiresIntro) return true
+    try { return sessionStorage.getItem(PILOT_INTRO_KEY) === '1' } catch { return false }
+  })
+
+  useEffect(() => {
+    if (!requiresIntro) setIntroAccepted(true)
+  }, [requiresIntro])
 
   useEffect(() => {
     if (!pilotProfile) return
@@ -130,6 +142,7 @@ export default function PilotSignup() {
       })
 
       await refresh()
+      try { sessionStorage.removeItem(PILOT_INTRO_KEY) } catch {}
       navigate('/piloto', { replace: true })
     } catch (err) {
       setError(err.message || 'Não foi possível concluir seu cadastro de piloto. Os arquivos enviados permanecem privados e serão substituídos na próxima tentativa.')
@@ -139,7 +152,19 @@ export default function PilotSignup() {
     }
   }
 
-  return <AppScreen className="screen-with-nav">
+  return <>
+    <PilotIntroModal
+      open={requiresIntro && !introAccepted}
+      onClose={() => {
+        try { sessionStorage.removeItem(PILOT_INTRO_KEY) } catch {}
+        navigate('/perfil', { replace: true })
+      }}
+      onConfirm={() => {
+        try { sessionStorage.setItem(PILOT_INTRO_KEY, '1') } catch {}
+        setIntroAccepted(true)
+      }}
+    />
+    <AppScreen className="screen-with-nav">
     <TopBar titulo="Piloto Parceiro" />
     <div className="page-heading">
       <span className="eyebrow">SE TORNE UM PILOTO DAS ENTREGAS</span>
@@ -226,4 +251,5 @@ export default function PilotSignup() {
     </form>
     <BottomNav />
   </AppScreen>
+  </>
 }
