@@ -34,7 +34,10 @@ function pendingAccount(userOrEmail) {
 
 async function readAccount(user) {
   if (!verified(user)) return pendingAccount(user)
-  const [profile, admin] = await Promise.all([getUserProfile(user.id), getAdminStatus(user.id)])
+  const [profile, admin] = await Promise.all([
+    getUserProfile(user.id),
+    getAdminStatus(user.id).catch(() => false),
+  ])
   return {
     ...profile,
     uid: user.id,
