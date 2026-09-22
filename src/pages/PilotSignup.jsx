@@ -6,7 +6,7 @@ import BottomNav from '../components/BottomNav.jsx'
 import { useUser } from '../context/UserContext.jsx'
 import { useCompany } from '../context/CompanyContext.jsx'
 import {
-  removePilotDocuments, savePilotProfile, submitPilotApplication, uploadPilotDocument,
+  savePilotProfile, submitPilotApplication, uploadPilotDocument,
 } from '../services/marketplace.js'
 
 const normalizePlate = value => String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7)
@@ -97,8 +97,7 @@ export default function PilotSignup() {
     }
 
     setBusy(true)
-    const uploaded = []
-    try {
+        try {
       setProgress('Salvando os dados da moto…')
       await savePilotProfile({
         vehiclePlate,
@@ -117,8 +116,7 @@ export default function PilotSignup() {
       for (const [kind, file] of uploads) {
         setProgress('Enviando documentação com segurança…')
         const path = await uploadPilotDocument(file, kind)
-        uploaded.push(path)
-        paths[kind] = path
+                paths[kind] = path
       }
 
       setProgress('Enviando cadastro para análise…')
@@ -134,10 +132,7 @@ export default function PilotSignup() {
       await refresh()
       navigate('/piloto', { replace: true })
     } catch (err) {
-      if (uploaded.length) {
-        try { await removePilotDocuments(uploaded) } catch {}
-      }
-      setError(err.message || 'Não foi possível concluir seu cadastro de piloto.')
+      setError(err.message || 'Não foi possível concluir seu cadastro de piloto. Os arquivos enviados permanecem privados e serão substituídos na próxima tentativa.')
     } finally {
       setBusy(false)
       setProgress('')
