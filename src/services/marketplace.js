@@ -197,6 +197,44 @@ export async function reviewPilotApplication(profileId, approve, reason = '') {
   return data
 }
 
+
+export async function setPilotAccountStatus(profileId, status, reason = '') {
+  const { data, error } = await ready().rpc('set_pilot_account_status', {
+    p_profile_id: profileId,
+    p_status: status,
+    p_reason: reason,
+  })
+  if (error) throw error
+  return data
+}
+
+export async function listPlatformRestaurants() {
+  const { data, error } = await ready().rpc('list_platform_restaurants')
+  if (error) throw error
+  return data || []
+}
+
+export async function setRestaurantAccountStatus(companyId, status, reason = '') {
+  const { data, error } = await ready().rpc('set_restaurant_account_status', {
+    p_slug: companyId,
+    p_status: status,
+    p_reason: reason,
+  })
+  if (error) throw error
+  return data
+}
+
+export async function listAuditEvents({ restaurantId = null, limit = 100 } = {}) {
+  let query = ready().from('audit_events')
+    .select('id,actor_id,restaurant_id,action,target_type,target_id,metadata,created_at')
+    .order('created_at', { ascending: false })
+    .limit(Math.max(1, Math.min(200, Number(limit) || 100)))
+  if (restaurantId) query = query.eq('restaurant_id', restaurantId)
+  const { data, error } = await query
+  if (error) throw error
+  return data || []
+}
+
 export async function pilotDocumentUrl(path, expiresIn = 600) {
   if (!path) return ''
   const { data, error } = await ready().storage.from(PILOT_BUCKET).createSignedUrl(path, expiresIn)
