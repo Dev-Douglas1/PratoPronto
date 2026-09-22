@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useUser } from '../context/UserContext.jsx'
 import { useCompany } from '../context/CompanyContext.jsx'
 import {
@@ -11,6 +11,7 @@ import { formatarMoeda as money } from '../utils/moeda.js'
 import { normalizeOrderStatus, orderStatusLabel } from '../config/orderStatus.js'
 import PrintTicket from '../components/company/PrintTicket.jsx'
 import Icon from '../components/company/Icon.jsx'
+import PilotIntroModal from '../components/PilotIntroModal.jsx'
 import '../company.css'
 
 const STATUS = {
@@ -20,7 +21,10 @@ const STATUS = {
   rejected: ['Cadastro precisa de correção', 'Revise o motivo e envie a documentação novamente.'],
 }
 
+const PILOT_INTRO_KEY = 'pratopronto:pilot-intro-accepted'
+
 export default function PilotPartner() {
+  const navigate = useNavigate()
   const { usuario, sair } = useUser()
   const { pilotProfile, refresh } = useCompany()
   const operationalStatus = pilotProfile?.account_status || 'active'
@@ -32,6 +36,25 @@ export default function PilotPartner() {
   const [busy, setBusy] = useState('')
   const [notice, setNotice] = useState(null)
   const [ticket, setTicket] = useState(null)
+  const [introOpen, setIntroOpen] = useState(() => {
+    try {
+      return pilotProfile?.approval_status === 'draft' && sessionStorage.getItem(PILOT_INTRO_KEY) !== '1'
+    } catch {
+      return pilotProfile?.approval_status === 'draft'
+    }
+  })
+
+  useEffect(() => {
+    if (pilotProfile?.approval_status !== 'draft') {
+      setIntroOpen(false)
+      return
+    }
+    try {
+      setIntroOpen(sessionStorage.getItem(PILOT_INTRO_KEY) !== '1')
+    } catch {
+      setIntroOpen(true)
+    }
+  }, [pilotProfile?.approval_status])
 
   useEffect(() => {
     if (!usuario?.uid || !approved) { setOffers([]); setOrders([]); return }
@@ -132,7 +155,7 @@ export default function PilotPartner() {
             <p className="company-alert"><b>Motivo:</b> {pilotProfile.rejection_reason || 'Revise os documentos enviados.'}</p>
             <Link className="company-button primary" to="/piloto/cadastro">Corrigir e reenviar cadastro</Link>
           </>}
-          {pilotProfile?.approval_status === 'draft' && <Link className="company-button primary" to="/piloto/cadastro">Finalizar documentação</Link>}
+          {pilotProfile?.approval_status === 'draft' && <button className="company-button primary" type="button" onClick={() => setIntroOpen(true)}>Finalizar documentação</button>}
           {pilotProfile?.approval_status === 'pending' && <p className="company-notice">As empresas ainda não conseguem enviar ofertas para sua conta enquanto a análise não for concluída.</p>}
           {approved && <>
             <div className="settings-grid">
@@ -203,5 +226,17 @@ export default function PilotPartner() {
       </main>
     </div>
     {ticket && <PrintTicket order={ticket} kind="entrega" companyName={ticket.companyId || 'Empresa'} onClose={() => setTicket(null)} />}
+    <PilotIntroModal
+      open={introOpen}
+      onClose={() => {
+        setIntroOpen(false)
+        navigate('/perfil')
+      }}
+      onConfirm={() => {
+        try { sessionStorage.setItem(PILOT_INTRO_KEY, '1') } catch {}
+        setIntroOpen(false)
+        navigate('/piloto/cadastro')
+      }}
+    />
   </div>
 }
