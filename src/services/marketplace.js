@@ -140,13 +140,6 @@ export async function uploadPilotDocument(file, kind) {
   return path
 }
 
-export async function removePilotDocuments(paths = []) {
-  const clean = paths.filter(Boolean)
-  if (!clean.length) return
-  const { error } = await ready().storage.from(PILOT_BUCKET).remove(clean)
-  if (error) throw error
-}
-
 export async function submitPilotApplication({
   cnhCategory, cnhExpiry, profilePhotoPath, motorcyclePhotoPath, cnhFrontPath, cnhBackPath,
 }) {
