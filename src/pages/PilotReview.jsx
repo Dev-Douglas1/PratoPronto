@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
 import TopBar from '../components/TopBar.jsx'
 import {
-  listPilotApplications, pilotDocumentUrl, reviewPilotApplication,
+  listPilotApplications, pilotDocumentUrl, reviewPilotApplication, setPilotAccountStatus,
 } from '../services/marketplace.js'
 
 const STATUS_LABEL = {
@@ -18,6 +18,7 @@ export default function PilotReview() {
   const [selected, setSelected] = useState(null)
   const [documents, setDocuments] = useState({})
   const [reason, setReason] = useState('')
+  const [blockReason, setBlockReason] = useState('')
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -46,7 +47,7 @@ export default function PilotReview() {
   )
 
   async function open(application) {
-    setSelected(application); setDocuments({}); setReason(''); setError('')
+    setSelected(application); setDocuments({}); setReason(''); setBlockReason(''); setError('')
     try {
       const pairs = await Promise.all([
         ['Foto do piloto', application.profile_photo_path],
@@ -79,6 +80,26 @@ export default function PilotReview() {
     }
   }
 
+
+  async function moderate(nextStatus) {
+    if (!selectedApplication || busy) return
+    if (nextStatus !== 'active' && blockReason.trim().length < 3) {
+      setError('Informe o motivo da suspensão ou bloqueio.')
+      return
+    }
+    setBusy(true); setError(''); setNotice('')
+    try {
+      await setPilotAccountStatus(selectedApplication.profile_id, nextStatus, blockReason.trim())
+      setNotice(nextStatus === 'active' ? 'Acesso operacional do piloto reativado.' : nextStatus === 'blocked' ? 'Piloto bloqueado. Novas ofertas e entregas ficaram impedidas.' : 'Piloto suspenso temporariamente.')
+      setBlockReason('')
+      await load(status)
+    } catch (err) {
+      setError(err.message || 'Não foi possível alterar o acesso do piloto.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return <AppScreen>
     <TopBar titulo="Análise de pilotos" />
     <div className="page-heading">
@@ -106,7 +127,7 @@ export default function PilotReview() {
         <article className="light-card" key={application.profile_id}>
           <strong>{application.display_name}</strong>
           <p>{application.city} · {application.motorcycle_type} · {application.vehicle_color}</p>
-          <small>Placa: {application.vehicle_plate} · CNH {application.cnh_category} · validade {application.cnh_expiry || '—'}</small>
+          <small>Placa: {application.vehicle_plate} · CNH {application.cnh_category} · validade {application.cnh_expiry || '—'} · acesso {application.account_status || 'active'}</small>
           <div className="inline-actions">
             <button className="btn btn-secondary" type="button" onClick={() => open(application)}>Analisar documentos</button>
           </div>
@@ -119,6 +140,9 @@ export default function PilotReview() {
       <div className="section-heading"><h2>{selectedApplication.display_name}</h2><button className="btn btn-secondary" type="button" onClick={() => setSelected(null)}>Fechar</button></div>
       <p><b>E-mail:</b> {selectedApplication.email}<br /><b>Telefone:</b> {selectedApplication.telefone}<br /><b>Cidade:</b> {selectedApplication.city}</p>
       <p><b>Moto:</b> {selectedApplication.motorcycle_type} · {selectedApplication.vehicle_color}<br /><b>Placa:</b> {selectedApplication.vehicle_plate}<br /><b>CNH:</b> categoria {selectedApplication.cnh_category}, válida até {selectedApplication.cnh_expiry}</p>
+
+      <p><b>Status operacional:</b> {selectedApplication.account_status === 'blocked' ? 'Bloqueado' : selectedApplication.account_status === 'suspended' ? 'Suspenso' : 'Ativo'}</p>
+      {selectedApplication.blocked_reason && <p className="form-error dark-error"><b>Motivo operacional:</b> {selectedApplication.blocked_reason}</p>}
 
       <div className="marketplace-company-grid">
         {Object.entries(documents).map(([label, url]) =>
@@ -138,6 +162,18 @@ export default function PilotReview() {
         </div>
       </>}
       {selectedApplication.rejection_reason && <p className="form-error dark-error"><b>Motivo registrado:</b> {selectedApplication.rejection_reason}</p>}
+
+      <hr />
+      <h3>Controle operacional</h3>
+      <p>Suspender ou bloquear impede novas ofertas e ações de entrega. A documentação permanece preservada para análise e auditoria.</p>
+      <label htmlFor="pilot-block-reason">Motivo da suspensão/bloqueio</label>
+      <textarea id="pilot-block-reason" maxLength={500} value={blockReason} onChange={event => setBlockReason(event.target.value)}
+        placeholder="Descreva o motivo para manter uma trilha clara da decisão." />
+      <div className="inline-actions">
+        {selectedApplication.account_status !== 'suspended' && <button className="btn btn-secondary" type="button" disabled={busy} onClick={() => moderate('suspended')}>Suspender</button>}
+        {selectedApplication.account_status !== 'blocked' && <button className="btn btn-secondary" type="button" disabled={busy} onClick={() => moderate('blocked')}>Bloquear</button>}
+        {selectedApplication.account_status !== 'active' && <button className="btn btn-primary" type="button" disabled={busy} onClick={() => moderate('active')}>Reativar acesso</button>}
+      </div>
     </section>}
 
     <div className="light-card">
