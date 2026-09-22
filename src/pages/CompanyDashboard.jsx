@@ -20,16 +20,17 @@ import CompanyTeam from '../components/company/CompanyTeam.jsx'
 import CompanyCatalogManager from '../components/company/CompanyCatalogManager.jsx'
 import CompanyPilotContacts from '../components/company/CompanyPilotContacts.jsx'
 import PilotAssignment from '../components/company/PilotAssignment.jsx'
+import CompanyAudit from '../components/company/CompanyAudit.jsx'
 import { DEFAULT_COMPANY_ID, roleLabel } from '../config/marketplace.js'
 import '../company.css'
 import InstallApp from '../components/InstallApp.jsx'
 
 const tabs = [
   ['pedidos', 'Pedidos', 'orders'], ['entregas', 'Entregas', 'delivery'], ['concluidos', 'Concluídos', 'check'],
-  ['promocoes', 'Ofertas', 'tag'], ['avaliacoes', 'Avaliações', 'star'], ['cardapio', 'Cardápio', 'menu'], ['equipe', 'Equipe', 'orders'], ['atendimento', 'Atendimento', 'chat'], ['configuracoes', 'Configurações', 'menu'],
+  ['promocoes', 'Ofertas', 'tag'], ['avaliacoes', 'Avaliações', 'star'], ['cardapio', 'Cardápio', 'menu'], ['equipe', 'Equipe', 'orders'], ['atendimento', 'Atendimento', 'chat'], ['auditoria', 'Auditoria', 'check'], ['configuracoes', 'Configurações', 'menu'],
 ]
 const mobileTabs = ['pedidos', 'entregas', 'promocoes', 'cardapio']
-const headings = { promocoes: ['Descontos e campanhas do restaurante', 'Ofertas e promoções'], configuracoes: ['Horários, entrega e pagamentos', 'Configurações da empresa'], pedidos: ['Acompanhe e atualize cada etapa', 'Pedidos em processo'], entregas: ['Organize a saída dos pedidos', 'Central de entregas'], concluidos: ['Histórico do restaurante', 'Pedidos concluídos'], avaliacoes: ['Opinião dos seus clientes', 'Avaliações dos clientes'], cardapio: ['Preços e itens disponíveis', 'Produtos e disponibilidade'], equipe: ['Equipe interna e contatos de entrega', 'Equipe da empresa'], atendimento: ['Cancelamentos e reembolsos', 'Central de atendimento'] }
+const headings = { promocoes: ['Descontos e campanhas do restaurante', 'Ofertas e promoções'], configuracoes: ['Horários, entrega e pagamentos', 'Configurações da empresa'], pedidos: ['Acompanhe e atualize cada etapa', 'Pedidos em processo'], entregas: ['Organize a saída dos pedidos', 'Central de entregas'], concluidos: ['Histórico do restaurante', 'Pedidos concluídos'], avaliacoes: ['Opinião dos seus clientes', 'Avaliações dos clientes'], cardapio: ['Preços e itens disponíveis', 'Produtos e disponibilidade'], equipe: ['Equipe interna e contatos de entrega', 'Equipe da empresa'], atendimento: ['Cancelamentos e reembolsos', 'Central de atendimento'], auditoria: ['Alterações críticas da operação', 'Auditoria da empresa'] }
 const hour = value => new Date(timestampMillis(value)).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 const date = value => new Date(timestampMillis(value)).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
 function Status({ value }) { return <span className={'company-status status-' + normalizeOrderStatus(value)}><i />{orderStatusLabel(value)}</span> }
@@ -97,6 +98,7 @@ export default function CompanyDashboard({ demo = false }) {
     if (id === 'avaliacoes') return can('reviews:reply')
     if (id === 'equipe') return can('team:manage')
     if (id === 'atendimento') return can('refunds:manage')
+    if (id === 'auditoria') return can('audit:read')
     if (id === 'configuracoes') return can('company:manage')
     return true
   })
@@ -190,6 +192,7 @@ export default function CompanyDashboard({ demo = false }) {
           {aba === 'promocoes' && (companyId === DEFAULT_COMPANY_ID || demo ? <Promotions settings={data.settings} now={now} demo={demo} busy={blocked} feedback={notice?.error ? notice.text : ''} onSave={(id, offer) => act(() => data.promotion(id, offer), 'Promoção salva. A validade e o desconto serão aplicados no cardápio.')} /> : <div className="company-panel"><h2>Ofertas da empresa</h2><p>O cardápio multiempresa já aceita produtos próprios. A edição de promoções personalizadas será ligada a esses produtos em uma próxima etapa.</p></div>)}
           {aba === 'configuracoes' && <StoreSettings demo={demo} companyId={companyId} />}
           {aba === 'equipe' && !demo && <div className="company-team"><CompanyTeam companyId={companyId} /><CompanyPilotContacts companyId={companyId} /></div>}
+          {aba === 'auditoria' && !demo && <CompanyAudit restaurantId={activeCompany?.restaurantId} />}
           {['pedidos', 'entregas', 'concluidos'].includes(aba) && <>
             <div className="company-toolbar"><label className="company-search"><Icon name="search" /><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar pedido, cliente ou bairro" aria-label="Buscar pedido, cliente ou bairro" /></label><select aria-label="Filtrar por etapa" value={status} onChange={event => setStatus(event.target.value)}><option value="todos">Todas as etapas</option>{ORDER_STATUS_OPTIONS.filter(s => aba === 'concluidos' ? ['entregue', 'cancelado'].includes(s.id) : aba === 'entregas' ? ['pronto', 'saiu_entrega'].includes(s.id) : ['aguardando_pagamento', 'confirmado', 'preparando', 'pronto'].includes(s.id)).map(s => <option key={s.id} value={s.id}>{s.label}</option>)}</select><span className="results-count">{currentOrders.length} pedidos</span></div>
             <section className="company-orders" aria-label="Lista de pedidos">{currentOrders.map(order => {
