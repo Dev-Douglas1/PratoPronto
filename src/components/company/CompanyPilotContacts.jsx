@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { listAvailablePilots, listPilotContacts, savePilotContact } from '../../services/marketplace.js'
+import { listAvailablePilots, listPilotContacts, removePilotContact, savePilotContact } from '../../services/marketplace.js'
 
 const initial = { relationType: 'own', label: '', contactType: 'whatsapp', contactValue: '', notes: '', pilotProfileId: '' }
 
@@ -29,6 +29,17 @@ export default function CompanyPilotContacts({ companyId }) {
       setNotice('Contato de entrega salvo.')
       await load()
     } catch (err) { setError(err.message || 'Não foi possível salvar o contato.') }
+    finally { setBusy(false) }
+  }
+
+  async function remove(item) {
+    if (busy || !window.confirm('Remover este contato de entrega?')) return
+    setBusy(true); setError(''); setNotice('')
+    try {
+      await removePilotContact(companyId, item.id)
+      setNotice('Contato removido.')
+      await load()
+    } catch (err) { setError(err.message || 'Não foi possível remover o contato.') }
     finally { setBusy(false) }
   }
 
@@ -82,7 +93,10 @@ export default function CompanyPilotContacts({ companyId }) {
         const href = contactHref(item)
         return <div className="operation-row" key={item.id}>
           <p><b>{item.label}</b><br /><span>{item.relation_type === 'own' ? 'Piloto próprio' : 'Parceiro'} · {item.contact_type}: {item.contact_value}</span></p>
-          {href && <a className="company-button secondary" href={href} target={item.contact_type === 'whatsapp' ? '_blank' : undefined} rel="noreferrer">Contatar</a>}
+          <div className="inline-actions">
+            {href && <a className="company-button secondary" href={href} target={item.contact_type === 'whatsapp' ? '_blank' : undefined} rel="noreferrer">Contatar</a>}
+            <button className="company-button subtle" type="button" disabled={busy} onClick={() => remove(item)}>Remover</button>
+          </div>
         </div>
       })}
       {!contacts.length && <p className="muted">Nenhum contato cadastrado.</p>}
