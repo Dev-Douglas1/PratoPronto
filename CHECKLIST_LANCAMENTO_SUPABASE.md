@@ -8,7 +8,7 @@ Nenhum software pode ser garantido como “zero erro”. O objetivo desta lista 
 
 - [x] Confirmar que o projeto Supabase de produção está ativo e é o projeto correto.
 - [x] Confirmar que somente a chave **publishable** está no frontend.
-- [ ] Garantir que nenhuma `service_role`, senha SMTP, token privado ou segredo esteja no GitHub ou em `VITE_*`.
+- [x] Garantir que nenhuma `service_role`, senha SMTP, token privado ou segredo esteja no GitHub ou em `VITE_*`.
 - [x] Rodar os Security Advisors do Supabase e revisar cada aviso.
 - [x] Rodar os Performance Advisors e criar os índices realmente necessários.
 - [x] Conferir RLS de perfis, empresas, membros, produtos, pedidos, avaliações, reembolsos, pilotos e Storage.
@@ -106,13 +106,13 @@ Nenhum software pode ser garantido como “zero erro”. O objetivo desta lista 
 - [x] `npm test` 100% aprovado.
 - [x] `npm run check:production` aprovado.
 - [x] `npm run build` aprovado.
-- [ ] GitHub Actions verde no commit exato que será lançado.
+- [x] GitHub Actions verde no commit atual da branch (`411c3b2`). Revalidar novamente no commit que efetivamente for lançado.
 - [ ] Testar Chrome Android, Safari iPhone e desktop.
 - [ ] Testar rede lenta, offline, reconexão e duas sessões simultâneas.
 - [ ] Testar telas pequenas sem overflow ou botões inacessíveis.
 - [ ] Testar acessibilidade básica: labels, teclado, foco e mensagens de erro.
 - [ ] Testar PWA instalada e atualização de versão.
-- [ ] Conferir que service worker não guarda dados sensíveis.
+- [x] Conferir que service worker não guarda dados sensíveis.
 - [ ] Adicionar monitoramento de erros do frontend e alertas operacionais.
 - [x] Definir limite/rate limiting para RPCs sensíveis e detectar abuso.
 
