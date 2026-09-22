@@ -184,3 +184,15 @@ test('plataforma possui moderação de empresas e pilotos sem apagar histórico'
   assert.match(pilots, /Bloquear/)
   assert.match(pilots, /Reativar acesso/)
 })
+
+
+test('service worker não persiste sessão, API ou dados de cliente', async () => {
+  const sw = await readFile('public/sw.js', 'utf8')
+  assert.match(sw, /event\.request\.method !== 'GET'/)
+  assert.match(sw, /url\.origin !== self\.location\.origin/)
+  assert.match(sw, /Somente arquivos estáticos/)
+  assert.match(sw, /\^\\\/\(assets\|images\|icons\)\\\//)
+  assert.doesNotMatch(sw, /supabase\.co/)
+  assert.doesNotMatch(sw, /authorization/i)
+  assert.doesNotMatch(sw, /localStorage/)
+})
