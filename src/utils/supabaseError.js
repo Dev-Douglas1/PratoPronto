@@ -6,7 +6,7 @@ export function traduzirErroSupabase(error) {
   if (text.includes('invalid login credentials')) return 'E-mail ou senha incorretos.'
   if (text.includes('email not confirmed')) return 'Confirme seu e-mail antes de entrar.'
   if (text.includes('user already registered')) return 'Já existe uma conta com esse e-mail.'
-  if (text.includes('password should be')) return 'A senha não atende aos requisitos de segurança.'
+  if (text.includes('password should be')) return 'A senha deve ter minúscula, maiúscula, número e símbolo, além do tamanho mínimo exigido.'
   if (text.includes('token has expired') || text.includes('otp expired') || text.includes('invalid otp')) return 'O código expirou ou é inválido. Solicite um novo código e tente novamente.'
   if (text.includes('flow state') || text.includes('code verifier')) return 'O link de recuperação é inválido ou expirou. Solicite um novo e-mail.'
   if (text.includes('same password')) return 'Escolha uma senha diferente da senha atual.'
