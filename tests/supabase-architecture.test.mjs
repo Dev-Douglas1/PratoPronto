@@ -119,3 +119,35 @@ test('runtime não referencia tabelas e RPCs legadas removidas do Supabase', asy
   }
   assert.deepEqual(violations, [])
 })
+
+
+test('operações críticas expõem moderação e status operacional', async () => {
+  const [server, marketplace, pilotReview, companies, pilotArea, dashboard] = await Promise.all([
+    readFile('src/services/server.js', 'utf8'),
+    readFile('src/services/marketplace.js', 'utf8'),
+    readFile('src/pages/PilotReview.jsx', 'utf8'),
+    readFile('src/pages/PlatformCompanies.jsx', 'utf8'),
+    readFile('src/pages/PilotPartner.jsx', 'utf8'),
+    readFile('src/pages/CompanyDashboard.jsx', 'utf8'),
+  ])
+  assert.match(server, /accountStatus/)
+  assert.match(marketplace, /set_pilot_account_status/)
+  assert.match(marketplace, /set_restaurant_account_status/)
+  assert.match(marketplace, /audit_events/)
+  assert.match(pilotReview, /Suspender/)
+  assert.match(pilotReview, /Bloquear/)
+  assert.match(companies, /Empresas da plataforma/)
+  assert.match(companies, /Auditoria recente/)
+  assert.match(pilotArea, /operationalStatus/)
+  assert.match(dashboard, /companyOperationalStatus/)
+})
+
+test('retenção documental fica acessível apenas pelo fluxo administrativo', async () => {
+  const [marketplace, pilotReview] = await Promise.all([
+    readFile('src/services/marketplace.js', 'utf8'),
+    readFile('src/pages/PilotReview.jsx', 'utf8'),
+  ])
+  assert.match(marketplace, /pilot-document-cleanup/)
+  assert.match(marketplace, /pilot_document_cleanup_queue/)
+  assert.match(pilotReview, /Processar retenção de documentos/)
+})
