@@ -17,11 +17,14 @@ Foram removidos os caminhos legados sem uso no frontend atual: `store_settings`,
 - RLS está habilitado nas tabelas expostas ao cliente.
 - `platform_admins` expõe somente o próprio registro ao administrador autenticado e não permite escrita direta do navegador.
 - Documentos de pilotos ficam no bucket privado `pilot-documents`, com limite de 5 MB e acesso restrito ao titular/administrador autorizado.
+- Cada piloto possui somente quatro caminhos de documento permitidos (`profile`, `motorcycle`, `cnh-front`, `cnh-back`). Upload/substituição só é permitido durante rascunho/correção; após envio/aprovação o navegador não pode sobrescrever nem apagar os arquivos.
+- Ao iniciar uma reverificação, o piloto aprovado sai do estado operacional antes de substituir documentos; o processo também bloqueia atualização enquanto houver entrega ativa atribuída.
 - `pilot_profiles` não funciona como diretório de documentos. Empresas recebem somente dados sanitizados de pilotos aprovados por RPC.
 - Empresas e pilotos possuem `account_status` separado do status comercial/aprovação, permitindo suspensão e bloqueio sem apagar histórico.
 - Empresa suspensa/bloqueada não recebe novos pedidos; operações sensíveis exigem empresa ativa.
 - Piloto suspenso/bloqueado não recebe ofertas, não aceita entrega e não inicia/conclui rota.
 - Operações críticas do banco passaram a RPCs validadas. Escrita direta de produtos, configurações da empresa e contatos de pilotos foi removida das policies de cliente.
+- Alterações de preço/promoção e contatos de pilotos usam RPCs próprias com validação e rate limiting, evitando bypass das regras pelo cliente.
 - RPCs críticas possuem limite por usuário e janela de tempo usando `private.rpc_rate_limits` e `private.enforce_rate_limit()`.
 - Existe trilha `audit_events` para alterações críticas de empresa, equipe, cardápio, pedidos, ofertas, avaliações, atendimento, pilotos e contatos.
 - Proprietário/administrador consegue consultar auditoria da própria empresa; administrador da plataforma consegue consultar auditoria geral.
