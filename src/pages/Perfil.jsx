@@ -1,4 +1,4 @@
-import { validateName, validatePhone, phoneInput } from '../shared/input-policy.js'
+import { validateCep, validateName, validatePhone, phoneInput, normalizeCep } from '../shared/input-policy.js'
 import AddressFields from '../components/AddressFields.jsx'
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
@@ -24,7 +24,7 @@ export default function Perfil() {
   function handleChange(event) {
     const { name, value, type, checked } = event.target
     if (name === 'telefone' && phoneInput(value).length > 11) { setErro('O telefone deve ter no máximo 11 números, incluindo o DDD.'); return }
-    setForm((atual) => ({ ...atual, [name]: type === 'checkbox' ? checked : name === 'telefone' ? phoneInput(value) : value }))
+    setForm((atual) => ({ ...atual, [name]: type === 'checkbox' ? checked : name === 'telefone' ? phoneInput(value) : name === 'cep' ? normalizeCep(value) : value }))
   }
 
   async function salvar(event) {
@@ -32,7 +32,7 @@ export default function Perfil() {
     if (salvando) return
     setErro('')
     setMensagem('')
-    try { validateName(form.nome); validatePhone(form.telefone) } catch (error) { setErro(error.message); return }
+    try { validateName(form.nome); validatePhone(form.telefone); validateCep(form.cep) } catch (error) { setErro(error.message); return }
     if (!form.nome?.trim() || !form.telefone?.trim()) {
       setErro('Preencha nome e telefone.')
       return

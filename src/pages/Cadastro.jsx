@@ -1,5 +1,5 @@
 import PasswordField from '../components/PasswordField.jsx'
-import { validateName, validatePassword, validatePhone, phoneInput, normalizeName } from '../shared/input-policy.js'
+import { validateCep, validateName, validatePassword, validatePhone, phoneInput, normalizeCep, normalizeName } from '../shared/input-policy.js'
 import AddressFields from '../components/AddressFields.jsx'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -40,7 +40,13 @@ export default function Cadastro() {
 
     setDados((atual) => ({
       ...atual,
-      [name]: type === 'checkbox' ? checked : name === 'telefone' ? phoneInput(value) : value,
+      [name]: type === 'checkbox'
+        ? checked
+        : name === 'telefone'
+          ? phoneInput(value)
+          : name === 'cep'
+            ? normalizeCep(value)
+            : value,
     }))
 
     // Apaga o erro quando o usuário começa a corrigir os dados
@@ -61,11 +67,14 @@ export default function Cadastro() {
       return
     }
 
-    try { validateName(dados.nome); validatePhone(dados.telefone); validatePassword(dados.senha) }
+    try { validateName(dados.nome); validatePhone(dados.telefone); validateCep(dados.cep); validatePassword(dados.senha) }
     catch (error) { setErro(error.message); return }
     const nome = normalizeName(dados.nome)
     const email = dados.email.trim().toLowerCase()
     const telefone = validatePhone(dados.telefone)
+    const cep = validateCep(dados.cep)
+    const cidade = dados.cidade.trim()
+    const uf = dados.uf.trim().toUpperCase()
     const endereco = dados.endereco.trim()
     const numero = dados.numero.trim()
     const bairro = dados.bairro.trim()
@@ -91,12 +100,13 @@ export default function Cadastro() {
       return
     }
 
-    if (
-      dados.senha.length < 12 ||
-      !/[A-Za-zÀ-ÿ]/.test(dados.senha) ||
-      !/\d/.test(dados.senha)
-    ) {
-      setErro('A senha deve ter pelo menos 12 caracteres, incluindo uma letra e um número.')
+    if (!cidade) {
+      setErro('Digite a cidade do endereço de entrega.')
+      return
+    }
+
+    if (!uf) {
+      setErro('Selecione o estado do endereço de entrega.')
       return
     }
 
@@ -135,6 +145,9 @@ export default function Cadastro() {
       nome,
       email,
       telefone,
+      cep,
+      cidade,
+      uf,
       endereco,
       numero,
       bairro,
@@ -233,7 +246,7 @@ export default function Cadastro() {
           disabled={enviando}
         />
 
-        <small className="field-help">De 12 a 128 caracteres, com letra e número.</small>
+        <small className="field-help">De 12 a 128 caracteres, com minúscula, maiúscula, número e símbolo.</small>
         <label htmlFor="confirmarSenha">Confirmar senha</label>
         <PasswordField
           id="confirmarSenha"

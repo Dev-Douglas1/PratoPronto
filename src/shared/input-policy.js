@@ -30,8 +30,22 @@ export function validatePhone(value) {
   return phone
 }
 export function phoneInput(value) { return normalizePhone(value) }
+export function normalizeCep(value) { return String(value || '').replace(/\D/g, '').slice(0, 8) }
+export function validateCep(value) {
+  const cep = String(value || '').replace(/\D/g, '')
+  if (!/^\d{8}$/.test(cep)) throw new Error('Informe um CEP com exatamente 8 números.')
+  return cep
+}
 export function validatePassword(value) {
-  if (typeof value !== 'string' || value.length < LIMITS.passwordMin || value.length > LIMITS.passwordMax) throw new Error('A senha deve ter de 12 a 128 caracteres.')
-  if (!/[A-Za-zÀ-ÿ]/.test(value) || !/\d/.test(value)) throw new Error('A senha deve incluir pelo menos uma letra e um número.')
+  if (typeof value !== 'string' || value.length < LIMITS.passwordMin || value.length > LIMITS.passwordMax) {
+    throw new Error('A senha deve ter de 12 a 128 caracteres.')
+  }
+  const hasLower = /[a-z]/.test(value)
+  const hasUpper = /[A-Z]/.test(value)
+  const hasDigit = /\d/.test(value)
+  const hasSymbol = /[!@#$%^&*()_+\-=\[\]{};'\\:"|<>?,.\/\`~]/.test(value)
+  if (!hasLower || !hasUpper || !hasDigit || !hasSymbol) {
+    throw new Error('A senha deve ter pelo menos uma letra minúscula, uma maiúscula, um número e um símbolo.')
+  }
   return value
 }

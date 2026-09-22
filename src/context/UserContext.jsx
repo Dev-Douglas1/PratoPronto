@@ -4,7 +4,7 @@ import {
   deleteUserData, getAdminStatus, getUserProfile, PRIVACY_POLICY_VERSION,
   TERMS_VERSION, updateUserProfile,
 } from '../services/storage.js'
-import { validateName, validatePassword, validatePhone } from '../shared/input-policy.js'
+import { validateCep, validateName, validatePassword, validatePhone } from '../shared/input-policy.js'
 import { criarErroSupabase } from '../utils/supabaseError.js'
 
 const UserContext = createContext(null)
@@ -150,6 +150,7 @@ export function UserProvider({ children }) {
     const supabase = ready()
     validateName(dados.nome)
     validatePhone(dados.telefone)
+    validateCep(dados.cep)
     validatePassword(dados.senha)
     const email = dados.email.trim().toLowerCase()
     const metadata = {
@@ -228,6 +229,9 @@ export function UserProvider({ children }) {
 
   async function atualizar(dados) {
     if (!usuario?.uid || !usuario.emailVerificado) throw new Error('Confirme seu e-mail antes de alterar o perfil.')
+    validateName(dados.nome)
+    validatePhone(dados.telefone)
+    validateCep(dados.cep)
     try {
       const profile = await updateUserProfile(usuario.uid, dados)
       const finalUser = { ...usuario, ...profile, uid: usuario.uid, email: usuario.email, emailVerificado: true }
