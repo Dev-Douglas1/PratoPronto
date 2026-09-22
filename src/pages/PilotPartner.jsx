@@ -23,7 +23,8 @@ const STATUS = {
 export default function PilotPartner() {
   const { usuario, sair } = useUser()
   const { pilotProfile, refresh } = useCompany()
-  const approved = pilotProfile?.approval_status === 'approved'
+  const operationalStatus = pilotProfile?.account_status || 'active'
+  const approved = pilotProfile?.approval_status === 'approved' && operationalStatus === 'active'
   const [offers, setOffers] = useState([])
   const [orders, setOrders] = useState([])
   const [codes, setCodes] = useState({})
@@ -95,7 +96,11 @@ export default function PilotPartner() {
     setCodes(current => ({ ...current, [order.id]: '' }))
   }
 
-  const [statusTitle, statusText] = STATUS[pilotProfile?.approval_status] || STATUS.draft
+  const [statusTitle, statusText] = operationalStatus === 'blocked'
+    ? ['Acesso bloqueado', pilotProfile?.blocked_reason || 'Seu acesso como Piloto Parceiro foi bloqueado pela plataforma.']
+    : operationalStatus === 'suspended'
+      ? ['Acesso suspenso', pilotProfile?.blocked_reason || 'Seu acesso como Piloto Parceiro está suspenso temporariamente.']
+      : STATUS[pilotProfile?.approval_status] || STATUS.draft
 
   return <div className="company-app pilot-app">
     <aside className="company-sidebar">
@@ -121,6 +126,8 @@ export default function PilotPartner() {
         <section className="company-panel">
           <h2>{statusTitle}</h2>
           <p>{statusText}</p>
+
+          {operationalStatus !== 'active' && <p className="company-alert">Enquanto este status estiver ativo, você não pode receber novas ofertas, aceitar entregas, iniciar rotas ou confirmar entregas.</p>}
           {pilotProfile?.approval_status === 'rejected' && <>
             <p className="company-alert"><b>Motivo:</b> {pilotProfile.rejection_reason || 'Revise os documentos enviados.'}</p>
             <Link className="company-button primary" to="/piloto/cadastro">Corrigir e reenviar cadastro</Link>
