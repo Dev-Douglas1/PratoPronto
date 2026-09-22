@@ -97,7 +97,7 @@ export default function PilotSignup() {
     }
 
     setBusy(true)
-        try {
+    try {
       setProgress('Salvando os dados da moto…')
       await savePilotProfile({
         vehiclePlate,
@@ -116,7 +116,7 @@ export default function PilotSignup() {
       for (const [kind, file] of uploads) {
         setProgress('Enviando documentação com segurança…')
         const path = await uploadPilotDocument(file, kind)
-                paths[kind] = path
+        paths[kind] = path
       }
 
       setProgress('Enviando cadastro para análise…')
