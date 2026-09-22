@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
 import TopBar from '../components/TopBar.jsx'
 import {
-  listPilotApplications, pilotDocumentUrl, reviewPilotApplication, setPilotAccountStatus,
+  listPilotApplications, listPilotDocumentCleanupQueue, pilotDocumentUrl, processPilotDocumentCleanup,
+  reviewPilotApplication, setPilotAccountStatus,
 } from '../services/marketplace.js'
 
 const STATUS_LABEL = {
@@ -23,12 +24,17 @@ export default function PilotReview() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const [cleanupQueue, setCleanupQueue] = useState([])
 
   async function load(nextStatus = status) {
     setLoading(true); setError('')
     try {
-      const values = await listPilotApplications(nextStatus)
+      const [values, queue] = await Promise.all([
+        listPilotApplications(nextStatus),
+        listPilotDocumentCleanupQueue(),
+      ])
       setApplications(values)
+      setCleanupQueue(queue)
       if (selected && !values.some(item => item.profile_id === selected.profile_id)) {
         setSelected(null); setDocuments({})
       }
@@ -100,6 +106,20 @@ export default function PilotReview() {
     }
   }
 
+  async function processCleanup() {
+    if (busy) return
+    setBusy(true); setError(''); setNotice('')
+    try {
+      const result = await processPilotDocumentCleanup()
+      setNotice(`Retenção processada: ${result.done || 0} removidos, ${result.skipped || 0} preservados, ${result.failed || 0} falhas.`)
+      await load(status)
+    } catch (err) {
+      setError(err.message || 'Não foi possível processar a retenção de documentos.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return <AppScreen>
     <TopBar titulo="Análise de pilotos" />
     <div className="page-heading">
@@ -116,6 +136,10 @@ export default function PilotReview() {
             {label}
           </button>
         )}
+      </div>
+      <div className="inline-actions">
+        <button className="btn btn-secondary" type="button" disabled={busy} onClick={processCleanup}>Processar retenção de documentos</button>
+        <small>{cleanupQueue.filter(item => item.status === 'pending').length} itens pendentes · {cleanupQueue.filter(item => item.status === 'failed').length} com falha</small>
       </div>
       {error && <p className="form-error dark-error" role="alert">{error}</p>}
       {notice && <p className="success-note" role="status">{notice}</p>}
