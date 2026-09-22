@@ -106,7 +106,7 @@ Nenhum software pode ser garantido como “zero erro”. O objetivo desta lista 
 - [x] `npm test` 100% aprovado.
 - [x] `npm run check:production` aprovado.
 - [x] `npm run build` aprovado.
-- [x] GitHub Actions verde no commit atual da branch (`411c3b2`). Revalidar novamente no commit que efetivamente for lançado.
+- [x] GitHub Actions verde após as mudanças técnicas atuais. Revalidar novamente no commit que efetivamente for lançado.
 - [ ] Testar Chrome Android, Safari iPhone e desktop.
 - [ ] Testar rede lenta, offline, reconexão e duas sessões simultâneas.
 - [ ] Testar telas pequenas sem overflow ou botões inacessíveis.
