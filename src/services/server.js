@@ -33,6 +33,8 @@ export async function callServer(name, data = {}) {
       name: row.name,
       role: row.role,
       permissions: row.permissions || [],
+      accountStatus: row.account_status || 'active',
+      blockedReason: row.blocked_reason || '',
     }))
   }
   if (name === 'appCreateCompany') return rpc('create_restaurant', { p_slug: data.companyId, p_name: data.name })
