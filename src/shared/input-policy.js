@@ -32,7 +32,7 @@ export function validatePhone(value) {
 export function phoneInput(value) { return normalizePhone(value) }
 export function normalizeCep(value) { return String(value || '').replace(/\D/g, '').slice(0, 8) }
 export function validateCep(value) {
-  const cep = normalizeCep(value)
+  const cep = String(value || '').replace(/\D/g, '')
   if (!/^\d{8}$/.test(cep)) throw new Error('Informe um CEP com exatamente 8 números.')
   return cep
 }
