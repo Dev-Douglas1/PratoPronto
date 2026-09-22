@@ -32,12 +32,14 @@ test('produção exige somente configuração pública do Supabase', () => {
 })
 
 
-test('senha local acompanha os requisitos fortes configurados no Supabase', () => {
-  assert.equal(validatePassword('PratoPronto1!'), 'PratoPronto1!')
-  assert.throws(() => validatePassword('pratopronto1!'), /maiúscula/)
-  assert.throws(() => validatePassword('PRATOPRONTO1!'), /minúscula/)
-  assert.throws(() => validatePassword('PratoPronto!!'), /número/)
-  assert.throws(() => validatePassword('PratoPronto12'), /símbolo/)
+test('senha local aceita de seis a doze caracteres sem exigir símbolo', () => {
+  assert.equal(validatePassword('Prato1'), 'Prato1')
+  assert.equal(validatePassword('Prato123'), 'Prato123')
+  assert.throws(() => validatePassword('Prat1'), /6 a 12/)
+  assert.throws(() => validatePassword('PratoPronto123'), /6 a 12/)
+  assert.throws(() => validatePassword('prato1'), /maiúscula/)
+  assert.throws(() => validatePassword('PRATO1'), /minúscula/)
+  assert.throws(() => validatePassword('PratoX'), /número/)
 })
 
 test('CEP exige exatamente oito números', () => {
