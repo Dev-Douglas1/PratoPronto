@@ -109,7 +109,6 @@ export function UserProvider({ children }) {
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email,
-        options: { emailRedirectTo: window.location.origin + '/verificar-email' },
       })
       if (error) throw error
       const result = { sent: true, retryAfterSeconds: 60 }
@@ -137,7 +136,7 @@ export function UserProvider({ children }) {
         sessionStorage.setItem(PENDING_EMAIL_KEY, normalized)
         const account = pendingAccount(normalized)
         setUsuario(account)
-        await supabase.auth.resend({ type: 'signup', email: normalized, options: { emailRedirectTo: window.location.origin + '/verificar-email' } }).catch(() => undefined)
+        await supabase.auth.resend({ type: 'signup', email: normalized }).catch(() => undefined)
         return account
       }
       throw criarErroSupabase(error)
@@ -172,7 +171,6 @@ export function UserProvider({ children }) {
       password: dados.senha,
       options: {
         data: metadata,
-        emailRedirectTo: window.location.origin + '/verificar-email',
       },
     })
     if (error) throw criarErroSupabase(error)
@@ -181,6 +179,28 @@ export function UserProvider({ children }) {
     const account = verified(data.user) ? await readAccount(data.user) : pendingAccount(data.user)
     setUsuario(account)
     setVerificacao({ sent: !verified(data.user), error: '', retryAt: Date.now() + 60000 })
+    return account
+  }
+
+  async function confirmarCodigoEmail(codigo) {
+    const supabase = ready()
+    const email = usuario?.email?.trim().toLowerCase()
+    const token = String(codigo || '').replace(/\D/g, '')
+    if (!email) throw new Error('Informe o e-mail da conta para confirmar o cadastro.')
+    if (!/^\d{6}$/.test(token)) throw new Error('Digite o código de 6 números enviado ao seu e-mail.')
+
+    const { data, error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: 'email',
+    })
+    if (error) throw criarErroSupabase(error)
+    if (!data.user || !verified(data.user)) throw new Error('Não foi possível confirmar este código. Solicite um novo e tente novamente.')
+
+    const account = await readAccount(data.user)
+    setUsuario(account)
+    sessionStorage.removeItem(PENDING_EMAIL_KEY)
+    setVerificacao({ sent: false, error: '', retryAt: 0 })
     return account
   }
 
@@ -229,7 +249,7 @@ export function UserProvider({ children }) {
     const normalized = email?.trim().toLowerCase()
     if (!normalized) throw new Error('Digite o e-mail da sua conta.')
     const { error } = await supabase.auth.resetPasswordForEmail(normalized, {
-      redirectTo: window.location.origin + '/perfil',
+      redirectTo: window.location.origin + '/redefinir-senha',
     })
     if (error) throw criarErroSupabase(error)
   }
@@ -250,7 +270,7 @@ export function UserProvider({ children }) {
   const value = useMemo(() => ({
     usuario, loading, autenticado: usuario?.emailVerificado === true,
     supabaseConfigured, verificacao, avisoLogin, entrar, cadastrar, atualizar, sair,
-    enviarRecuperacaoSenha, enviarVerificacaoEmail, conferirVerificacaoEmail, excluirConta,
+    enviarRecuperacaoSenha, enviarVerificacaoEmail, confirmarCodigoEmail, conferirVerificacaoEmail, excluirConta,
   }), [usuario, loading, verificacao, avisoLogin])
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>
