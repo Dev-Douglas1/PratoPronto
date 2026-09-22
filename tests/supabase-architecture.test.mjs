@@ -196,3 +196,28 @@ test('service worker não persiste sessão, API ou dados de cliente', async () =
   assert.doesNotMatch(sw, /authorization/i)
   assert.doesNotMatch(sw, /localStorage/)
 })
+
+
+test('documentos de piloto usam quatro caminhos fixos e não podem ser apagados pelo frontend', async () => {
+  const [marketplace, signup] = await Promise.all([
+    readFile('src/services/marketplace.js', 'utf8'),
+    readFile('src/pages/PilotSignup.jsx', 'utf8'),
+  ])
+  assert.match(marketplace, /const path = `\$\{uid\}\/\$\{kind\}`/)
+  assert.match(marketplace, /upsert: true/)
+  assert.doesNotMatch(marketplace, /removePilotDocuments/)
+  assert.doesNotMatch(marketplace, /storage\.from\(PILOT_BUCKET\)\.remove/)
+  assert.match(signup, /savePilotProfile/)
+  assert.match(signup, /submitPilotApplication/)
+})
+
+test('cardápio e contatos de entrega usam somente RPCs rate-limitáveis para escrita', async () => {
+  const [company, marketplace] = await Promise.all([
+    readFile('src/services/company.js', 'utf8'),
+    readFile('src/services/marketplace.js', 'utf8'),
+  ])
+  assert.match(company, /update_restaurant_product_state/)
+  assert.doesNotMatch(company, /from\('products'\)\.update/)
+  assert.match(marketplace, /save_restaurant_pilot_contact/)
+  assert.match(marketplace, /remove_restaurant_pilot_contact/)
+})
