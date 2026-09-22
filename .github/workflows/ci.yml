@@ -55,7 +55,7 @@ jobs:
             if [ "$i" = "30" ]; then cat /tmp/pratopronto-dev.log; exit 1; fi
             sleep 0.5
           done
-          for route in / /login /cadastro /verificar-email /recuperar-senha /redefinir-senha /pizzas /bebidas /pedido /pagamento /acompanhamento /perfil /empresa /piloto /piloto/cadastro /plataforma/pilotos /plataforma/empresas /loja/pratopronto; do
+          for route in / /login /login-telefone /auth/callback /cadastro /verificar-email /recuperar-senha /redefinir-senha /pizzas /bebidas /pedido /pagamento /acompanhamento /perfil /empresa /piloto /piloto/cadastro /plataforma/pilotos /plataforma/empresas /loja/pratopronto; do
             code=$(curl -sS -o /tmp/page.html -w '%{http_code}' "http://127.0.0.1:5173${route}")
             test "$code" = "200"
             grep -q 'id="root"' /tmp/page.html
