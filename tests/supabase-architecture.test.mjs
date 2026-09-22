@@ -151,3 +151,36 @@ test('retenção documental fica acessível apenas pelo fluxo administrativo', a
   assert.match(marketplace, /pilot_document_cleanup_queue/)
   assert.match(pilotReview, /Processar retenção de documentos/)
 })
+
+
+test('mutações críticas da empresa não escrevem diretamente nas tabelas protegidas', async () => {
+  const [company, marketplace, dashboard] = await Promise.all([
+    readFile('src/services/company.js', 'utf8'),
+    readFile('src/services/marketplace.js', 'utf8'),
+    readFile('src/pages/CompanyDashboard.jsx', 'utf8'),
+  ])
+  assert.doesNotMatch(company, /from\('products'\)\.update/)
+  assert.doesNotMatch(marketplace, /from\('restaurant_pilot_contacts'\)\.(insert|update|delete)/)
+  assert.match(company, /update_restaurant_product_state/)
+  assert.match(marketplace, /save_restaurant_pilot_contact/)
+  assert.match(marketplace, /remove_restaurant_pilot_contact/)
+  assert.match(dashboard, /audit:read/)
+  assert.match(dashboard, /CompanyAudit/)
+})
+
+test('plataforma possui moderação de empresas e pilotos sem apagar histórico', async () => {
+  const [app, profile, companies, pilots] = await Promise.all([
+    readFile('src/App.jsx', 'utf8'),
+    readFile('src/pages/Perfil.jsx', 'utf8'),
+    readFile('src/pages/PlatformCompanies.jsx', 'utf8'),
+    readFile('src/pages/PilotReview.jsx', 'utf8'),
+  ])
+  assert.match(app, /\/plataforma\/empresas/)
+  assert.match(profile, /Administrar empresas/)
+  assert.match(companies, /Suspender/)
+  assert.match(companies, /Bloquear/)
+  assert.match(companies, /Reativar/)
+  assert.match(pilots, /Suspender/)
+  assert.match(pilots, /Bloquear/)
+  assert.match(pilots, /Reativar acesso/)
+})
