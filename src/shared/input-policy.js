@@ -1,6 +1,6 @@
 // Shared by the browser and Supabase-facing services. Never apply moderation to
 // passwords, email addresses, identifiers or payment references.
-export const LIMITS = Object.freeze({ nameMin: 2, nameMax: 80, passwordMin: 12, passwordMax: 128, titleMax: 60 })
+export const LIMITS = Object.freeze({ nameMin: 2, nameMax: 80, passwordMin: 6, passwordMax: 12, titleMax: 60 })
 const letters = 'a-zA-ZÀ-ÿ0-9'
 const variants = { a: '[a4@áàâãä]', e: '[e3éèêë]', i: '[i1!íìîï]', o: '[o0óòôõö]', u: '[uúùûü]', s: '[s5$]' }
 const separator = '[\\s._*\\-\u200b-\u200d]*'
@@ -38,14 +38,13 @@ export function validateCep(value) {
 }
 export function validatePassword(value) {
   if (typeof value !== 'string' || value.length < LIMITS.passwordMin || value.length > LIMITS.passwordMax) {
-    throw new Error('A senha deve ter de 12 a 128 caracteres.')
+    throw new Error('A senha deve ter de 6 a 12 caracteres.')
   }
   const hasLower = /[a-z]/.test(value)
   const hasUpper = /[A-Z]/.test(value)
   const hasDigit = /\d/.test(value)
-  const hasSymbol = /[!@#$%^&*()_+\-=\[\]{};'\\:"|<>?,.\/\`~]/.test(value)
-  if (!hasLower || !hasUpper || !hasDigit || !hasSymbol) {
-    throw new Error('A senha deve ter pelo menos uma letra minúscula, uma maiúscula, um número e um símbolo.')
+  if (!hasLower || !hasUpper || !hasDigit) {
+    throw new Error('A senha deve ter pelo menos uma letra minúscula, uma maiúscula e um número.')
   }
   return value
 }
