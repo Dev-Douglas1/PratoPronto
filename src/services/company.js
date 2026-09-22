@@ -160,21 +160,30 @@ export async function saveProduct(id, settings, companyId = DEFAULT_COMPANY_ID) 
   const preco = Math.round(Number(settings.preco) * 100) / 100
   if (!(preco > 0 && preco <= 2000)) throw new Error('Informe um preço entre R$ 0,01 e R$ 2.000,00.')
   if (produtos.find(p => p.id === id)?.personalizavel && preco <= 12) throw new Error('O preço base da pizza deve superar R$ 12,00.')
-  const rid = await restaurantIdForSlug(companyId)
-  const { error } = await ready().from('products').update({
-    price_cents: Math.round(preco * 100),
-    active: Boolean(settings.disponivel),
-    updated_at: new Date().toISOString(),
-  }).eq('restaurant_id', rid).eq('slug', id)
+  const { data, error } = await ready().rpc('update_restaurant_product_state', {
+    p_restaurant_slug: companyId,
+    p_product_slug: id,
+    p_price_cents: Math.round(preco * 100),
+    p_active: Boolean(settings.disponivel),
+    p_promotion: null,
+    p_update_promotion: false,
+  })
   if (error) throw error
+  return data
 }
 
 export async function savePromotion(productId, input, companyId = DEFAULT_COMPANY_ID) {
   const promocao = validatePromotion(input)
-  const rid = await restaurantIdForSlug(companyId)
-  const { error } = await ready().from('products').update({ promotion: promocao, updated_at: new Date().toISOString() })
-    .eq('restaurant_id', rid).eq('slug', productId)
+  const { data, error } = await ready().rpc('update_restaurant_product_state', {
+    p_restaurant_slug: companyId,
+    p_product_slug: productId,
+    p_price_cents: null,
+    p_active: null,
+    p_promotion: promocao,
+    p_update_promotion: true,
+  })
   if (error) throw error
+  return data
 }
 
 export { restaurantIdForSlug, settingFromProduct }
