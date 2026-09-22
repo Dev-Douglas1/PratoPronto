@@ -2,18 +2,20 @@
 
 Nenhum software pode ser garantido como “zero erro”. O objetivo desta lista é impedir lançamento enquanto existir qualquer falha conhecida nos fluxos críticos.
 
+> Estado em 22/09/2026: itens marcados representam implementação/verificação técnica já concluída nesta branch. Testes com contas reais, dispositivos, SMTP, backup/restauração, hospedagem e E2E permanecem obrigatórios antes do lançamento.
+
 ## Gate 1 — Banco e segurança
 
-- [ ] Confirmar que o projeto Supabase de produção está ativo e é o projeto correto.
-- [ ] Confirmar que somente a chave **publishable** está no frontend.
+- [x] Confirmar que o projeto Supabase de produção está ativo e é o projeto correto.
+- [x] Confirmar que somente a chave **publishable** está no frontend.
 - [ ] Garantir que nenhuma `service_role`, senha SMTP, token privado ou segredo esteja no GitHub ou em `VITE_*`.
-- [ ] Rodar os Security Advisors do Supabase e revisar cada aviso.
-- [ ] Rodar os Performance Advisors e criar os índices realmente necessários.
-- [ ] Conferir RLS de perfis, empresas, membros, produtos, pedidos, avaliações, reembolsos, pilotos e Storage.
-- [ ] Confirmar que `pilot-documents` é privado e limitado a 5 MB por arquivo.
-- [ ] Confirmar que empresas não conseguem ler CNH/fotos privadas de pilotos.
-- [ ] Confirmar que somente administradores da plataforma conseguem revisar documentos.
-- [ ] Remover tabelas/rotinas antigas que não tenham mais uso antes de produção.
+- [x] Rodar os Security Advisors do Supabase e revisar cada aviso.
+- [x] Rodar os Performance Advisors e criar os índices realmente necessários.
+- [x] Conferir RLS de perfis, empresas, membros, produtos, pedidos, avaliações, reembolsos, pilotos e Storage.
+- [x] Confirmar que `pilot-documents` é privado e limitado a 5 MB por arquivo.
+- [x] Confirmar que empresas não conseguem ler CNH/fotos privadas de pilotos.
+- [x] Confirmar que somente administradores da plataforma conseguem revisar documentos.
+- [x] Remover tabelas/rotinas antigas que não tenham mais uso antes de produção.
 - [ ] Configurar rotina de backup e testar restauração.
 
 ## Gate 2 — Supabase Auth
@@ -78,30 +80,32 @@ Nenhum software pode ser garantido como “zero erro”. O objetivo desta lista 
 
 ## Gate 6 — Pagamento
 
-- [ ] Manter somente **maquininha/pagamento na entrega** enquanto pagamento online não estiver homologado.
+- [x] Manter somente **maquininha/pagamento na entrega** enquanto pagamento online não estiver homologado.
 - [ ] Testar valor que o piloto deve cobrar e confirmação de recebimento.
 - [ ] Garantir que pedido cancelado não aparece como valor a cobrar.
 - [ ] Antes de ativar Pix/cartão: implementar provedor real, webhook assinado, idempotência, reconciliação e reembolso.
-- [ ] Nunca armazenar número completo de cartão, CVV ou senha.
+- [x] Nunca armazenar número completo de cartão, CVV ou senha.
 
 ## Gate 7 — Privacidade e operação
 
-- [ ] Atualizar Política de Privacidade para empresas, pilotos, CNH/fotos, finalidade e retenção.
-- [ ] Atualizar Termos de Uso para marketplace, empresas e Pilotos Parceiros.
-- [ ] Definir prazo real de retenção para documentos de pilotos rejeitados/inativos.
-- [ ] Implementar exclusão dos arquivos privados quando a retenção terminar.
+- [x] Atualizar Política de Privacidade para empresas, pilotos, CNH/fotos, finalidade e retenção.
+- [x] Atualizar Termos de Uso para marketplace, empresas e Pilotos Parceiros.
+- [x] Definir prazo real de retenção para documentos de pilotos rejeitados/inativos.
+- [x] Implementar exclusão dos arquivos privados quando a retenção terminar por fila protegida + Edge Function administrativa.
+- [ ] Automatizar a execução periódica da fila de retenção sem expor segredo administrativo.
 - [ ] Definir canal de contato de privacidade e suporte.
-- [ ] Definir procedimento para fraude, piloto bloqueado, empresa bloqueada e contestação.
+- [x] Implementar suspensão/bloqueio técnico de piloto e empresa, com motivo e trilha de auditoria.
+- [ ] Definir procedimento humano de contestação, revisão e reativação para fraude/bloqueios.
 - [ ] Revisar necessidade de emissão fiscal e responsabilidades de cada empresa.
-- [ ] Guardar trilha de auditoria para aprovação/reprovação de pilotos e mudanças críticas.
+- [x] Guardar trilha de auditoria para aprovação/reprovação de pilotos e mudanças críticas.
 
 ## Gate 8 — Qualidade técnica
 
-- [ ] `npm ci` sem erro.
-- [ ] `npm audit --omit=dev` sem vulnerabilidade alta/crítica.
-- [ ] `npm test` 100% aprovado.
-- [ ] `npm run check:production` aprovado.
-- [ ] `npm run build` aprovado.
+- [x] `npm ci` sem erro.
+- [x] `npm audit --omit=dev` sem vulnerabilidade alta/crítica.
+- [x] `npm test` 100% aprovado.
+- [x] `npm run check:production` aprovado.
+- [x] `npm run build` aprovado.
 - [ ] GitHub Actions verde no commit exato que será lançado.
 - [ ] Testar Chrome Android, Safari iPhone e desktop.
 - [ ] Testar rede lenta, offline, reconexão e duas sessões simultâneas.
@@ -110,7 +114,7 @@ Nenhum software pode ser garantido como “zero erro”. O objetivo desta lista 
 - [ ] Testar PWA instalada e atualização de versão.
 - [ ] Conferir que service worker não guarda dados sensíveis.
 - [ ] Adicionar monitoramento de erros do frontend e alertas operacionais.
-- [ ] Definir limite/rate limiting para RPCs sensíveis e detectar abuso.
+- [x] Definir limite/rate limiting para RPCs sensíveis e detectar abuso.
 
 ## Gate 9 — Publicação
 
