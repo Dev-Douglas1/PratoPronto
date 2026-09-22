@@ -118,13 +118,6 @@ const PILOT_BUCKET = 'pilot-documents'
 const PILOT_ALLOWED_TYPES = new Set(['image/jpeg','image/png','image/webp','application/pdf'])
 const PILOT_MAX_BYTES = 5 * 1024 * 1024
 
-function pilotFileExtension(file) {
-  const fromName = String(file?.name || '').split('.').pop()?.toLowerCase()
-  if (fromName && /^[a-z0-9]{2,5}$/.test(fromName)) return fromName
-  const byType = { 'image/jpeg':'jpg', 'image/png':'png', 'image/webp':'webp', 'application/pdf':'pdf' }
-  return byType[file?.type] || 'bin'
-}
-
 export async function uploadPilotDocument(file, kind) {
   if (!file) throw new Error('Selecione o arquivo obrigatório.')
   if (!PILOT_ALLOWED_TYPES.has(file.type)) throw new Error('Use JPG, PNG, WEBP ou PDF.')
@@ -137,11 +130,11 @@ export async function uploadPilotDocument(file, kind) {
   const uid = userData.user?.id
   if (!uid) throw new Error('Entre novamente antes de enviar os documentos.')
 
-  const path = `${uid}/${kind}/${crypto.randomUUID()}.${pilotFileExtension(file)}`
+  const path = `${uid}/${kind}`
   const { error } = await supabase.storage.from(PILOT_BUCKET).upload(path, file, {
     cacheControl: '3600',
     contentType: file.type,
-    upsert: false,
+    upsert: true,
   })
   if (error) throw error
   return path
