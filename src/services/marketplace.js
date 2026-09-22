@@ -208,6 +208,22 @@ export async function setPilotAccountStatus(profileId, status, reason = '') {
   return data
 }
 
+
+export async function listPilotDocumentCleanupQueue() {
+  const { data, error } = await ready().from('pilot_document_cleanup_queue')
+    .select('id,profile_id,reason,due_at,status,attempts,last_error,created_at,processed_at')
+    .order('due_at', { ascending: true })
+    .limit(200)
+  if (error) throw error
+  return data || []
+}
+
+export async function processPilotDocumentCleanup() {
+  const { data, error } = await ready().functions.invoke('pilot-document-cleanup', { body: {} })
+  if (error) throw error
+  return data || { processed: 0, done: 0, skipped: 0, failed: 0 }
+}
+
 export async function listPlatformRestaurants() {
   const { data, error } = await ready().rpc('list_platform_restaurants')
   if (error) throw error
