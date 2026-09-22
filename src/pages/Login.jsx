@@ -1,6 +1,6 @@
 import PasswordField from '../components/PasswordField.jsx'
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
 import BrandMark from '../components/BrandMark.jsx'
 import { useUser } from '../context/UserContext.jsx'
@@ -8,6 +8,7 @@ import { accountDestination } from '../utils/access.js'
 
 export default function Login() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { entrar, supabaseConfigured } = useUser()
   const [usuario, setUsuario] = useState('')
   const [senha, setSenha] = useState('')
@@ -69,6 +70,7 @@ export default function Login() {
             autoComplete="current-password"
           />
           <Link className="forgot-link" to="/recuperar-senha">Esqueci minha senha</Link>
+          {location.state?.message && <p className="success-note" role="status">{location.state.message}</p>}
           {erro && <p className="form-error" role="alert">{erro}</p>}
           <button className="btn btn-primary" type="submit" disabled={enviando}>
             {enviando ? 'Entrando...' : 'Entrar'}
