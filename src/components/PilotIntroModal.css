@@ -1,0 +1,204 @@
+.pilot-intro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, .76);
+  backdrop-filter: blur(5px);
+}
+
+.pilot-intro-modal {
+  position: relative;
+  width: min(620px, 100%);
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  padding: 30px;
+  border: 2px solid #ffe317;
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 90% 8%, rgba(255, 227, 23, .13), transparent 28%),
+    #111;
+  color: #fff;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .55);
+}
+
+.pilot-intro-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 50%;
+  background: #252525;
+  color: #fff;
+  font: inherit;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.pilot-intro-close:hover,
+.pilot-intro-close:focus-visible {
+  border-color: #ffe317;
+  color: #ffe317;
+  outline: none;
+}
+
+.pilot-intro-icon {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 16px;
+  border-radius: 16px;
+  background: #ffe317;
+  color: #111;
+  font-size: 28px;
+}
+
+.pilot-intro-eyebrow {
+  color: #ffe317;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 1.8px;
+}
+
+.pilot-intro-modal h2 {
+  margin: 7px 48px 10px 0;
+  font-size: clamp(25px, 5vw, 34px);
+  line-height: 1.08;
+}
+
+.pilot-intro-modal > p {
+  margin: 0;
+  color: #d3d3d3;
+  line-height: 1.6;
+}
+
+.pilot-intro-steps {
+  display: grid;
+  gap: 10px;
+  margin: 22px 0;
+}
+
+.pilot-intro-steps > div {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 12px;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 14px;
+  background: rgba(255,255,255,.035);
+}
+
+.pilot-intro-steps b {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #ffe317;
+  color: #111;
+}
+
+.pilot-intro-steps span {
+  display: grid;
+  gap: 3px;
+}
+
+.pilot-intro-steps strong {
+  font-size: 14px;
+}
+
+.pilot-intro-steps small {
+  color: #aaa;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.pilot-intro-warning {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #fff5bf;
+  color: #342b00;
+}
+
+.pilot-intro-warning strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.pilot-intro-warning p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.pilot-intro-privacy {
+  margin-top: 14px !important;
+  font-size: 13px;
+}
+
+.pilot-intro-actions {
+  display: grid;
+  grid-template-columns: minmax(0, .75fr) minmax(0, 1.25fr);
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.pilot-intro-actions button {
+  min-height: 48px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.pilot-intro-secondary {
+  border: 1px solid #555;
+  background: #202020;
+  color: #fff;
+}
+
+.pilot-intro-primary {
+  border: 1px solid #ffe317;
+  background: #ffe317;
+  color: #111;
+}
+
+.pilot-intro-actions button:focus-visible {
+  outline: 3px solid rgba(255, 227, 23, .35);
+  outline-offset: 2px;
+}
+
+@media (max-width: 560px) {
+  .pilot-intro-overlay {
+    padding: 10px;
+    align-items: end;
+  }
+
+  .pilot-intro-modal {
+    width: 100%;
+    max-height: calc(100dvh - 10px);
+    padding: 24px 18px 18px;
+    border-radius: 22px 22px 12px 12px;
+  }
+
+  .pilot-intro-modal h2 {
+    margin-right: 42px;
+  }
+
+  .pilot-intro-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .pilot-intro-primary {
+    order: -1;
+  }
+}
