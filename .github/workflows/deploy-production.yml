@@ -1,4 +1,4 @@
-name: Preparar PratoPronto para produção
+name: Publicar PratoPronto em produção
 
 on:
   workflow_dispatch:
@@ -6,10 +6,15 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: pratopronto-production
+  cancel-in-progress: false
+
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     environment: production
+
     steps:
       - name: Baixar código
         uses: actions/checkout@v4
@@ -22,6 +27,12 @@ jobs:
 
       - name: Instalar dependências
         run: npm ci
+
+      - name: Auditar dependências de produção
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Verificar segredos e chaves proibidas
+        run: npm run check:secrets
 
       - name: Criar configuração Supabase
         shell: bash
@@ -39,7 +50,7 @@ jobs:
             echo "VITE_ENABLE_CARD_DEMO=false"
           } > .env.production
 
-      - name: Validar configuração
+      - name: Validar configuração de produção
         env:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
@@ -48,10 +59,11 @@ jobs:
           VITE_ENABLE_CARD_DEMO: 'false'
         run: npm run check:production
 
-      - name: Testar e compilar
-        run: |
-          npm test
-          npm run build
+      - name: Testar aplicação
+        run: npm test
+
+      - name: Compilar produção
+        run: npm run build
 
       - name: Salvar artefato web
         uses: actions/upload-artifact@v4
@@ -59,3 +71,21 @@ jobs:
           name: pratopronto-web
           path: dist/
           if-no-files-found: error
+
+      - name: Preparar credencial do Firebase Hosting
+        shell: bash
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "Secret FIREBASE_SERVICE_ACCOUNT não configurado no ambiente production."
+            exit 1
+          fi
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-service-account.json"
+
+      - name: Publicar frontend no Firebase Hosting
+        shell: bash
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_HOSTING_PROJECT_ID || 'pratopronto-d861d' }}
+        run: npx --yes firebase-tools@latest deploy --only hosting --project "$FIREBASE_PROJECT_ID" --non-interactive
