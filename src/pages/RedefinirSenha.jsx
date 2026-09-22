@@ -85,7 +85,7 @@ export default function RedefinirSenha() {
           <span className="eyebrow">NOVA SENHA</span>
           <h2>Crie uma nova senha</h2>
           <p className="auth-description">
-            Use de 12 a 128 caracteres, com pelo menos uma letra e um número.
+            Use de 12 a 128 caracteres, com minúscula, maiúscula, número e símbolo.
           </p>
 
           {!pronto && !erro && <p className="success-note">Validando seu link seguro...</p>}
