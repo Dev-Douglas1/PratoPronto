@@ -44,13 +44,14 @@ test('início, login, cadastro e recuperação mostram conteúdo sem serviços e
     assert.match(render(Page), new RegExp(expected))
   }
 })
-test('confirmação mostra instruções, reenvio e botão simples sem campo de números', async () => {
+test('confirmação exige OTP de seis números e permite reenvio', async () => {
   const { default: Page } = await server.ssrLoadModule('/src/pages/VerificarEmail.jsx')
   const html = render(Page)
-  assert.match(html, /Já confirmei meu e-mail/)
-  assert.match(html, /link de confirmação/)
-  assert.match(html, /Enviar e-mail de confirmação/)
-  assert.doesNotMatch(html, /<input|4 números|Código enviado/)
+  assert.match(html, /Código de verificação/)
+  assert.match(html, /one-time-code/)
+  assert.match(html, /pattern="[0-9]{6}"/)
+  assert.match(html, /Confirmar código/)
+  assert.match(html, /Enviar código de confirmação/)
 })
 test('painel de demonstração abre usando os mesmos providers do aplicativo', async () => {
   const { default: Page } = await server.ssrLoadModule('/src/pages/CompanyDashboard.jsx')
