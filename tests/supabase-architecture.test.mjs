@@ -267,3 +267,18 @@ test('falha na consulta de empresa não derruba o perfil autenticado', async () 
   assert.match(migration, /grant execute on function private\.restaurant_membership_exists\(uuid, uuid\) to authenticated/i)
   assert.match(migration, /phone_confirmed_at is not null/)
 })
+
+
+test('cadastro de piloto exige confirmação do aviso antes do formulário', async () => {
+  const [partner, signup, modal] = await Promise.all([
+    readFile('src/pages/PilotPartner.jsx', 'utf8'),
+    readFile('src/pages/PilotSignup.jsx', 'utf8'),
+    readFile('src/components/PilotIntroModal.jsx', 'utf8'),
+  ])
+  assert.match(partner, /PilotIntroModal/)
+  assert.match(partner, /pratopronto:pilot-intro-accepted/)
+  assert.match(signup, /requiresIntro/)
+  assert.match(signup, /introAccepted/)
+  assert.match(modal, /aria-modal="true"/)
+  assert.match(modal, /Entendi, continuar cadastro/)
+})
