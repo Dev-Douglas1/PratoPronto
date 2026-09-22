@@ -323,25 +323,25 @@ export async function listPilotContacts(companyId) {
 }
 
 export async function savePilotContact(companyId, contact) {
-  const supabase = ready()
-  const rid = await restaurantIdForSlug(companyId)
-  const { data: userData } = await supabase.auth.getUser()
-  const payload = {
-    restaurante_id: rid,
-    pilot_profile_id: contact.pilotProfileId || null,
-    relation_type: contact.relationType === 'partner' ? 'partner' : 'own',
-    label: contact.label.trim(),
-    contact_type: contact.contactType || 'whatsapp',
-    contact_value: contact.contactValue.trim(),
-    notes: contact.notes?.trim() || '',
-    active: true,
-    created_by: userData.user.id,
-    updated_at: new Date().toISOString(),
-  }
-  const query = contact.id
-    ? supabase.from('restaurant_pilot_contacts').update(payload).eq('id', contact.id)
-    : supabase.from('restaurant_pilot_contacts').insert(payload)
-  const { data, error } = await query.select().single()
+  const { data, error } = await ready().rpc('save_restaurant_pilot_contact', {
+    p_restaurant_slug: companyId,
+    p_contact_id: contact.id || null,
+    p_pilot_profile_id: contact.pilotProfileId || null,
+    p_relation_type: contact.relationType === 'partner' ? 'partner' : 'own',
+    p_label: contact.label.trim(),
+    p_contact_type: contact.contactType || 'whatsapp',
+    p_contact_value: contact.contactValue.trim(),
+    p_notes: contact.notes?.trim() || '',
+  })
+  if (error) throw error
+  return data
+}
+
+export async function removePilotContact(companyId, contactId) {
+  const { data, error } = await ready().rpc('remove_restaurant_pilot_contact', {
+    p_restaurant_slug: companyId,
+    p_contact_id: contactId,
+  })
   if (error) throw error
   return data
 }
