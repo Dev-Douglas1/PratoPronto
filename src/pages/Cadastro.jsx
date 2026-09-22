@@ -161,7 +161,7 @@ export default function Cadastro() {
       <div className="page-heading">
         <span className="eyebrow">NOVO CLIENTE</span>
         <h1>Crie sua conta</h1>
-        <p>Depois do cadastro, toque no link enviado ao seu e-mail para liberar o acesso.</p>
+        <p>Depois do cadastro, digite o código de 6 números enviado ao seu e-mail para liberar o acesso.</p>
       </div>
 
       <form
