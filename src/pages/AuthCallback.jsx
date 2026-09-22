@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
 import BrandMark from '../components/BrandMark.jsx'
@@ -9,8 +9,11 @@ export default function AuthCallback() {
   const navigate = useNavigate()
   const { finalizarOAuth } = useUser()
   const [erro, setErro] = useState('')
+  const iniciado = useRef(false)
 
   useEffect(() => {
+    if (iniciado.current) return undefined
+    iniciado.current = true
     let ativo = true
     async function concluir() {
       try {
