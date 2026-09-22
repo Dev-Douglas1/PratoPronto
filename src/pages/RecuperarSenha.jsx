@@ -39,7 +39,7 @@ export default function RecuperarSenha() {
         <form className="login-card" onSubmit={enviar}>
           <span className="eyebrow">RECUPERAR ACESSO</span>
           <h2>Redefina sua senha</h2>
-          <p className="auth-description">Informe o e-mail cadastrado. O link seguro será enviado pelo serviço de autenticação.</p>
+          <p className="auth-description">Informe o e-mail cadastrado. Você receberá um link seguro para criar uma nova senha.</p>
           <label htmlFor="recovery-email">E-mail</label>
           <input
             id="recovery-email"
