@@ -5,7 +5,7 @@ import BrandMark from '../components/BrandMark.jsx'
 import { useUser } from '../context/UserContext.jsx'
 
 export default function RecuperarSenha() {
-  const { enviarRecuperacaoSenha, firebaseConfigured } = useUser()
+  const { enviarRecuperacaoSenha, supabaseConfigured } = useUser()
   const [email, setEmail] = useState('')
   const [mensagem, setMensagem] = useState('')
   const [erro, setErro] = useState('')
@@ -16,15 +16,15 @@ export default function RecuperarSenha() {
     setErro('')
     setMensagem('')
 
-    if (!firebaseConfigured) {
-      setErro('Configure o Firebase antes de recuperar a senha.')
+    if (!supabaseConfigured) {
+      setErro('Configure o Supabase antes de recuperar a senha.')
       return
     }
 
     try {
       setEnviando(true)
       await enviarRecuperacaoSenha(email)
-      setMensagem('Se existir uma conta com esse e-mail, o Firebase enviará as instruções de recuperação.')
+      setMensagem('Se existir uma conta com esse e-mail, o serviço de autenticação enviará as instruções de recuperação.')
     } catch (error) {
       setErro(error.message)
     } finally {
@@ -39,7 +39,7 @@ export default function RecuperarSenha() {
         <form className="login-card" onSubmit={enviar}>
           <span className="eyebrow">RECUPERAR ACESSO</span>
           <h2>Redefina sua senha</h2>
-          <p className="auth-description">Informe o e-mail cadastrado. O link seguro será enviado pelo serviço de autenticação.</p>
+          <p className="auth-description">Informe o e-mail cadastrado. Você receberá um link seguro para criar uma nova senha.</p>
           <label htmlFor="recovery-email">E-mail</label>
           <input
             id="recovery-email"

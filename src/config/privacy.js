@@ -1,4 +1,4 @@
-import { POLICY_VERSION } from '../../functions/src/policy.js'
+import { POLICY_VERSION } from '../shared/policy.js'
 export const privacyConfig = {
   appName: 'PratoPronto',
   controllerName: import.meta.env.VITE_CONTROLLER_NAME || 'Responsável pelo PratoPronto',

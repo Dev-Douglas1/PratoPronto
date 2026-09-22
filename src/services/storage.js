@@ -1,168 +1,215 @@
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  serverTimestamp,
-  setDoc,
-  updateDoc,
-  where,
-  onSnapshot,
-} from 'firebase/firestore'
-import { db, firebaseConfigured } from '../firebase.js'
-import { validateName, validatePhone } from '../../functions/src/input-policy.js'
-import { callServer } from './server.js'
-import { advanceOrder, decideRefund, submitRefund } from './company.js'
+import { getSupabase, supabaseConfigured } from '../lib/supabase.js'
 
-import { POLICY_VERSION as PRIVACY_POLICY_VERSION, TERMS_VERSION } from '../../functions/src/policy.js'
-export { PRIVACY_POLICY_VERSION, TERMS_VERSION }
+export const PRIVACY_POLICY_VERSION = '2026-09-15'
+export const TERMS_VERSION = '2026-09-09'
 
-function requireFirebase() {
-  if (!firebaseConfigured || !db) {
-    throw new Error('Firebase não configurado. Preencha as variáveis VITE_FIREBASE_* no arquivo .env.')
+function ready() {
+  if (!supabaseConfigured) throw new Error('Supabase não configurado. Preencha as variáveis VITE_SUPABASE_* no arquivo .env.')
+  return getSupabase()
+}
+
+function profileFromRow(row) {
+  if (!row) return null
+  return {
+    uid: row.id,
+    nome: row.nome || '',
+    email: row.email || '',
+    telefone: row.telefone || '',
+    avatarUrl: row.avatar_url || '',
+    endereco: row.endereco || '',
+    numero: row.numero || '',
+    bairro: row.bairro || '',
+    complemento: row.complemento || '',
+    cep: row.cep || '',
+    cidade: row.cidade || '',
+    uf: row.uf || '',
+    aceitarMarketing: Boolean(row.aceitar_marketing),
+    privacyPolicyVersion: row.privacy_policy_version,
+    termsVersion: row.terms_version,
+    consentTimestamp: row.consent_timestamp,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   }
+}
+
+function orderFromRow(row) {
+  if (!row) return null
+  return {
+    ...(row.data || {}),
+    id: row.id,
+    userId: row.user_id,
+    restaurantId: row.restaurant_id,
+    status: row.status,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    assignedCourier: row.assigned_pilot_id || row.data?.assignedCourier || '',
+    deliveryVerificationRequired: row.delivery_verification_required !== false,
+    deliveryStatus: row.delivery_status,
+    pagamento: {
+      ...(row.data?.pagamento || {}),
+      metodo: row.payment_method || row.data?.pagamento?.metodo,
+      status: row.payment_status || row.data?.pagamento?.status,
+    },
+  }
+}
+
+function recordFromRow(row) {
+  return row ? { ...(row.data || {}), id: row.id, status: row.status || row.data?.status, createdAt: row.created_at, updatedAt: row.updated_at } : null
 }
 
 export async function saveUserProfile(uid, data) {
-  requireFirebase()
-  const safeData = {
-    nome: validateName(data.nome),
-    email: data.email?.trim().toLowerCase() ?? '',
-    telefone: validatePhone(data.telefone),
-    endereco: data.endereco?.trim() ?? '',
-    numero: data.numero?.trim() ?? '',
-    bairro: data.bairro?.trim() ?? '',
-    cep: data.cep?.replace(/\D/g, '') ?? '',
-    cidade: data.cidade?.trim() ?? '',
-    uf: data.uf?.trim().toUpperCase() ?? '',
-    complemento: data.complemento?.trim() ?? '',
-    aceitarMarketing: Boolean(data.aceitarMarketing),
-    privacyPolicyVersion: data.privacyPolicyVersion ?? PRIVACY_POLICY_VERSION,
-    termsVersion: data.termsVersion ?? TERMS_VERSION,
-    consentTimestamp: data.consentTimestamp ?? new Date().toISOString(),
-    updatedAt: serverTimestamp(),
+  const supabase = ready()
+  const payload = {
+    id: uid,
+    nome: data.nome?.trim() || '',
+    email: data.email?.trim().toLowerCase() || '',
+    telefone: String(data.telefone || '').replace(/\D/g, ''),
+    endereco: data.endereco?.trim() || '',
+    numero: data.numero?.trim() || '',
+    bairro: data.bairro?.trim() || '',
+    cep: String(data.cep || '').replace(/\D/g, ''),
+    cidade: data.cidade?.trim() || '',
+    uf: data.uf?.trim().toUpperCase() || '',
+    complemento: data.complemento?.trim() || '',
+    aceitar_marketing: Boolean(data.aceitarMarketing),
+    privacy_policy_version: data.privacyPolicyVersion || PRIVACY_POLICY_VERSION,
+    terms_version: data.termsVersion || TERMS_VERSION,
+    consent_timestamp: data.consentTimestamp || new Date().toISOString(),
   }
-
-  await setDoc(doc(db, 'users', uid), safeData, { merge: true })
-  // Pending registrations can create their own private profile, but cannot read
-  // protected data until the server confirms the email.
-  return safeData
+  const { data: row, error } = await supabase.from('profiles').upsert(payload).select().single()
+  if (error) throw error
+  return profileFromRow(row)
 }
 
 export async function getUserProfile(uid) {
-  requireFirebase()
-  const snapshot = await getDoc(doc(db, 'users', uid))
-  return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null
+  const supabase = ready()
+  const { data, error } = await supabase.from('profiles').select('*').eq('id', uid).maybeSingle()
+  if (error) throw error
+  return profileFromRow(data)
 }
 
-export async function getAdminStatus(uid) {
-  requireFirebase()
-  const snapshot = await getDoc(doc(db, 'admins', uid))
-  return snapshot.exists() && snapshot.data()?.role === 'restaurant_admin'
+export async function getAdminStatus() {
+  const supabase = ready()
+  const { data, error } = await supabase.rpc('my_restaurants')
+  if (error) throw error
+  return Array.isArray(data) && data.length > 0
 }
 
 export async function updateUserProfile(uid, partial) {
-  requireFirebase()
-  const safe = {
-    nome: validateName(partial.nome),
-    telefone: validatePhone(partial.telefone),
-    endereco: partial.endereco?.trim() ?? '',
-    numero: partial.numero?.trim() ?? '',
-    bairro: partial.bairro?.trim() ?? '',
-    cep: partial.cep?.replace(/\D/g, '') ?? '',
-    cidade: partial.cidade?.trim() ?? '',
-    uf: partial.uf?.trim().toUpperCase() ?? '',
-    complemento: partial.complemento?.trim() ?? '',
-    aceitarMarketing: Boolean(partial.aceitarMarketing),
-    updatedAt: serverTimestamp(),
+  const supabase = ready()
+  const payload = {
+    nome: partial.nome?.trim() || '',
+    telefone: String(partial.telefone || '').replace(/\D/g, ''),
+    endereco: partial.endereco?.trim() || '',
+    numero: partial.numero?.trim() || '',
+    bairro: partial.bairro?.trim() || '',
+    cep: String(partial.cep || '').replace(/\D/g, ''),
+    cidade: partial.cidade?.trim() || '',
+    uf: partial.uf?.trim().toUpperCase() || '',
+    complemento: partial.complemento?.trim() || '',
+    aceitar_marketing: Boolean(partial.aceitarMarketing),
   }
-  await updateDoc(doc(db, 'users', uid), safe)
-  return getUserProfile(uid)
+  const { data, error } = await supabase.from('profiles').update(payload).eq('id', uid).select().single()
+  if (error) throw error
+  return profileFromRow(data)
 }
 
 export async function getLastOrder(userId) {
-  requireFirebase()
-  const q = query(collection(db, 'orders'), where('userId', '==', userId))
-  const snapshot = await getDocs(q)
-  const orders = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }))
-  orders.sort((a, b) => {
-    const aTime = a.createdAt?.toMillis?.() ?? 0
-    const bTime = b.createdAt?.toMillis?.() ?? 0
-    return bTime - aTime
-  })
-  return orders[0] ?? null
+  const rows = await getOrdersForUser(userId)
+  return rows[0] || null
 }
 
 export function subscribeToLastOrder(userId, onChange, onError) {
-  requireFirebase()
-  const q = query(collection(db, 'orders'), where('userId', '==', userId))
-  return onSnapshot(q, (snapshot) => {
-    const orders = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }))
-    orders.sort((a, b) => {
-      const aTime = a.createdAt?.toMillis?.() ?? 0
-      const bTime = b.createdAt?.toMillis?.() ?? 0
-      return bTime - aTime
-    })
-    onChange(orders[0] ?? null)
-  }, onError)
+  return subscribeOrders(userId, rows => onChange(rows[0] || null), onError)
+}
+
+function subscribeOrders(userId, onChange, onError) {
+  const supabase = ready()
+  let stopped = false
+  const load = async () => {
+    const { data, error } = await supabase.from('orders').select('*').eq('user_id', userId).order('created_at', { ascending: false })
+    if (error) { if (!stopped) onError?.(error); return }
+    if (!stopped) onChange((data || []).map(orderFromRow))
+  }
+  load()
+  const channel = supabase.channel('orders:user:' + userId)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: 'user_id=eq.' + userId }, load)
+    .subscribe()
+  return () => { stopped = true; supabase.removeChannel(channel) }
 }
 
 export async function getOrdersForUser(userId) {
-  requireFirebase()
-  const q = query(collection(db, 'orders'), where('userId', '==', userId))
-  const snapshot = await getDocs(q)
-  return snapshot.docs.map((item) => ({ id: item.id, ...item.data() }))
+  const supabase = ready()
+  const { data, error } = await supabase.from('orders').select('*').eq('user_id', userId).order('created_at', { ascending: false })
+  if (error) throw error
+  return (data || []).map(orderFromRow)
 }
 
 export async function getAllOrdersForAdmin() {
-  requireFirebase()
-  const snapshot = await getDocs(collection(db, 'orders'))
-  const orders = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }))
-  return orders.sort((a, b) => {
-    const aTime = a.createdAt?.toMillis?.() ?? 0
-    const bTime = b.createdAt?.toMillis?.() ?? 0
-    return bTime - aTime
-  })
+  const supabase = ready()
+  const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false })
+  if (error) throw error
+  return (data || []).map(orderFromRow)
 }
 
 export async function updateOrderStatus(orderId, status, received = false) {
-  return advanceOrder(orderId, status, received)
+  const supabase = ready()
+  const { data, error } = await supabase.rpc('advance_order', { p_order_id: orderId, p_next: status, p_received: received })
+  if (error) throw error
+  return data
 }
 
-export async function createRefundRequest({ userId, orderId, motivo }) {
-  return submitRefund({ userId, orderId, motivo })
+export async function createRefundRequest({ orderId, motivo }) {
+  const supabase = ready()
+  const { data, error } = await supabase.rpc('submit_refund_request', { p_order_id: orderId, p_reason: motivo })
+  if (error) throw error
+  return data
 }
 
 export async function getRefundRequestForOrder(userId, orderId) {
-  requireFirebase()
-  const snapshot = await getDoc(doc(db, 'refundRequests', orderId))
-  return snapshot.exists() ? { id: snapshot.id, ...snapshot.data() } : null
+  const supabase = ready()
+  const { data, error } = await supabase.from('refund_requests').select('*').eq('id', orderId).eq('user_id', userId).maybeSingle()
+  if (error) throw error
+  return recordFromRow(data)
 }
 
 export async function getRefundRequestsForUser(userId) {
-  requireFirebase()
-  const q = query(collection(db, 'refundRequests'), where('userId', '==', userId))
-  const snapshot = await getDocs(q)
-  return snapshot.docs.map((item) => ({ id: item.id, ...item.data() }))
+  const supabase = ready()
+  const { data, error } = await supabase.from('refund_requests').select('*').eq('user_id', userId).order('created_at', { ascending: false })
+  if (error) throw error
+  return (data || []).map(recordFromRow)
 }
 
 export async function getReviewsForUser(userId) {
-  requireFirebase()
-  const snapshot = await getDocs(query(collection(db, 'reviews'), where('userId', '==', userId)))
-  return snapshot.docs.map(item => ({ ...item.data(), id: item.id }))
+  const supabase = ready()
+  const { data, error } = await supabase.from('reviews').select('*').eq('user_id', userId).order('created_at', { ascending: false })
+  if (error) throw error
+  return (data || []).map(recordFromRow)
 }
 
 export async function getRefundRequestsForAdmin() {
-  requireFirebase()
-  const snapshot = await getDocs(collection(db, 'refundRequests'))
-  return snapshot.docs.map((item) => ({ id: item.id, ...item.data() }))
+  const supabase = ready()
+  const { data, error } = await supabase.from('refund_requests').select('*').order('created_at', { ascending: false })
+  if (error) throw error
+  return (data || []).map(recordFromRow)
 }
 
 export async function reviewRefundRequest({ requestId, status, resposta }) {
-  return decideRefund(requestId, status === 'aprovado_demo', resposta)
+  const supabase = ready()
+  const { data, error } = await supabase.rpc('decide_refund_request', {
+    p_order_id: requestId,
+    p_approve: status !== 'recusado',
+    p_answer: resposta,
+  })
+  if (error) throw error
+  return data
 }
 
 export async function deleteUserData() {
-  return callServer('appPrivacyRequest')
+  const supabase = ready()
+  const { data, error } = await supabase.rpc('request_account_deletion')
+  if (error) throw error
+  return data
 }
+
+export { orderFromRow, recordFromRow }

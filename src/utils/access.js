@@ -1,5 +1,5 @@
-// These decisions only select screens. Firebase rules and server authorization
-// independently require a verified email before allowing protected data.
+// Estas decisões apenas escolhem telas. O Supabase Auth e as políticas RLS
+// continuam exigindo e-mail verificado para dados protegidos.
 export function accountDestination(user) {
   if (!user) return '/login'
   if (user.emailVerificado !== true) return '/verificar-email'

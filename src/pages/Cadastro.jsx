@@ -1,12 +1,12 @@
 import PasswordField from '../components/PasswordField.jsx'
-import { validateName, validatePassword, validatePhone, phoneInput, normalizeName } from '../../functions/src/input-policy.js'
+import { validateName, validatePassword, validatePhone, phoneInput, normalizeName } from '../shared/input-policy.js'
 import AddressFields from '../components/AddressFields.jsx'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
 import TopBar from '../components/TopBar.jsx'
 import { useUser } from '../context/UserContext.jsx'
-import { traduzirErroFirebase } from '../utils/firebaseError'
+import { traduzirErroSupabase } from '../utils/supabaseError.js'
 
 const initialState = {
   nome: '',
@@ -28,7 +28,7 @@ const initialState = {
 
 export default function Cadastro() {
   const navigate = useNavigate()
-  const { cadastrar, firebaseConfigured } = useUser()
+  const { cadastrar, supabaseConfigured } = useUser()
 
   const [dados, setDados] = useState(initialState)
   const [erro, setErro] = useState('')
@@ -54,7 +54,7 @@ export default function Cadastro() {
     if (enviando) return
     setErro('')
 
-    if (!firebaseConfigured) {
+    if (!supabaseConfigured) {
       setErro(
         'O cadastro ainda não está disponível. A empresa precisa concluir a ativação do serviço.'
       )
@@ -148,7 +148,7 @@ export default function Cadastro() {
       setDados(atual => ({ ...atual, senha: '', confirmarSenha: '' }))
       navigate('/verificar-email', { replace: true })
     } catch (error) {
-      setErro(traduzirErroFirebase(error))
+      setErro(traduzirErroSupabase(error))
     } finally {
       setEnviando(false)
     }
@@ -161,7 +161,7 @@ export default function Cadastro() {
       <div className="page-heading">
         <span className="eyebrow">NOVO CLIENTE</span>
         <h1>Crie sua conta</h1>
-        <p>Depois do cadastro, toque no link enviado ao seu e-mail para liberar o acesso.</p>
+        <p>Depois do cadastro, digite o código de 6 números enviado ao seu e-mail para liberar o acesso.</p>
       </div>
 
       <form

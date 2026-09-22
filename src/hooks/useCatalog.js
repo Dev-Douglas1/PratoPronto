@@ -1,48 +1,83 @@
 import { useEffect, useMemo, useState } from 'react'
-import { collection, onSnapshot } from 'firebase/firestore'
-import { promotionStatus } from '../../functions/src/promotions.js'
-import { db } from '../firebase.js'
-import { produtos } from '../data/produtos.js'
-import { accessError } from '../utils/dataAccess.js'
+import { promotionStatus } from '../shared/promotions.js'
+import { getSupabase, supabaseConfigured } from '../lib/supabase.js'
+import { DEFAULT_COMPANY_ID } from '../config/marketplace.js'
 
-export default function useCatalog(enabled = true) {
+export default function useCatalog(enabled = true, companyId = DEFAULT_COMPANY_ID) {
   const [now, setNow] = useState(Date.now())
-  useEffect(() => { if (!enabled) return; const timer = setInterval(() => setNow(Date.now()), 15000); return () => clearInterval(timer) }, [enabled])
-  const [settings, setSettings] = useState({})
-  const [loading, setLoading] = useState(true)
+  const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(enabled)
   const [error, setError] = useState('')
   const [confirmed, setConfirmed] = useState(false)
   const [attempt, setAttempt] = useState(0)
-  useEffect(() => {
-    if (!enabled) { setSettings({}); setLoading(false); setError(''); setConfirmed(false); return }
-    let live = true
-    setLoading(true)
-    setError('')
-    setConfirmed(false)
-    if (!db) { setError('O cardápio está disponível para consulta. A empresa ainda precisa ativar os pedidos.'); setLoading(false); return }
-    const fail = err => { if (!live) return; setSettings({}); setError(accessError(err)); setConfirmed(false); setLoading(false) }
-    const stop = onSnapshot(collection(db, 'productSettings'), { includeMetadataChanges: true }, snapshot => {
-      if (!live) return
-      if (snapshot.metadata.fromCache) {
-        setConfirmed(false)
-        setLoading(false)
-        setError('Sem confirmação do restaurante. Os preços e a disponibilidade precisam ser atualizados.')
-        return
-      }
-      setSettings(Object.fromEntries(snapshot.docs.map(item => [item.id, item.data()])))
-      setError(''); setLoading(false); setConfirmed(true)
-    }, fail)
-    return () => { live = false; stop() }
-  }, [enabled, attempt])
+
   useEffect(() => {
     if (!enabled) return
-    const refresh = () => setAttempt(value => value + 1)
-    window.addEventListener('online', refresh)
-    return () => window.removeEventListener('online', refresh)
+    const timer = setInterval(() => setNow(Date.now()), 15000)
+    return () => clearInterval(timer)
   }, [enabled])
-  const catalog = useMemo(() => produtos.map(product => {
-    const preco = settings[product.id]?.preco ?? product.preco
-    return { ...product, preco, precoBase: preco, promocao: confirmed ? settings[product.id]?.promocao : undefined, ofertaAtiva: confirmed && settings[product.id]?.disponivel !== false && promotionStatus(settings[product.id]?.promocao, now) === 'ativa', disponivel: settings[product.id]?.disponivel !== false }
-  }), [settings, now, confirmed])
+
+  useEffect(() => {
+    if (!enabled) { setRows([]); setLoading(false); setError(''); setConfirmed(false); return }
+    if (!supabaseConfigured) {
+      setRows([]); setLoading(false); setConfirmed(false)
+      setError('Configure o Supabase para carregar preços e disponibilidade.')
+      return
+    }
+    const supabase = getSupabase()
+    let alive = true
+    let channel
+
+    async function load() {
+      setLoading(true)
+      const { data: restaurant, error: restaurantError } = await supabase.from('restaurantes').select('id').eq('slug', companyId).maybeSingle()
+      if (restaurantError) throw restaurantError
+      if (!restaurant) throw new Error('Empresa não encontrada.')
+      const { data, error: productError } = await supabase.from('products').select('*').eq('restaurant_id', restaurant.id).order('name')
+      if (productError) throw productError
+      if (!alive) return
+      setRows(data || [])
+      setError('')
+      setConfirmed(true)
+      setLoading(false)
+      if (!channel) {
+        channel = supabase.channel('catalog:' + companyId)
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => load().catch(fail))
+          .subscribe()
+      }
+    }
+
+    function fail(err) {
+      if (!alive) return
+      setError(err.message || 'Não foi possível atualizar o cardápio.')
+      setConfirmed(false)
+      setLoading(false)
+    }
+
+    load().catch(fail)
+    return () => { alive = false; if (channel) supabase.removeChannel(channel) }
+  }, [enabled, companyId, attempt])
+
+  const catalog = useMemo(() => rows.map(row => {
+    const promocao = row.promotion || undefined
+    const personalizavel = row.config?.personalizavel === true
+    return {
+      id: row.slug,
+      uuid: row.id,
+      companyId,
+      nome: row.name,
+      descricao: row.description || '',
+      preco: Number(row.price_cents || 0) / 100,
+      precoBase: Number(row.price_cents || 0) / 100,
+      imagem: row.image_url || '/icons/app-icon.svg',
+      categoria: row.category,
+      personalizavel,
+      config: row.config || {},
+      promocao,
+      ofertaAtiva: row.active !== false && promotionStatus(promocao, now) === 'ativa',
+      disponivel: row.active !== false,
+    }
+  }), [rows, companyId, now])
+
   return { catalog, loading, error, confirmed, retry: () => setAttempt(value => value + 1) }
 }

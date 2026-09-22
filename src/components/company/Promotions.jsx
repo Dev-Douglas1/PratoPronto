@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { produtos } from '../../data/produtos.js'
-import { promotionStatus, promotionalPrice, validatePromotion } from '../../../functions/src/promotions.js'
+import { promotionStatus, promotionalPrice, validatePromotion } from '../../shared/promotions.js'
 import { formatarMoeda as money } from '../../utils/moeda.js'
 import Modal from './Modal.jsx'
 import Icon from './Icon.jsx'

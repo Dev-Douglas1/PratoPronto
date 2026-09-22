@@ -1,7 +1,6 @@
 import AppScreen from '../components/AppScreen.jsx'
 import TopBar from '../components/TopBar.jsx'
 import { privacyConfig } from '../config/privacy.js'
-
 import useStorefront from '../hooks/useStorefront.js'
 
 export default function PoliticaPrivacidade() {
@@ -16,40 +15,42 @@ export default function PoliticaPrivacidade() {
         <p><strong>Contato de privacidade:</strong> {store?.privacyEmail || privacyConfig.privacyEmail}</p>
 
         <h4>1. Dados tratados</h4>
-        <p>Nome, e-mail, telefone, endereço de entrega, preferências de comunicação, dados do pedido, personalizações, solicitações de atendimento/cancelamento, avaliações voluntárias, respostas da empresa e identificadores técnicos necessários ao funcionamento do Firebase. Para proteger a conta, também registramos o horário do login, o tipo geral de navegador/dispositivo e limites de tentativas de confirmação.</p>
+        <p>Tratamos dados de conta e perfil, como nome, e-mail, telefone e endereço; dados de pedidos, atendimento, avaliações e identificadores técnicos necessários à segurança e ao funcionamento do aplicativo. Empresas tratam os dados necessários para preparar e atender pedidos vinculados a elas.</p>
+        <p>Para quem solicita cadastro como Piloto Parceiro, também tratamos cidade, placa, tipo/modelo e cor da moto, categoria e validade da CNH, foto do piloto, foto da moto e imagens da CNH enviadas para análise.</p>
 
         <h4>2. Finalidades</h4>
         <ul>
-          <li>Criar e proteger a conta do usuário.</li>
-          <li>Registrar, preparar, entregar e acompanhar pedidos.</li>
-          <li>Atender solicitações e exercer direitos relacionados aos dados pessoais.</li>
-          <li>Receber avaliações voluntárias sobre comida e entrega, disponíveis ao autor e à empresa para atendimento e melhoria do serviço.</li>
-          <li>Prevenir abuso, confirmar o e-mail e controlar o acesso administrativo.</li>
-          <li>Enviar links de confirmação e, quando o serviço estiver ativado, avisos de acesso à conta. Essas mensagens de segurança são separadas das promoções.</li>
-          <li>Enviar promoções somente quando o usuário escolher essa opção.</li>
+          <li>Criar, verificar e proteger contas.</li>
+          <li>Permitir busca de empresas e produtos, registrar, preparar, entregar e acompanhar pedidos.</li>
+          <li>Permitir que empresas gerenciem equipe, cardápio, pedidos, avaliações e atendimento.</li>
+          <li>Verificar cadastros de Pilotos Parceiros antes de liberar ofertas de entrega.</li>
+          <li>Permitir que pilotos aceitem ou recusem ofertas e concluam entregas com senha informada pelo cliente.</li>
+          <li>Prevenir fraude, abuso e acesso indevido.</li>
+          <li>Enviar comunicações de segurança e, separadamente, promoções quando houver escolha do usuário.</li>
         </ul>
 
-        <h4>3. Bases legais</h4>
-        <p>Os dados necessários para cadastro, pedido e entrega são tratados para viabilizar o serviço contratado e cumprir obrigações aplicáveis. O recebimento de marketing é opcional e depende do consentimento do usuário.</p>
+        <h4>3. Base e necessidade</h4>
+        <p>Dados necessários para conta, pedido, entrega, administração da empresa e análise do piloto são tratados para viabilizar o serviço e cumprir obrigações aplicáveis. Marketing permanece opcional. O envio de documentação de piloto ocorre somente quando o usuário decide solicitar acesso à função de Piloto Parceiro.</p>
 
         <h4>4. Pagamentos</h4>
-        <p>Quando a operação real estiver ativada, Pix e cartões online são processados no ambiente do Mercado Pago. O PratoPronto registra valores, método, referência da transação e status de pagamento e devolução. Número completo de cartão e CVV não são enviados ao banco do PratoPronto. A senha da conta é gerenciada pelo Firebase Authentication. Ambientes de teste são identificados na tela e não representam cobrança real.</p>
+        <p>Na versão atual, o meio operacional liberado é pagamento na entrega/maquininha. Pix e cartão online somente poderão ser disponibilizados após integração e homologação específicas. O PratoPronto não deve armazenar número completo de cartão, CVV ou senha bancária.</p>
 
-        <h4>5. Compartilhamento</h4>
-        <p>Os dados podem ser tratados por fornecedores de infraestrutura estritamente necessários ao serviço, como Firebase/Google Cloud, hospedagem do aplicativo e Mercado Pago no pagamento online. O Firebase envia o link de confirmação do cadastro. Quando o serviço de avisos de login estiver ativado, o Resend receberá o endereço de e-mail e o conteúdo do aviso para entregar a mensagem. A empresa e o entregador recebem somente as informações necessárias ao atendimento e à entrega. Não há venda de dados pessoais.</p>
+        <h4>5. Compartilhamento e acesso</h4>
+        <p>O Supabase é utilizado para autenticação, banco de dados, atualizações em tempo real e armazenamento privado. Empresas recebem apenas os dados necessários aos pedidos e à operação de suas próprias lojas. Pilotos recebem somente informações necessárias às entregas que aceitaram. Documentos de Pilotos Parceiros não são exibidos às empresas; ficam em armazenamento privado e podem ser acessados pelo próprio titular e por administradores da plataforma autorizados para análise.</p>
+        <p>Não há venda de dados pessoais.</p>
 
         <h4>6. Retenção</h4>
-        <p>{store?.retentionDays ? `Os dados de contato e entrega em pedidos encerrados são removidos após ${store.retentionDays} dias sem alteração, conforme a configuração operacional da empresa.` : privacyConfig.retentionOrders} Solicitações de exclusão são processadas no servidor. Pedidos, devoluções e contestações pendentes são resolvidos antes do encerramento; registros mínimos de transações e cópias de segurança seguem os prazos aplicáveis.</p>
-        <p>Os links de confirmação têm validade e uso controlados pelo Firebase. O aplicativo não armazena o link de confirmação no perfil nem no navegador. Quando os avisos de login estão ativados, os registros de envio ficam no servidor por até sete dias e são removidos pela rotina de limpeza na próxima execução disponível. Dados tratados pelo provedor de e-mail seguem também os prazos desse fornecedor.</p>
+        <p>{store?.retentionDays ? `Os dados de contato e entrega em pedidos encerrados seguem a configuração operacional de retenção de ${store.retentionDays} dias, sem prejuízo de obrigações legais aplicáveis.` : privacyConfig.retentionOrders}</p>
+        <p>Documentos de piloto devem permanecer somente pelo período necessário para análise, operação, prevenção de fraude, exercício de direitos e obrigações aplicáveis. Cadastros rejeitados, inativos ou encerrados devem ter os documentos eliminados conforme a política operacional de retenção da plataforma.</p>
 
-        <h4>7. Direitos do titular</h4>
-        <p>O usuário pode acessar, corrigir, exportar e solicitar exclusão dos dados, além de alterar sua preferência de marketing na área “Privacidade”. Algumas informações podem precisar ser mantidas quando houver obrigação legal ou outra hipótese permitida pela LGPD.</p>
+        <h4>7. Direitos</h4>
+        <p>O titular pode acessar e corrigir dados de perfil, alterar preferências, solicitar informações e pedir exclusão pela área de privacidade, observadas hipóteses legais de retenção. Pilotos podem corrigir e reenviar documentação quando o cadastro for reprovado.</p>
 
         <h4>8. Segurança</h4>
-        <p>Autenticação é feita pelo Firebase Authentication, com verificação de e-mail e recuperação de senha. As regras do Firestore limitam clientes aos próprios dados e reservam o painel operacional aos administradores autorizados. O carrinho pode ser mantido localmente no navegador para conveniência.</p>
+        <p>A autenticação utiliza Supabase Auth com verificação de e-mail. O banco usa Row Level Security e RPCs com validação de identidade e papel. Documentos de piloto ficam em bucket privado com regras de acesso por usuário e administração da plataforma. Senhas de entrega são protegidas e removidas após a confirmação da entrega.</p>
 
         <h4>9. Alterações</h4>
-        <p>Quando esta política mudar de maneira relevante, a versão deve ser atualizada e os usuários devem ser informados de forma clara.</p>
+        <p>Mudanças relevantes desta política exigem atualização de versão e comunicação clara antes de novos tratamentos incompatíveis com a versão anterior.</p>
       </div>
     </AppScreen>
   )

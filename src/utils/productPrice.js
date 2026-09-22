@@ -1,5 +1,5 @@
 import { tamanhos, bordas, extras } from '../data/produtos.js'
-import { promotionalPrice } from '../../functions/src/promotions.js'
+import { promotionalPrice } from '../shared/promotions.js'
 
 export function productPrice(product, options = {}, now = Date.now()) {
   let unit = Math.round(product.preco * 100)

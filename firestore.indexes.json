@@ -1,8 +1,0 @@
-{
-  "indexes": [
-    { "collectionGroup": "webhookEvents", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "state", "order": "ASCENDING" }, { "fieldPath": "nextAttemptAt", "order": "ASCENDING" }] },
-    { "collectionGroup": "refundJobs", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "state", "order": "ASCENDING" }, { "fieldPath": "nextAttemptAt", "order": "ASCENDING" }] },
-    { "collectionGroup": "paymentWatches", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "active", "order": "ASCENDING" }, { "fieldPath": "nextAttemptAt", "order": "ASCENDING" }] }
-  ],
-  "fieldOverrides": []
-}

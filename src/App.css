@@ -536,3 +536,27 @@ body {
 .catalog-notice p { margin: 0 0 .5rem; line-height: 1.5; }
 .catalog-notice button { min-height: 44px; font: inherit; background: transparent; cursor: pointer; }
 .offer-filter:disabled { opacity: .65; cursor: wait; }
+
+
+/* Marketplace multiempresa */
+.marketplace-search { margin-top: 24px; }
+.marketplace-results { width: 100%; display: grid; gap: 14px; text-align: left; margin-top: 18px; }
+.marketplace-company-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.marketplace-company-card { display: grid; gap: 5px; color: inherit; text-decoration: none; }
+.marketplace-company-card strong { font-size: 1rem; }
+.marketplace-company-card small { color: #6d6017; }
+.marketplace-product-list { display: grid; gap: 8px; }
+.marketplace-product-result { display: flex; align-items: center; gap: 12px; color: inherit; text-decoration: none; }
+.marketplace-product-result > span { flex: 0 0 56px; width: 56px; height: 56px; display: grid; place-items: center; border-radius: 12px; background: #f4f4ef; overflow: hidden; }
+.marketplace-product-result img { width: 100%; height: 100%; object-fit: cover; }
+.marketplace-product-result div { min-width: 0; display: grid; gap: 4px; }
+.marketplace-product-result strong { overflow-wrap: anywhere; }
+.marketplace-product-result small { color: #666; line-height: 1.35; }
+.delivery-code-card { margin: 16px 0; text-align: center; border: 2px solid #d3b70f; background: #fffbea; }
+.delivery-code-card small { font-weight: 800; letter-spacing: 1.4px; color: #6c5a00; }
+.delivery-code-card h2 { margin: 8px 0; font-size: clamp(32px, 10vw, 50px); letter-spacing: 10px; color: #171717; }
+.delivery-code-card p { margin: 0; line-height: 1.55; color: #4d4520; }
+@media (max-width: 620px) {
+  .marketplace-company-grid { grid-template-columns: 1fr; }
+  .marketplace-product-result { padding: 12px; }
+}

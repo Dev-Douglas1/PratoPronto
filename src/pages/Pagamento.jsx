@@ -15,9 +15,9 @@ const methods = [
 ]
 export default function Pagamento() {
   const navigate = useNavigate()
-  const { lista, limpar } = useCart()
+  const { lista, limpar, companyId } = useCart()
   const { usuario } = useUser()
-  const { store, loading, error: storeError } = useStorefront()
+  const { store, loading, error: storeError } = useStorefront(companyId)
   const [method, setMethod] = useState('pix')
   const [cardType, setCardType] = useState('credito')
   const [note, setNote] = useState('')
@@ -26,7 +26,7 @@ export default function Pagamento() {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const lock = useRef(false)
-  const storageKey = 'pratopronto:checkout:' + usuario?.uid
+  const storageKey = 'pratopronto:checkout:' + usuario?.uid + ':' + companyId
   const [pending, setPending] = useState(() => {
     try { const value = JSON.parse(sessionStorage.getItem(storageKey)); return value?.quoteId && value?.requestId ? value : null } catch { return null }
   })
@@ -51,7 +51,7 @@ export default function Pagamento() {
     try {
       if (pending) { await finish(pending); return }
       if (!quote) {
-        const value = await callServer('appQuote', { items: cartItems(lista), method, cardType, note, acceptTerms })
+        const value = await callServer('appQuote', { companyId, items: cartItems(lista), method, cardType, note, acceptTerms })
         setQuote(value)
         return
       }

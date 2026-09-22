@@ -4,12 +4,13 @@ import { advanceOrder, decideRefund, replyReview, saveProduct, savePromotion, su
 import { canAdvanceOrder } from '../config/orderStatus.js'
 import { accessError, COMPANY_SOURCES, initialSources } from '../utils/dataAccess.js'
 
-import { assertRespectful } from '../../functions/src/input-policy.js'
-import { validatePromotion } from '../../functions/src/promotions.js'
+import { assertRespectful } from '../shared/input-policy.js'
+import { validatePromotion } from '../shared/promotions.js'
 import { produtos } from '../data/produtos.js'
+import { DEFAULT_COMPANY_ID } from '../config/marketplace.js'
 
 const empty = { orders: [], refunds: [], reviews: [], settings: [], events: {} }
-export default function useCompanyData(demo) {
+export default function useCompanyData(demo, companyId = DEFAULT_COMPANY_ID) {
   const [data, setData] = useState(() => demo ? makeCompanyDemo() : empty)
   const [sources, setSources] = useState(() => initialSources(demo))
   const [attempt, setAttempt] = useState(0)
@@ -26,7 +27,7 @@ export default function useCompanyData(demo) {
         setSources(current => ({ ...current, [key]: { loading: false, error: accessError(err, COMPANY_SOURCES[key], true), fromCache: true } }))
       }
       try {
-        unsubscribe.push(subscribeCompany(name, (values, metadata) => {
+        unsubscribe.push(subscribeCompany(name, companyId, (values, metadata) => {
           if (!live) return
           setData(current => ({ ...current, [key]: values }))
           setSources(current => ({ ...current, [key]: { loading: false, error: '', fromCache: metadata?.fromCache !== false } }))
@@ -34,7 +35,7 @@ export default function useCompanyData(demo) {
       } catch (err) { fail(err) }
     }
     return () => { live = false; unsubscribe.forEach(fn => fn()) }
-  }, [demo, attempt])
+  }, [demo, attempt, companyId])
 
   async function advance(id, next, received) {
     if (!demo) return advanceOrder(id, next, received)
@@ -62,14 +63,14 @@ export default function useCompanyData(demo) {
     setData(current => ({ ...current, reviews: current.reviews.map(item => item.id === id ? { ...item, resposta: resposta.trim() } : item) }))
   }
   async function product(id, settings) {
-    if (!demo) return saveProduct(id, settings)
+    if (!demo) return saveProduct(id, settings, companyId)
     const preco = Math.round(Number(settings.preco) * 100) / 100
     if (!(preco > 0 && preco <= 2000)) throw new Error('Confira o preço informado.')
     setData(current => ({ ...current, settings: [...current.settings.filter(item => item.id !== id), { ...current.settings.find(item => item.id === id), id, disponivel: settings.disponivel, preco }] }))
   }
   async function promotion(id, input) {
     const promocao = validatePromotion(input)
-    if (!demo) return savePromotion(id, promocao)
+    if (!demo) return savePromotion(id, promocao, companyId)
     const base = produtos.find(item => item.id === id)
     if (!base) throw new Error('Escolha um produto do cardápio.')
     setData(current => ({ ...current, settings: [...current.settings.filter(item => item.id !== id), { preco: base.preco, disponivel: true, ...current.settings.find(item => item.id === id), id, promocao }] }))

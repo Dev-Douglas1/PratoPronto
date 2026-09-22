@@ -22,93 +22,70 @@ jobs:
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 22
           cache: npm
 
       - name: Instalar dependências
         run: npm ci
 
-      - name: Criar configuração de produção
+      - name: Auditar dependências de produção
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Verificar segredos e chaves proibidas
+        run: npm run check:secrets
+
+      - name: Criar configuração Supabase
         shell: bash
         env:
-          VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
-          VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
-          VITE_FIREBASE_STORAGE_BUCKET: ${{ vars.VITE_FIREBASE_STORAGE_BUCKET }}
-          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-          VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID }}
-          VITE_FIREBASE_APPCHECK_SITE_KEY: ${{ vars.VITE_FIREBASE_APPCHECK_SITE_KEY }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
           VITE_CONTROLLER_NAME: ${{ vars.VITE_CONTROLLER_NAME }}
           VITE_PRIVACY_EMAIL: ${{ vars.VITE_PRIVACY_EMAIL }}
-          VITE_SECURE_ORDER_BACKEND: ${{ vars.VITE_SECURE_ORDER_BACKEND }}
-          VITE_SECURE_ORDER_API_URL: ${{ vars.VITE_SECURE_ORDER_API_URL }}
         run: |
           {
-            echo "VITE_FIREBASE_API_KEY=$VITE_FIREBASE_API_KEY"
-            echo "VITE_FIREBASE_AUTH_DOMAIN=$VITE_FIREBASE_AUTH_DOMAIN"
-            echo "VITE_FIREBASE_PROJECT_ID=$VITE_FIREBASE_PROJECT_ID"
-            echo "VITE_FIREBASE_STORAGE_BUCKET=$VITE_FIREBASE_STORAGE_BUCKET"
-            echo "VITE_FIREBASE_MESSAGING_SENDER_ID=$VITE_FIREBASE_MESSAGING_SENDER_ID"
-            echo "VITE_FIREBASE_APP_ID=$VITE_FIREBASE_APP_ID"
-            echo "VITE_FIREBASE_APPCHECK_SITE_KEY=$VITE_FIREBASE_APPCHECK_SITE_KEY"
+            echo "VITE_SUPABASE_URL=$VITE_SUPABASE_URL"
+            echo "VITE_SUPABASE_PUBLISHABLE_KEY=$VITE_SUPABASE_PUBLISHABLE_KEY"
             echo "VITE_CONTROLLER_NAME=$VITE_CONTROLLER_NAME"
             echo "VITE_PRIVACY_EMAIL=$VITE_PRIVACY_EMAIL"
             echo "VITE_ENABLE_CARD_DEMO=false"
-            echo "VITE_SECURE_ORDER_BACKEND=${VITE_SECURE_ORDER_BACKEND:-false}"
-            echo "VITE_SECURE_ORDER_API_URL=$VITE_SECURE_ORDER_API_URL"
           } > .env.production
 
       - name: Validar configuração de produção
-        shell: bash
         env:
-          VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
-          VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
-          VITE_FIREBASE_STORAGE_BUCKET: ${{ vars.VITE_FIREBASE_STORAGE_BUCKET }}
-          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-          VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID }}
-          VITE_FIREBASE_APPCHECK_SITE_KEY: ${{ vars.VITE_FIREBASE_APPCHECK_SITE_KEY }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
           VITE_CONTROLLER_NAME: ${{ vars.VITE_CONTROLLER_NAME }}
           VITE_PRIVACY_EMAIL: ${{ vars.VITE_PRIVACY_EMAIL }}
           VITE_ENABLE_CARD_DEMO: 'false'
-          VITE_SECURE_ORDER_BACKEND: ${{ vars.VITE_SECURE_ORDER_BACKEND }}
-          VITE_SECURE_ORDER_API_URL: ${{ vars.VITE_SECURE_ORDER_API_URL }}
         run: npm run check:production
 
-      - name: Auditar dependências
-        run: npm audit --audit-level=high
+      - name: Testar aplicação
+        run: npm test
 
       - name: Compilar produção
         run: npm run build
 
-      - name: Preparar credencial Firebase
+      - name: Salvar artefato web
+        uses: actions/upload-artifact@v4
+        with:
+          name: pratopronto-web
+          path: dist/
+          if-no-files-found: error
+
+      - name: Preparar credencial do Firebase Hosting
         shell: bash
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
           if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
-            echo "Secret FIREBASE_SERVICE_ACCOUNT não configurado."
+            echo "Secret FIREBASE_SERVICE_ACCOUNT não configurado no ambiente production."
             exit 1
           fi
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-service-account.json"
 
-      - name: Publicar Hosting
+      - name: Publicar frontend no Firebase Hosting
         shell: bash
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-          FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_HOSTING_PROJECT_ID || 'pratopronto-d861d' }}
         run: npx --yes firebase-tools@latest deploy --only hosting --project "$FIREBASE_PROJECT_ID" --non-interactive
-
-      - name: Publicar regras do Firestore
-        shell: bash
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
-          FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
-          VITE_SECURE_ORDER_BACKEND: ${{ vars.VITE_SECURE_ORDER_BACKEND }}
-        run: |
-          if [ "${VITE_SECURE_ORDER_BACKEND:-false}" = "true" ]; then
-            node scripts/build-secure-rules.mjs
-            npx --yes firebase-tools@latest deploy --only firestore:rules --config firebase.secure.json --project "$FIREBASE_PROJECT_ID" --non-interactive
-          else
-            npx --yes firebase-tools@latest deploy --only firestore:rules --project "$FIREBASE_PROJECT_ID" --non-interactive
-          fi

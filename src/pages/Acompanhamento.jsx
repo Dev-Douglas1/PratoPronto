@@ -8,7 +8,9 @@ import { submitRefund, submitReview, subscribeCustomerOrders, subscribeOrderReco
 import { formatarMoeda as money } from '../utils/moeda.js'
 import { normalizeOrderStatus, orderStatusLabel, ORDER_STATUS_OPTIONS } from '../config/orderStatus.js'
 import { paymentLabel, paymentStatusLabel, timestampMillis } from '../utils/pedido.js'
-import { traduzirErroFirebase } from '../utils/firebaseError.js'
+import { traduzirErroSupabase } from '../utils/supabaseError.js'
+import { subscribeDeliverySecret } from '../services/marketplace.js'
+import { DEFAULT_COMPANY_ID } from '../config/marketplace.js'
 
 export default function Acompanhamento() {
   const { usuario } = useUser()
@@ -26,14 +28,15 @@ export default function Acompanhamento() {
   const [food, setFood] = useState('')
   const [delivery, setDelivery] = useState('')
   const [comment, setComment] = useState('')
+  const [deliverySecret, setDeliverySecret] = useState(null)
   const selectedId = params.get('pedido') || location.state?.pedidoId
   const order = selectedId ? orders.find(item => item.id === selectedId) : orders[0]
-  function showError(err) { setError(err.code ? traduzirErroFirebase(err) : err.message) }
+  function showError(err) { setError(err.code ? traduzirErroSupabase(err) : err.message) }
   useEffect(() => {
     return subscribeCustomerOrders(usuario.uid, list => { setOrders(list); setLoading(false) }, err => { showError(err); setLoading(false) })
   }, [usuario.uid])
   useEffect(() => {
-    setRefund(null); setReview(null); setRecordLoading(true); setHelp(false); setError(''); setReason(''); setFood(''); setDelivery(''); setComment('')
+    setRefund(null); setReview(null); setRecordLoading(true); setHelp(false); setError(''); setReason(''); setFood(''); setDelivery(''); setComment(''); setDeliverySecret(null)
     if (!order?.id) return
     let loaded = 0
     const done = () => { if (++loaded >= 2) setRecordLoading(false) }
@@ -43,6 +46,10 @@ export default function Acompanhamento() {
     ]
     return () => unsubscribe.forEach(fn => fn())
   }, [order?.id])
+  useEffect(() => {
+    if (!order?.id || order.deliveryVerificationRequired !== true) { setDeliverySecret(null); return }
+    return subscribeDeliverySecret(order.id, setDeliverySecret, err => showError(err))
+  }, [order?.id, order?.deliveryVerificationRequired])
   async function submit(event, action) {
     event.preventDefault()
     if (busy) return
@@ -68,13 +75,14 @@ export default function Acompanhamento() {
       <div className="delivery-summary"><span className="delivery-summary__icon">{status === 'entregue' ? '✓' : '#'}</span><div><strong>Pedido #{order.id.slice(-8)}</strong><span>Total: {money(order.total)}</span><small>{order.entrega.endereco}, {order.entrega.numero} · {order.entrega.bairro} · {order.entrega.cidade}/{order.entrega.uf}</small></div></div>
       <div className="payment-status-card"><span>▰</span><div><small>{test ? 'AMBIENTE DE TESTES' : 'PAGAMENTO'}</small><strong>{paymentLabel(order.pagamento)}</strong><p>{paymentStatusLabel(order.pagamento)}.{test ? ' Nenhum valor real foi movimentado.' : ''}</p></div></div>
       {status === 'aguardando_pagamento' && !demo && <button className="btn btn-primary wide-button" disabled={busy} onClick={payAgain}>Continuar pagamento no Mercado Pago</button>}
+      {deliverySecret?.code && ['pronto','saiu_entrega'].includes(status) && <div className="light-card delivery-code-card"><small>SENHA DE ENTREGA</small><h2>{deliverySecret.code}</h2><p>Informe estes 4 números ao Piloto Parceiro somente quando estiver com seu pedido em mãos. Não envie a senha por mensagem antes da entrega.</p></div>}
       {status !== 'cancelado' && <div className="order-progress" aria-label="Etapas do pedido">{stages.map((step, i) => <div key={step.id} className={i < index ? 'is-done' : i === index ? 'is-current' : ''} aria-current={i === index ? 'step' : undefined}><i>{i < index ? '✓' : i + 1}</i><span><strong>{step.label}</strong><small>{i < index ? 'Concluído' : i === index ? 'Etapa atual' : 'Próxima etapa'}</small></span></div>)}</div>}
       <div className="light-card"><h3>Seu pedido</h3>{order.itens.map((item, i) => <p key={item.id + i}><strong>{item.quantidade} × {item.nome}</strong><br /><small>{item.detalhes}</small></p>)}</div>
       <p className="live-update-note">O restaurante atualiza as etapas do seu pedido.</p>
       {refund && <div className="refund-note"><strong>Atendimento: {refund.status === 'pendente' ? 'em análise' : refund.status === 'recusado' ? 'solicitação recusada' : refund.status === 'aprovado_demo' ? 'cancelamento aprovado (teste)' : refund.status === 'cancelado_sem_cobranca' ? 'cancelado sem cobrança' : paymentStatusLabel({ status: refund.status })}</strong><span>{refund.motivo}</span>{refund.resposta && <p><b>Resposta da empresa:</b> {refund.resposta}</p>}</div>}
       {!refund && !recordLoading && status !== 'cancelado' && !help && <button className="btn btn-secondary wide-button" onClick={() => setHelp(true)}>Preciso de ajuda com este pedido</button>}
       {help && <form className="light-card refund-form" onSubmit={event => submit(event, () => submitRefund({ userId: usuario.uid, orderId: order.id, motivo: reason }))}><label htmlFor="reason">Cancelamento ou problema na entrega</label><textarea id="reason" required minLength={5} maxLength={500} value={reason} onChange={event => setReason(event.target.value)} placeholder="Conte o que aconteceu para a empresa ajudar." /><small>O restaurante analisará sua solicitação. {test ? 'Neste ambiente, o reembolso é de teste.' : 'A devolução será solicitada após a aprovação. Você acompanha aqui a confirmação do provedor.'}</small><div className="two-actions"><button className="btn btn-secondary" type="button" onClick={() => setHelp(false)}>Voltar</button><button className="btn btn-primary" disabled={busy}>Enviar</button></div></form>}
-      {status === 'entregue' && !recordLoading && <section className="light-card customer-review"><h3>{review ? 'Sua avaliação' : 'Como foi seu pedido?'}</h3>{review ? <><p>Comida: {review.notaComida}/5 · Entrega: {review.notaEntrega}/5</p><p>{review.comentario}</p>{review.resposta && <blockquote><strong>A empresa respondeu</strong><p>{review.resposta}</p></blockquote>}</> : <form onSubmit={event => submit(event, () => submitReview({ userId: usuario.uid, orderId: order.id, nome: usuario.nome || 'Cliente', notaComida: food, notaEntrega: delivery, comentario: comment }))}><p>Sua opinião ajuda o restaurante a melhorar.</p><label>Comida<select required value={food} onChange={event => setFood(event.target.value)}><option value="">Escolha uma nota</option>{[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n} {n === 1 ? 'estrela' : 'estrelas'}</option>)}</select></label><label>Entrega<select required value={delivery} onChange={event => setDelivery(event.target.value)}><option value="">Escolha uma nota</option>{[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n} {n === 1 ? 'estrela' : 'estrelas'}</option>)}</select></label><label>Comentário (opcional)<textarea maxLength={1000} value={comment} onChange={event => setComment(event.target.value)} /></label><button className="btn btn-primary wide-button" disabled={busy}>{busy ? 'Enviando…' : 'Enviar avaliação'}</button></form>}</section>}
+      {status === 'entregue' && !recordLoading && <section className="light-card customer-review"><h3>{review ? 'Sua avaliação' : 'Como foi seu pedido?'}</h3>{review ? <><p>Comida: {review.notaComida}/5 · Entrega: {review.notaEntrega}/5</p><p>{review.comentario}</p>{review.resposta && <blockquote><strong>A empresa respondeu</strong><p>{review.resposta}</p></blockquote>}</> : <form onSubmit={event => submit(event, () => submitReview({ companyId: order.companyId || DEFAULT_COMPANY_ID, userId: usuario.uid, orderId: order.id, nome: usuario.nome || 'Cliente', notaComida: food, notaEntrega: delivery, comentario: comment }))}><p>Sua opinião ajuda o restaurante a melhorar.</p><label>Comida<select required value={food} onChange={event => setFood(event.target.value)}><option value="">Escolha uma nota</option>{[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n} {n === 1 ? 'estrela' : 'estrelas'}</option>)}</select></label><label>Entrega<select required value={delivery} onChange={event => setDelivery(event.target.value)}><option value="">Escolha uma nota</option>{[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n} {n === 1 ? 'estrela' : 'estrelas'}</option>)}</select></label><label>Comentário (opcional)<textarea maxLength={1000} value={comment} onChange={event => setComment(event.target.value)} /></label><button className="btn btn-primary wide-button" disabled={busy}>{busy ? 'Enviando…' : 'Enviar avaliação'}</button></form>}</section>}
     </>}
     <Link className="btn btn-primary wide-button" to="/pizzas">Escolher pizzas</Link>
   </AppScreen>

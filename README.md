@@ -1,52 +1,65 @@
 # PratoPronto
 
-Aplicativo React/Vite para pedidos de pizzas e bebidas, com Firebase Authentication, Firestore e backend em Cloud Functions.
+Marketplace React/Vite para pedidos, empresas e entregas, usando **Supabase Auth, Postgres, Row Level Security, Realtime e Storage privado**.
 
-- Cliente: conta, confirmação de e-mail, recuperação de senha, endereço completo, cardápio, personalizações, carrinho, resumo de compra, acompanhamento, atendimento e avaliação após entrega.
-- Empresa: pedidos e etapas, comandas de cozinha/entrega, preços e disponibilidade, respostas às avaliações, cancelamentos, configuração de horários/bairros/taxas e verificação de serviços.
-- Pagamentos: integração de Checkout Pro com Pix/cartões e opção de maquininha. O servidor calcula valores, confirma pagamentos e processa devoluções; a ativação depende das contas e da homologação.
-- Segurança: pedidos não podem ser gravados pelo navegador; autenticação verificada, papel administrativo concedido por ferramenta confiável, App Check e limites por usuário. Sem cartão completo, CVV ou senha no Firestore.
-- Celular: interface adaptável, PWA instalável, aviso de atualização e página sem conexão. Dados financeiros não são mantidos pelo service worker.
+## Áreas do aplicativo
 
-A demonstração empresarial fica em `/demo/empresa/pedidos`, com dados fictícios em memória. A operação real fica em `/empresa/pedidos` e depende do acesso administrativo no Firebase.
+- Cliente: cadastro, confirmação de e-mail, perfil, endereço, busca de empresas/pratos, cardápio, carrinho, checkout, acompanhamento, atendimento e avaliação.
+- Empresa: múltiplas empresas por conta, equipe com papéis `owner`, `admin`, `attendant` e `kitchen`, cardápio próprio, pedidos, impressão, avaliações, atendimento e contatos de pilotos.
+- Piloto Parceiro: cadastro iniciado pelo Perfil, dados da moto, documentação privada, aprovação manual, ofertas para aceitar/recusar, rota e confirmação da entrega por senha de 4 dígitos.
+- Plataforma: revisão privada de cadastros de Pilotos Parceiros antes de liberar ofertas.
+
+## Backend atual
+
+O Firebase e o Worker antigos foram retirados do runtime desta branch. O frontend usa apenas:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+
+Nunca coloque `service_role`, chaves secretas, credenciais SMTP ou outros segredos em variáveis `VITE_*`.
+
+O cálculo e as alterações sensíveis usam RPCs PostgreSQL com validação de usuário/papel no Supabase. As tabelas sensíveis usam RLS. Os documentos de pilotos ficam no bucket privado `pilot-documents`.
+
+## Pagamentos
+
+Nesta fase Supabase, o fluxo operacional liberado é **pagamento na entrega/maquininha**. Pix e cartão online não devem ser anunciados como ativos até uma integração de pagamento real, webhook e reembolso serem homologados novamente.
 
 ## Executar
 
 ```bash
 npm ci
-npm ci --prefix functions
 npm run dev
 ```
 
-Preencha `.env` com a configuração pública Web do Firebase e a chave pública do App Check. Use os exemplos do projeto; não copie credenciais administrativas para o frontend.
+Crie um `.env.local` com:
 
-## Ativar a operação
-
-Siga [ATIVAR_OPERACAO.md](ATIVAR_OPERACAO.md) para preparar Firebase, conta recebedora, segredos, administrador, horários, entrega, publicação pública e homologação. Consulte [LANCAMENTO.md](LANCAMENTO.md) para o estado desta entrega.
+```env
+VITE_SUPABASE_URL=https://SEU-PROJETO.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+```
 
 ## Testes
 
 ```bash
+npm audit --omit=dev
 npm test
-npm run test:server
-npm run test:rules
-npm run test:integration
+npm run check:production
 npm run build
 ```
 
-Os testes de integração usam Firestore Emulator e um provedor de pagamentos controlado. Não movimentam dinheiro nem demonstram, por si só, que uma conta real foi configurada.
+A CI também abre as principais rotas em Vite, compila o build e testa o PWA.
 
-## Organização
+## Rotas principais
 
-- `src/`: páginas, componentes, contexto e integração do frontend.
-- `functions/src/`: cálculo de pedido, Checkout Pro, confirmação, reembolso, administração e manutenção.
-- `functions/src/catalog-data.js`: catálogo público compartilhado entre frontend e servidor.
-- `functions/scripts/`: ferramentas de configuração administrativa, autenticadas com a conta Google responsável.
-- `firestore.rules` e `firestore.indexes.json`: proteção e índices do banco.
-- `ops/`: políticas de monitoramento e ciclo de vida de backups para configuração da operação.
+- `/perfil` — perfil do cliente e entrada para cadastro de piloto.
+- `/piloto/cadastro` — moto, CNH, fotos e envio para análise.
+- `/piloto` — status do cadastro, ofertas e entregas.
+- `/empresa/:aba` — área da empresa.
+- `/empresa/nova` — cadastro de nova empresa.
+- `/loja/:companyId` — loja pública de cada empresa.
+- `/plataforma/pilotos` — análise de pilotos, somente para `platform_admins`.
+- `/demo/empresa/pedidos` — demonstração sem dados reais.
 
-As comandas são documentos não fiscais. Imagens dos produtos e identidade visual permanecem nos arquivos locais do projeto; a documentação específica de origem/licenciamento dos assets deve acompanhar a publicação comercial.
+## Lançamento
 
-## Integração com a main
-
-Consulte [INTEGRACAO_MAIN.md](INTEGRACAO_MAIN.md) para as escolhas de resolução, recuperação do merge no Codespaces e limitações de compatibilidade com o Worker. As regras atuais bloqueiam escrita de pedidos pelo navegador em todos os ambientes.
+Use [CHECKLIST_LANCAMENTO_SUPABASE.md](CHECKLIST_LANCAMENTO_SUPABASE.md) como gate de produção. Não publique somente porque o build passou: autenticação real, e-mail, primeiro administrador, pedidos, empresa e entrega precisam ser testados ponta a ponta no ambiente real.

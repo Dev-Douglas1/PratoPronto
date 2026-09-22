@@ -5,10 +5,11 @@ import { useCart } from '../context/CartContext.jsx'
 import { formatarMoeda } from '../utils/moeda.js'
 import { useUser } from '../context/UserContext.jsx'
 import BottomNav from '../components/BottomNav.jsx'
+import { DEFAULT_COMPANY_ID } from '../config/marketplace.js'
 
 export default function Pedido() {
   const navigate = useNavigate()
-  const { lista, subtotal, taxaEntrega, total, adicionar, remover } = useCart()
+  const { lista, companyId, subtotal, taxaEntrega, total, adicionar, remover } = useCart()
   const { usuario } = useUser()
 
   return (
@@ -39,7 +40,7 @@ export default function Pedido() {
           ) : (
             lista.map(({ produto, quantidade }) => (
               <div className="cart-item" key={produto.id}>
-                <img src={produto.imagem} alt="" />
+                <img src={produto.imagem || '/icons/app-icon.svg'} alt="" />
                 <div className="cart-item__copy">
                   <strong>{produto.nome}</strong>
                   {produto.detalhes && <span>{produto.detalhes}</span>}
@@ -64,7 +65,7 @@ export default function Pedido() {
           </div>
 
           <div className="two-actions">
-            <button className="btn btn-secondary" onClick={() => navigate('/pizzas')}>Ver mais</button>
+            <button className="btn btn-secondary" onClick={() => navigate(companyId === DEFAULT_COMPANY_ID ? '/pizzas' : '/loja/' + companyId)}>Ver mais</button>
             <button className="btn btn-primary" disabled={!lista.length} onClick={() => navigate('/pagamento')}>Pagar</button>
           </div>
         </div>
