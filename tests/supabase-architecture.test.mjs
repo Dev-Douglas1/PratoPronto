@@ -221,3 +221,21 @@ test('cardápio e contatos de entrega usam somente RPCs rate-limitáveis para es
   assert.match(marketplace, /save_restaurant_pilot_contact/)
   assert.match(marketplace, /remove_restaurant_pilot_contact/)
 })
+
+
+test('cadastro usa OTP de seis dígitos e recuperação possui tela para nova senha', async () => {
+  const [user, verify, app, reset] = await Promise.all([
+    readFile('src/context/UserContext.jsx', 'utf8'),
+    readFile('src/pages/VerificarEmail.jsx', 'utf8'),
+    readFile('src/App.jsx', 'utf8'),
+    readFile('src/pages/RedefinirSenha.jsx', 'utf8'),
+  ])
+  assert.match(user, /auth\.verifyOtp/)
+  assert.match(user, /type:\s*'email'/)
+  assert.match(user, /\/redefinir-senha/)
+  assert.match(verify, /one-time-code/)
+  assert.match(verify, /\\d\{6\}/)
+  assert.match(app, /\/redefinir-senha/)
+  assert.match(reset, /exchangeCodeForSession/)
+  assert.match(reset, /auth\.updateUser\(\{ password:/)
+})
