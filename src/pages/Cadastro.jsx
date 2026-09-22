@@ -246,7 +246,7 @@ export default function Cadastro() {
           disabled={enviando}
         />
 
-        <small className="field-help">De 6 a 12 caracteres, com minúscula, maiúscula e número. sem símbolo obrigatório.</small>
+        <small className="field-help">De 6 a 12 caracteres, com minúscula, maiúscula e número. Símbolo opcional.</small>
         <label htmlFor="confirmarSenha">Confirmar senha</label>
         <PasswordField
           id="confirmarSenha"
