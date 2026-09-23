@@ -8,7 +8,7 @@
     "prebuild": "npm test",
     "build": "vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "node --test tests/orders.test.mjs tests/entrega.test.mjs tests/render.test.mjs tests/catalog.test.mjs tests/integration-config.test.mjs tests/supabase-architecture.test.mjs",
+    "test": "node --test tests/orders.test.mjs tests/entrega.test.mjs tests/render.test.mjs tests/catalog.test.mjs tests/integration-config.test.mjs tests/supabase-architecture.test.mjs tests/team-access.test.mjs",
     "check:production": "node scripts/check-production-env.mjs",
     "check:secrets": "node scripts/check-no-secrets.mjs"
   },
@@ -19,6 +19,7 @@
     "react-router-dom": "^7.8.2"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
     "@vitejs/plugin-react": "^5.0.2",
     "vite": "^7.1.3"
   },

@@ -52,4 +52,25 @@ Depois do hardening, não restam avisos de foreign key sem índice nem policies 
 
 ## Pendências de operação real
 
+### Revisão de IDs e equipe em 23/09/2026
+
+O UUID do Supabase Auth é exibido no perfil e aceito, junto com e-mail verificado,
+na gestão de membros. A RPC valida o vínculo atual com o restaurante antes de
+consultar a conta de destino, inclusive quando o papel do solicitante é nulo.
+Somente o proprietário pode conceder/alterar/remover administradores da empresa;
+nenhum membro pode alterar o proprietário ou seu próprio acesso por esse formulário.
+O ID não é uma credencial, e a RPC não concede administração global da plataforma.
+
+Foram aprovados sete testes PostgreSQL locais de papéis/isolamento, o teste de
+interface do ID e a verificação transacional do banco real, com todos os dados de
+teste revertidos. O conjunto do aplicativo passou nos 47 testes e no build com Node 22.
+A auditoria de dependências de produção não encontrou vulnerabilidades.
+
+Os avisos do Advisor sobre RPCs `SECURITY DEFINER` continuam exigindo revisão por
+operação; o teste de equipe não certifica os outros fluxos do aplicativo. A proteção
+contra senhas vazadas continua desabilitada e depende da configuração do Auth:
+https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
+
+### Homologação pendente
+
 Ainda não são considerados homologados: SMTP de produção, contas reais de teste, E2E completo cliente → empresa → piloto, backup/restauração, dispositivos reais, hospedagem final e monitoramento de produção. A fila de retenção possui processador seguro, mas a execução periódica automática ainda precisa ser configurada sem expor credenciais.

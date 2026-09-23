@@ -1,5 +1,6 @@
 import { validateCep, validateName, validatePhone, phoneInput, normalizeCep } from '../shared/input-policy.js'
 import AddressFields from '../components/AddressFields.jsx'
+import AccountIdentifier from '../components/AccountIdentifier.jsx'
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
@@ -91,6 +92,7 @@ export default function Perfil() {
         <div><span className="eyebrow">MINHA CONTA</span><h1>{usuario.nome || 'Cliente PratoPronto'}</h1><p>{usuario.email || usuario.telefone || 'Complete seus dados'}</p></div>
       </div>
       <form className="light-card form-card" onSubmit={salvar}>
+        <AccountIdentifier accountId={usuario.uid} hint />
         <div className={`account-badge ${usuario.emailVerificado ? 'is-verified' : ''}`}>
           <strong>{usuario.emailVerificado ? '✓ E-mail verificado' : '! E-mail ainda não verificado'}</strong>
           {!usuario.emailVerificado && <button type="button" onClick={verificarEmail}>Enviar verificação</button>}

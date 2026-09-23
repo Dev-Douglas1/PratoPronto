@@ -38,7 +38,8 @@ export async function callServer(name, data = {}) {
     }))
   }
   if (name === 'appCreateCompany') return rpc('create_restaurant', { p_slug: data.companyId, p_name: data.name })
-  if (name === 'appSaveCompanyMember') return rpc('add_restaurant_member', { p_restaurant_slug: data.companyId, p_email: data.email, p_role: data.role })
+  // p_email is kept for compatibility with already published clients; the RPC also accepts a full account UUID.
+  if (name === 'appSaveCompanyMember') return rpc('add_restaurant_member', { p_restaurant_slug: data.companyId, p_email: data.identifier ?? data.email, p_role: data.role })
   if (name === 'appRemoveCompanyMember') return rpc('remove_restaurant_member', { p_restaurant_slug: data.companyId, p_profile_id: data.userId })
   if (name === 'appSaveCompanyProduct') return rpc('save_restaurant_product', {
     p_restaurant_slug: data.companyId,

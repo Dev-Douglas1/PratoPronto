@@ -100,3 +100,22 @@ test('Piloto Parceiro explica a área antes de liberar o cadastro', async () => 
   assert.match(html, /Agora não/)
   assert.match(html, /Entendi, continuar cadastro/)
 })
+
+test('ID completo fica copiável sem virar campo editável e permissões de equipe limitam as opções', async () => {
+  const { default: AccountIdentifier } = await server.ssrLoadModule('/src/components/AccountIdentifier.jsx')
+  const { default: CompanyTeam } = await server.ssrLoadModule('/src/components/company/CompanyTeam.jsx')
+  const id = '10000000-0000-4000-8000-000000000001'
+  const html = render(AccountIdentifier, { accountId: id, hint: true })
+  assert.match(html, new RegExp(id))
+  assert.match(html, /Copiar ID/)
+  assert.match(html, /role="status"/)
+  assert.doesNotMatch(html, /<input/)
+  const owner = render(CompanyTeam, { companyId: 'loja-a', actorRole: 'owner', actorId: id })
+  assert.match(owner, /ID da conta ou e-mail/)
+  assert.match(owner, /<option value="admin"/)
+  const admin = render(CompanyTeam, { companyId: 'loja-a', actorRole: 'admin', actorId: id })
+  assert.doesNotMatch(admin, /<option value="admin"/)
+  assert.match(admin, /<option value="attendant"/)
+  const customer = render(CompanyTeam, { companyId: 'loja-a', actorId: id })
+  assert.doesNotMatch(customer, /Salvar acesso/)
+})
