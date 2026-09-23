@@ -52,7 +52,7 @@ test('papéis internos não incluem piloto e entregas usam ofertas separadas', a
 
 test('cadastro de piloto nasce no perfil e exige dados da moto', async () => {
   const [profile, signup, route, marketplace] = await Promise.all([
-    readFile('src/pages/Perfil.jsx', 'utf8'),
+    readFile('src/components/ProfileOverview.jsx', 'utf8'),
     readFile('src/pages/PilotSignup.jsx', 'utf8'),
     readFile('src/components/PilotRoute.jsx', 'utf8'),
     readFile('src/services/marketplace.js', 'utf8'),
@@ -171,7 +171,7 @@ test('mutações críticas da empresa não escrevem diretamente nas tabelas prot
 test('plataforma possui moderação de empresas e pilotos sem apagar histórico', async () => {
   const [app, profile, companies, pilots] = await Promise.all([
     readFile('src/App.jsx', 'utf8'),
-    readFile('src/pages/Perfil.jsx', 'utf8'),
+    readFile('src/components/ProfileOverview.jsx', 'utf8'),
     readFile('src/pages/PlatformCompanies.jsx', 'utf8'),
     readFile('src/pages/PilotReview.jsx', 'utf8'),
   ])
