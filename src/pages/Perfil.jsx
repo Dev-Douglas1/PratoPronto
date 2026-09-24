@@ -43,7 +43,7 @@ export default function Perfil() {
   if (user.loading) return <AppScreen><div className="light-card" role="status">Carregando perfil...</div></AppScreen>
   if (!user.usuario) return <Navigate to="/login" replace />
   const edit = (area = 'dados') => { setMessage(''); setParams({ editar: area }) }
-  return <AppScreen className="screen-with-nav profile-page">
+  return <AppScreen className={`screen-with-nav profile-page${editing ? ' profile-page--editing' : ''}`}>
     <section className="account-sheet" aria-label="Minha conta">
       <header className="account-topbar">
         <Link to={editing ? '/perfil' : '/pizzas'} className="account-icon-button" aria-label={editing ? 'Voltar ao perfil' : 'Voltar ao cardápio'}>←</Link>
