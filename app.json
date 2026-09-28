@@ -6,13 +6,11 @@
     "orientation": "portrait",
     "scheme": "pratopronto",
     "userInterfaceStyle": "light",
-    "platforms": ["android", "ios", "web"],
+    "platforms": [
+      "android",
+      "ios"
+    ],
     "icon": "./public/icons/app-512.png",
-    "splash": {
-      "image": "./public/icons/app-512.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#111111"
-    },
     "android": {
       "package": "com.pratopronto.app",
       "adaptiveIcon": {
@@ -23,9 +21,6 @@
     "ios": {
       "bundleIdentifier": "com.pratopronto.app",
       "supportsTablet": true
-    },
-    "web": {
-      "favicon": "./public/icons/app-192.png"
     },
     "plugins": [
       [
