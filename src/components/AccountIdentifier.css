@@ -1,0 +1,9 @@
+.account-identifier { min-width: 0; padding: 12px; border: 1px solid #dddccf; border-radius: 12px; background: #fffef1; color: #252519; }
+.account-identifier-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.account-identifier-heading strong { font-size: 14px; }
+.account-identifier-heading button { min-height: 44px; padding: 9px 14px; border: 1px solid #dedac0; border-radius: 9px; background: #fff; color: #222; font-size: 14px; font-weight: 700; cursor: pointer; }
+.account-identifier-heading button:focus-visible, .account-identifier code:focus-visible { outline: 3px solid #837500; outline-offset: 3px; }
+.account-identifier code { display: block; margin-top: 8px; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; user-select: all; }
+.account-identifier p { margin: 8px 0 0; font-size: 13px; line-height: 1.5; color: #585847; }
+.account-identifier-feedback { display: block; font-size: 13px; line-height: 1.5; color: #3d5722; }
+.account-identifier-feedback:not(:empty) { margin-top: 8px; }

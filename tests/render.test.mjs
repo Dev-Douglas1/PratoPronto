@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react'
 import { createElement as h } from 'react'
 import { renderToString } from 'react-dom/server'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
+import { createClient } from '@supabase/supabase-js'
 import { accountDestination } from '../src/utils/access.js'
 
 let server, UserProvider, CompanyProvider, CartProvider, useCart
@@ -99,4 +100,84 @@ test('Piloto Parceiro explica a área antes de liberar o cadastro', async () => 
   assert.match(html, /Fechar apresentação do Piloto Parceiro/)
   assert.match(html, /Agora não/)
   assert.match(html, /Entendi, continuar cadastro/)
+})
+
+test('ID completo fica copiável sem virar campo editável e permissões de equipe limitam as opções', async () => {
+  const { default: AccountIdentifier } = await server.ssrLoadModule('/src/components/AccountIdentifier.jsx')
+  const { default: CompanyTeam } = await server.ssrLoadModule('/src/components/company/CompanyTeam.jsx')
+  const id = '10000000-0000-4000-8000-000000000001'
+  const html = render(AccountIdentifier, { accountId: id, hint: true })
+  assert.match(html, new RegExp(id))
+  assert.match(html, /Copiar ID/)
+  assert.match(html, /role="status"/)
+  assert.doesNotMatch(html, /<input/)
+  const owner = render(CompanyTeam, { companyId: 'loja-a', actorRole: 'owner', actorId: id })
+  assert.match(owner, /ID da conta ou e-mail/)
+  assert.match(owner, /<option value="admin"/)
+  const admin = render(CompanyTeam, { companyId: 'loja-a', actorRole: 'admin', actorId: id })
+  assert.doesNotMatch(admin, /<option value="admin"/)
+  assert.match(admin, /<option value="attendant"/)
+  const customer = render(CompanyTeam, { companyId: 'loja-a', actorId: id })
+  assert.doesNotMatch(customer, /Salvar acesso/)
+})
+
+test('perfil mostra atividade real e atalhos permitidos sem expor o formulário inteiro', async () => {
+  const { default: ProfileOverview } = await server.ssrLoadModule('/src/components/ProfileOverview.jsx')
+  const usuario = { uid: '10000000-0000-4000-8000-000000000001', nome: 'Ana Teste', email: 'ana@example.test', emailVerificado: true, cidade: 'Curitiba', uf: 'PR', endereco: 'Rua Privada' }
+  const props = { usuario, stats: { orders: 12, delivered: 9, reviews: 3, loading: false }, onEdit() {} }
+  const customer = render(ProfileOverview, props)
+  assert.match(customer, /<dd>12<\/dd>/)
+  assert.match(customer, /<dd>9<\/dd>/)
+  assert.match(customer, /<dd>3<\/dd>/)
+  assert.match(customer, /Conta verificada/)
+  assert.match(customer, /Editar perfil/)
+  assert.match(customer, /href="\/privacidade"/)
+  assert.match(customer, /href="\/acompanhamento"/)
+  assert.match(customer, /Copiar ID/)
+  assert.doesNotMatch(customer, /ana@example.test|Rua Privada|<input|Seguidores|Administrar empresas|Área da empresa/)
+  const staff = render(ProfileOverview, { ...props, staffCompanies: [{ role: 'kitchen' }] })
+  assert.match(staff, /href="\/empresa\/pedidos"/)
+  assert.doesNotMatch(staff, /href="\/plataforma\/empresas"/)
+  const admin = render(ProfileOverview, { ...props, platformAdmin: true, pilotProfile: { id: 'pilot' } })
+  assert.match(admin, /href="\/plataforma\/empresas"/)
+  assert.match(admin, /href="\/piloto"/)
+})
+
+test('falha nos contadores mantém edição e não apresenta zeros inventados', async () => {
+  const { default: ProfileOverview } = await server.ssrLoadModule('/src/components/ProfileOverview.jsx')
+  const props = { usuario: { uid: 'ana', nome: 'Ana' }, incomplete: true, onEdit() {} }
+  const failure = render(ProfileOverview, { ...props, stats: { loading: false, error: true } })
+  assert.equal((failure.match(/<dd>—<\/dd>/g) || []).length, 3)
+  assert.match(failure, /Tentar novamente/)
+  assert.match(failure, /Completar perfil/)
+  assert.doesNotMatch(failure, /<dd>0<\/dd>/)
+  const empty = render(ProfileOverview, { ...props, stats: { loading: false, orders: 0, delivered: 0, reviews: 0 } })
+  assert.equal((empty.match(/<dd>0<\/dd>/g) || []).length, 3)
+})
+
+test('consulta do perfil conta somente registros próprios e propaga falhas do banco', async () => {
+  const { getProfileStats } = await server.ssrLoadModule('/src/services/storage.js')
+  const requests = []
+  let deny = false
+  const client = createClient('https://fixture.supabase.co', 'sb_publishable_fixture', {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { fetch: async (input, options) => {
+      const url = new URL(String(input))
+      requests.push({ url, options })
+      if (deny) return new Response(null, { status: 403 })
+      const count = url.pathname.endsWith('reviews') ? 2 : url.searchParams.has('status') ? 5 : 7
+      return new Response(null, { status: 200, headers: { 'content-range': '*/' + count } })
+    } },
+  })
+  assert.deepEqual(await getProfileStats('account-a', client), { orders: 7, delivered: 5, reviews: 2 })
+  assert.equal(requests.length, 3)
+  for (const { url, options } of requests) {
+    assert.equal(options.method, 'HEAD')
+    assert.equal(url.searchParams.get('user_id'), 'eq.account-a')
+    assert.equal(url.searchParams.get('select'), 'id')
+  }
+  assert.equal(requests.filter(({ url }) => url.searchParams.get('status') === 'eq.entregue').length, 1)
+  deny = true
+  await assert.rejects(getProfileStats('account-a', client))
+  await assert.rejects(getProfileStats('', client))
 })

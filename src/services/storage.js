@@ -155,6 +155,22 @@ export async function getAllOrdersForAdmin() {
   return (data || []).map(orderFromRow)
 }
 
+export async function getProfileStats(userId, client = ready()) {
+  if (!userId) throw new Error('Entre na sua conta para consultar sua atividade.')
+  // HEAD returns counts without downloading addresses, order items or reviews.
+  // Each query is scoped to this account and still subject to RLS.
+  const results = await Promise.all([
+    client.from('orders').select('id', { count: 'exact', head: true }).eq('user_id', userId),
+    client.from('orders').select('id', { count: 'exact', head: true }).eq('user_id', userId).eq('status', 'entregue'),
+    client.from('reviews').select('id', { count: 'exact', head: true }).eq('user_id', userId),
+  ])
+  for (const result of results) {
+    if (result.error) throw result.error
+    if (!Number.isInteger(result.count) || result.count < 0) throw new Error('Não foi possível carregar sua atividade.')
+  }
+  return { orders: results[0].count, delivered: results[1].count, reviews: results[2].count }
+}
+
 export async function updateOrderStatus(orderId, status, received = false) {
   const supabase = ready()
   const { data, error } = await supabase.rpc('advance_order', { p_order_id: orderId, p_next: status, p_received: received })

@@ -9,6 +9,30 @@ Marketplace React/Vite para pedidos, empresas e entregas, usando **Supabase Auth
 - Piloto Parceiro: cadastro iniciado pelo Perfil, dados da moto, documentação privada, aprovação manual, ofertas para aceitar/recusar, rota e confirmação da entrega por senha de 4 dígitos.
 - Plataforma: revisão privada de cadastros de Pilotos Parceiros antes de liberar ofertas.
 
+## ID da conta e acessos da equipe
+
+Cada conta já recebe um UUID do Supabase Auth. O mesmo ID identifica o perfil,
+os pedidos e os vínculos com restaurantes; ele não muda quando o nome ou e-mail muda.
+
+1. Em **Meu perfil**, a pessoa usa **Copiar ID**.
+2. O proprietário abre **Área da empresa → Equipe**, cola o ID completo (ou e-mail verificado), escolhe a função e salva.
+3. Para trocar uma função existente, usa **Alterar função** na equipe e salva a nova opção no formulário.
+
+O proprietário pode conceder acesso de administrador da sua empresa. Administradores
+podem gerenciar atendentes e cozinha, mas não outros administradores, o proprietário
+ou seu próprio acesso. Uma conta pode ter funções diferentes em restaurantes diferentes.
+Conhecer um ID não concede permissão e não substitui o login.
+
+`platform_admins` continua separado: tornar alguém administrador de um restaurante
+não dá acesso administrativo à plataforma. Nenhuma conta é promovida pelo nome,
+e-mail, ID digitado no cadastro ou metadados editáveis pelo usuário.
+
+Para esta alteração, aplique a migration `20260923024345_account_ids_and_team_permissions.sql`.
+Ela mantém a API por e-mail compatível com versões anteriores. Os testes de isolamento
+e papéis rodam em PostgreSQL local via PGlite com `npm test`. A verificação transacional
+do banco existente está em `supabase/tests/team-access-rollback.sql`; ela desfaz todos
+os usuários e vínculos fictícios ao concluir e não envia e-mails.
+
 ## Backend atual
 
 O Firebase e o Worker antigos foram retirados do runtime desta branch. O frontend usa apenas:
