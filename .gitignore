@@ -18,3 +18,7 @@ supabase/.temp/
 .dev.vars
 .dev.vars.*
 firestore.secure.rules
+
+# Expo local
+.expo/
+web-build/
