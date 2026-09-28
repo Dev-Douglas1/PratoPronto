@@ -1,0 +1,24 @@
+name: Verificar PratoPronto Expo
+
+on:
+  push:
+    branches: [expo]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  expo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Instalar dependências
+        run: npm install
+      - name: Verificar segredos
+        run: npm run check:secrets
+      - name: Validar projeto Expo
+        run: npx expo-doctor
