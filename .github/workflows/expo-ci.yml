@@ -22,3 +22,5 @@ jobs:
         run: npm run check:secrets
       - name: Validar projeto Expo
         run: npx expo-doctor
+      - name: Validar bundle Android
+        run: npx expo export --platform android --output-dir /tmp/pratopronto-expo
