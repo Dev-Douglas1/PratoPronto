@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "PratoPronto",
+    "slug": "pratopronto",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "pratopronto",
+    "userInterfaceStyle": "light",
+    "platforms": ["android", "ios", "web"],
+    "icon": "./public/icons/app-512.png",
+    "splash": {
+      "image": "./public/icons/app-512.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#111111"
+    },
+    "android": {
+      "package": "com.pratopronto.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./public/icons/app-512.png",
+        "backgroundColor": "#FFE317"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.pratopronto.app",
+      "supportsTablet": true
+    },
+    "web": {
+      "favicon": "./public/icons/app-192.png"
+    },
+    "plugins": [
+      [
+        "expo-web-browser",
+        {
+          "experimentalLauncherActivity": false
+        }
+      ]
+    ]
+  }
+}
