@@ -12,7 +12,7 @@
     "check:secrets": "node scripts/check-no-secrets.mjs"
   },
   "dependencies": {
-    "@react-native-async-storage/async-storage": "latest",
+    "@react-native-async-storage/async-storage": "2.2.0",
     "@supabase/supabase-js": "^2.57.4",
     "expo": "~57.0.25",
     "expo-auth-session": "latest",
@@ -23,7 +23,7 @@
     "expo-status-bar": "latest",
     "expo-web-browser": "latest",
     "react": "19.2.3",
-    "react-native": "0.86.0",
+    "react-native": "0.86.3",
     "react-native-url-polyfill": "^2.0.0"
   },
   "devDependencies": {
