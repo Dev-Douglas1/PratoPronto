@@ -18,6 +18,8 @@ jobs:
           node-version: 22
       - name: Instalar dependências
         run: npm install
+      - name: Deduplicar dependências
+        run: npm dedupe
       - name: Verificar segredos
         run: npm run check:secrets
       - name: Validar projeto Expo
