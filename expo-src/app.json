@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "PratoPronto",
+    "slug": "pratopronto-snack",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "pratopronto",
+    "userInterfaceStyle": "light",
+    "platforms": ["android", "ios"]
+  }
+}
