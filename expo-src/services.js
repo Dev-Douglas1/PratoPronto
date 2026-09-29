@@ -169,6 +169,39 @@ export async function loadMyCompanies() {
   return data || []
 }
 
+export async function loadCompanyCatalog(restaurantId) {
+  const { data, error } = await supabase.rpc('company_catalog_list', { p_restaurant_id: restaurantId })
+  if (error) throw error
+  return data || []
+}
+
+export async function saveCompanyProduct(restaurantId, input) {
+  const price = Number(String(input.price || '0').replace(',', '.'))
+  if (!Number.isFinite(price) || price < 0) throw new Error('Informe um preço válido.')
+  const { data, error } = await supabase.rpc('company_catalog_save', {
+    p_restaurant_id: restaurantId,
+    p_product_id: input.id || null,
+    p_name: String(input.name || '').trim(),
+    p_description: String(input.description || '').trim(),
+    p_category: String(input.category || 'Outros').trim(),
+    p_price_cents: Math.round(price * 100),
+    p_image_url: String(input.imageUrl || '').trim() || null,
+    p_active: input.active !== false,
+  })
+  if (error) throw error
+  return data
+}
+
+export async function setCompanyProductActive(restaurantId, productId, active) {
+  const { data, error } = await supabase.rpc('company_catalog_set_active', {
+    p_restaurant_id: restaurantId,
+    p_product_id: productId,
+    p_active: active === true,
+  })
+  if (error) throw error
+  return data
+}
+
 export async function loadCompanyOrders(restaurantId) {
   const { data, error } = await supabase.from('orders').select('*').eq('restaurant_id', restaurantId).order('created_at', { ascending: false }).limit(100)
   if (error) throw error
