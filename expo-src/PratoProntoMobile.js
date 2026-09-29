@@ -34,6 +34,7 @@ import {
   createQuote,
   loadCatalog,
   loadCompanyOrders,
+  loadCompanyCatalog,
   loadMyCompanies,
   loadOrders,
   loadPilotOffers,
@@ -48,6 +49,8 @@ import {
   profileStats,
   respondPilotOffer,
   savePilotProfile,
+  saveCompanyProduct,
+  setCompanyProductActive,
   saveProfile,
   setPilotAvailability,
   submitPilotApplication,
@@ -911,23 +914,41 @@ function PilotSignupScreen({ navigate, profile, busy, setBusy, setGlobalError })
 }
 
 function CompanyScreen({ navigate, setGlobalError }) {
+  const emptyForm = { id:null, name:'', description:'', category:'Outros', price:'', imageUrl:'', active:true }
   const [companies, setCompanies] = useState([])
   const [selected, setSelected] = useState(null)
   const [orders, setOrders] = useState([])
+  const [products, setProducts] = useState([])
+  const [tab, setTab] = useState('catalog')
+  const [form, setForm] = useState(emptyForm)
+  const [editing, setEditing] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  const load = useCallback(async () => {
+  const restaurantId = selected?.restaurant_id || selected?.restaurantId || null
+
+  const load = useCallback(async (forcedCompany = null) => {
     setLoading(true)
     try {
       const list = await loadMyCompanies()
       setCompanies(list)
-      const company = selected || list[0]
-      setSelected(company || null)
-      if (company?.restaurant_id || company?.restaurantId) setOrders(await loadCompanyOrders(company.restaurant_id || company.restaurantId))
-      else setOrders([])
+      const company = forcedCompany || selected || list[0] || null
+      setSelected(company)
+      const rid = company?.restaurant_id || company?.restaurantId
+      if (rid) {
+        const [nextOrders, nextProducts] = await Promise.all([
+          loadCompanyOrders(rid),
+          loadCompanyCatalog(rid),
+        ])
+        setOrders(nextOrders)
+        setProducts(nextProducts)
+      } else {
+        setOrders([])
+        setProducts([])
+      }
     } catch (e) { setGlobalError(friendlyError(e)) }
     finally { setLoading(false) }
   }, [selected?.restaurant_id, selected?.restaurantId])
+
   useEffect(() => { load() }, [])
 
   async function advance(row) {
@@ -937,15 +958,93 @@ function CompanyScreen({ navigate, setGlobalError }) {
     try { await advanceOrder(row.id,next,false); await load() } catch (e) { setGlobalError(friendlyError(e)) }
   }
 
-  return <Screen title="Área da empresa" subtitle="GESTÃO DE PEDIDOS" onBack={() => navigate('profile')} refreshing={loading} onRefresh={load}>
-    {companies.length > 1 ? <ScrollView horizontal contentContainerStyle={styles.chips}>{companies.map(c => <Pressable key={c.company_id || c.companyId} onPress={() => { setSelected(c); setTimeout(load,0) }} style={[styles.chip, selected === c && styles.chipActive]}><Text>{c.name}</Text></Pressable>)}</ScrollView> : null}
-    <Notice>Esta versão móvel mantém as ações principais. Configurações avançadas de produtos/equipe continuam disponíveis na versão web.</Notice>
-    {orders.map(row => {
-      const order = orderData(row)
-      const nextMap = { novo:'Confirmar pedido', confirmado:'Começar preparo', preparando:'Marcar como pronto' }
-      return <Card key={row.id}><View style={styles.totalLine}><Text style={styles.cardTitle}>#{shortId(row.id)}</Text><Text style={styles.statusPill}>{row.status}</Text></View><Text style={styles.muted}>{order.cliente?.nome || 'Cliente'} · {order.entrega?.bairro || ''}</Text><Text style={styles.orderTotal}>{money(order.total)}</Text>{nextMap[row.status] ? <Button onPress={() => advance(row)}>{nextMap[row.status]}</Button> : null}</Card>
-    })}
-    {!orders.length && !loading ? <Card><Text style={styles.cardTitle}>Nenhum pedido encontrado</Text></Card> : null}
+  function editProduct(row) {
+    setForm({
+      id: row.id,
+      name: row.name || '',
+      description: row.description || '',
+      category: row.category || 'Outros',
+      price: (Number(row.price_cents || 0) / 100).toFixed(2).replace('.', ','),
+      imageUrl: row.image_url || '',
+      active: row.active !== false,
+    })
+    setEditing(true)
+  }
+
+  async function saveProduct() {
+    if (!restaurantId) return
+    if (String(form.name).trim().length < 2) return setGlobalError('Informe o nome do produto.')
+    setLoading(true)
+    try {
+      await saveCompanyProduct(restaurantId, form)
+      setForm(emptyForm)
+      setEditing(false)
+      await load()
+    } catch (e) { setGlobalError(friendlyError(e)) }
+    finally { setLoading(false) }
+  }
+
+  async function toggleProduct(row) {
+    if (!restaurantId) return
+    setLoading(true)
+    try {
+      await setCompanyProductActive(restaurantId, row.id, !row.active)
+      await load()
+    } catch (e) { setGlobalError(friendlyError(e)) }
+    finally { setLoading(false) }
+  }
+
+  return <Screen title="Área da empresa" subtitle="GESTÃO DA EMPRESA" onBack={() => navigate('profile')} refreshing={loading} onRefresh={() => load()}>
+    {companies.length > 1 ? <ScrollView horizontal contentContainerStyle={styles.chips}>{companies.map(c => {
+      const id = c.restaurant_id || c.restaurantId || c.company_id || c.companyId
+      return <Pressable key={id} onPress={() => load(c)} style={[styles.chip, (selected?.restaurant_id || selected?.restaurantId) === (c.restaurant_id || c.restaurantId) && styles.chipActive]}><Text>{c.name || c.nome || 'Empresa'}</Text></Pressable>
+    })}</ScrollView> : null}
+
+    <View style={styles.row}>
+      <Button style={{flex:1}} variant={tab === 'catalog' ? 'primary' : 'secondary'} onPress={() => setTab('catalog')}>Cardápio</Button>
+      <Button style={{flex:1}} variant={tab === 'orders' ? 'primary' : 'secondary'} onPress={() => setTab('orders')}>Pedidos</Button>
+    </View>
+
+    {tab === 'catalog' ? <>
+      <Button onPress={() => { setForm(emptyForm); setEditing(true) }}>+ Adicionar prato</Button>
+
+      {editing ? <Card>
+        <Text style={styles.cardTitle}>{form.id ? 'Editar prato' : 'Novo prato'}</Text>
+        <Field label="Nome do prato" value={form.name} onChangeText={v => setForm(x => ({...x,name:v}))} placeholder="Ex.: Pizza Calabresa" maxLength={80} />
+        <Field label="Descrição" value={form.description} onChangeText={v => setForm(x => ({...x,description:v}))} placeholder="Ingredientes e detalhes" multiline maxLength={500} />
+        <Field label="Categoria" value={form.category} onChangeText={v => setForm(x => ({...x,category:v}))} placeholder="Pizzas, Bebidas..." maxLength={50} />
+        <Field label="Preço (R$)" value={form.price} onChangeText={v => setForm(x => ({...x,price:v}))} placeholder="39,90" keyboardType="decimal-pad" />
+        <Field label="URL da imagem (opcional)" value={form.imageUrl} onChangeText={v => setForm(x => ({...x,imageUrl:v}))} placeholder="https://..." autoCapitalize="none" />
+        <View style={styles.totalLine}><Text style={styles.cardTitle}>Disponível no cardápio</Text><Switch value={form.active} onValueChange={v => setForm(x => ({...x,active:v}))} /></View>
+        <Button disabled={loading} onPress={saveProduct}>{form.id ? 'Salvar alterações' : 'Cadastrar prato'}</Button>
+        <Button variant="secondary" onPress={() => { setEditing(false); setForm(emptyForm) }}>Cancelar</Button>
+      </Card> : null}
+
+      {products.map(row => <Card key={row.id}>
+        <View style={styles.row}>
+          {row.image_url ? <Image source={{uri:row.image_url}} style={{width:72,height:72,borderRadius:12}} /> : <View style={[styles.productImage,{width:72,minHeight:72}]}><Text style={styles.productEmoji}>🍽️</Text></View>}
+          <View style={styles.flex}>
+            <Text style={styles.cardTitle}>{row.name}</Text>
+            <Text style={styles.muted}>{row.category || 'Outros'}</Text>
+            <Text style={styles.price}>{money(Number(row.price_cents || 0)/100)}</Text>
+          </View>
+        </View>
+        {!!row.description && <Text style={styles.muted}>{row.description}</Text>}
+        <Notice>{row.active ? 'Disponível para clientes' : 'Produto desativado'}</Notice>
+        <View style={styles.row}>
+          <Button style={{flex:1}} variant="secondary" onPress={() => editProduct(row)}>Editar</Button>
+          <Button style={{flex:1}} onPress={() => toggleProduct(row)}>{row.active ? 'Desativar' : 'Ativar'}</Button>
+        </View>
+      </Card>)}
+      {!products.length && !loading ? <Card><Text style={styles.cardTitle}>Nenhum prato cadastrado</Text><Text style={styles.muted}>Use “Adicionar prato” para criar o primeiro item desta empresa.</Text></Card> : null}
+    </> : <>
+      {orders.map(row => {
+        const order = orderData(row)
+        const nextMap = { novo:'Confirmar pedido', confirmado:'Começar preparo', preparando:'Marcar como pronto' }
+        return <Card key={row.id}><View style={styles.totalLine}><Text style={styles.cardTitle}>#{shortId(row.id)}</Text><Text style={styles.statusPill}>{row.status}</Text></View><Text style={styles.muted}>{order.cliente?.nome || 'Cliente'} · {order.entrega?.bairro || ''}</Text><Text style={styles.orderTotal}>{money(order.total)}</Text>{nextMap[row.status] ? <Button onPress={() => advance(row)}>{nextMap[row.status]}</Button> : null}</Card>
+      })}
+      {!orders.length && !loading ? <Card><Text style={styles.cardTitle}>Nenhum pedido encontrado</Text></Card> : null}
+    </>}
   </Screen>
 }
 
