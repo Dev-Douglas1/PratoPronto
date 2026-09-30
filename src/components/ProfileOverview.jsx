@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import AccountIdentifier from './AccountIdentifier.jsx'
+import PilotIntroModal from './PilotIntroModal.jsx'
 
 export function ProfileIcon({ name }) {
   const paths = {
@@ -39,6 +40,9 @@ export default function ProfileOverview({ usuario, staffCompanies = [], pilotPro
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState('')
+  const [pilotIntroOpen, setPilotIntroOpen] = useState(false)
+  const pilotStatus = pilotProfile?.approval_status || ''
+  const hasPilotArea = ['pending', 'approved', 'rejected'].includes(pilotStatus)
   const city = [usuario.cidade, usuario.uf].filter(Boolean).join(', ')
   const count = key => !stats.loading && !stats.error && Number.isInteger(stats[key]) ? stats[key].toLocaleString('pt-BR') : '—'
 
@@ -86,7 +90,12 @@ export default function ProfileOverview({ usuario, staffCompanies = [], pilotPro
     <div className="account-menu account-work">
       <h2>No PratoPronto</h2>
       {!!staffCompanies.length && <MenuItem icon="shop" title="Área da empresa" subtitle="Pedidos, cardápio e equipe" to="/empresa/pedidos" />}
-      <MenuItem icon="bike" title={pilotProfile ? 'Área Piloto Parceiro' : 'Se torne um piloto das entregas'} subtitle={pilotProfile ? 'Acompanhe suas entregas' : 'Conheça o programa de parceiros'} to={pilotProfile ? '/piloto' : '/piloto/cadastro'} />
+      {hasPilotArea
+        ? <MenuItem icon="bike" title="Área Piloto Parceiro" subtitle="Acompanhe seu cadastro e suas entregas" to="/piloto" />
+        : <MenuItem icon="bike" title="Se torne um piloto das entregas" subtitle="Conheça o programa de parceiros" onClick={() => {
+            try { sessionStorage.removeItem('pratopronto:pilot-intro-accepted') } catch {}
+            setPilotIntroOpen(true)
+          }} />}
       {platformAdmin && <>
         <MenuItem icon="shop" title="Administrar empresas" subtitle="Administração da plataforma" to="/plataforma/empresas" />
         <MenuItem icon="bike" title="Analisar cadastros de pilotos" subtitle="Aprovações da plataforma" to="/plataforma/pilotos" />
@@ -95,5 +104,14 @@ export default function ProfileOverview({ usuario, staffCompanies = [], pilotPro
     {!usuario.emailVerificado && <button className="account-verify-button" type="button" onClick={verify} disabled={!!busy}>{busy === 'verify' ? 'Enviando...' : 'Enviar verificação'}</button>}
     <button className="account-logout" type="button" onClick={logout} disabled={!!busy}><ProfileIcon name="exit" />{busy === 'logout' ? 'Saindo...' : 'Sair da conta'}</button>
     <div className="account-feedback" aria-live="polite">{message && <p className="success-note" role="status">{message}</p>}{error && <p className="form-error dark-error" role="alert">{error}</p>}</div>
+    <PilotIntroModal
+      open={pilotIntroOpen}
+      onClose={() => setPilotIntroOpen(false)}
+      onConfirm={() => {
+        try { sessionStorage.setItem('pratopronto:pilot-intro-accepted', '1') } catch {}
+        setPilotIntroOpen(false)
+        navigate('/piloto/cadastro')
+      }}
+    />
   </>
 }
