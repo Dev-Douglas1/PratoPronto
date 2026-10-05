@@ -8,13 +8,23 @@ import BottomActions from '../components/BottomActions.jsx'
 import BottomNav from '../components/BottomNav.jsx'
 import useCatalog from '../hooks/useCatalog.js'
 
-export default function Bebidas() {
+function isDessert(product) {
+  return ['sobremesa', 'sobremesas', 'dessert', 'desserts'].includes(
+    String(product.categoria || '').trim().toLowerCase(),
+  )
+}
+
+export default function Sobremesas() {
   const navigate = useNavigate()
   const [busca, setBusca] = useState('')
   const [somenteOfertas, setSomenteOfertas] = useState(false)
   const { catalog, loading, error, confirmed, retry } = useCatalog()
   const filtradas = useMemo(
-    () => catalog.filter((bebida) => !bebida.personalizavel && bebida.nome.toLowerCase().includes(busca.toLowerCase()) && (!confirmed || !somenteOfertas || bebida.ofertaAtiva)),
+    () => catalog.filter((produto) =>
+      isDessert(produto)
+      && produto.nome.toLowerCase().includes(busca.toLowerCase())
+      && (!confirmed || !somenteOfertas || produto.ofertaAtiva),
+    ),
     [busca, catalog, somenteOfertas, confirmed],
   )
 
@@ -23,27 +33,28 @@ export default function Bebidas() {
       <TopBar titulo="PratoPronto" carrinho />
       <section className="catalog-surface">
         <div className="catalog-heading">
-          <small>Geladas e prontas para acompanhar</small>
-          <h1>Escolha sua bebida</h1>
+          <small>Para fechar o pedido do jeito certo</small>
+          <h1>Escolha sua sobremesa</h1>
         </div>
         <label className="search-box">
           <span aria-hidden="true">⌕</span>
-          <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar bebida..." />
+          <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar sobremesa..." />
         </label>
         <div className="category-tabs" role="tablist" aria-label="Categorias">
           <button role="tab" aria-selected="false" onClick={() => navigate('/pizzas')}>🍕 Pizzas</button>
-          <button className="is-active" role="tab" aria-selected="true">🥤 Bebidas</button>
-          <button role="tab" aria-selected="false" onClick={() => navigate('/sobremesas')}>🍰 Sobremesas</button>
+          <button role="tab" aria-selected="false" onClick={() => navigate('/bebidas')}>🥤 Bebidas</button>
+          <button className="is-active" role="tab" aria-selected="true">🍰 Sobremesas</button>
         </div>
-        <button className="offer-filter" type="button" disabled={!confirmed} aria-pressed={confirmed && somenteOfertas} onClick={() => setSomenteOfertas(value => !value)}>{confirmed && somenteOfertas ? '✓ Mostrando ofertas · ver todos' : 'Ver produtos em oferta'}</button>
-        <div className="section-heading"><h2>Bebidas</h2><span>{filtradas.length} opções</span></div>
+        <button className="offer-filter" type="button" disabled={!confirmed} aria-pressed={confirmed && somenteOfertas} onClick={() => setSomenteOfertas(value => !value)}>
+          {confirmed && somenteOfertas ? '✓ Mostrando ofertas · ver todos' : 'Ver produtos em oferta'}
+        </button>
+        <div className="section-heading"><h2>Sobremesas</h2><span>{filtradas.length} opções</span></div>
         <StoreInfo />
         <CatalogResults produtos={filtradas} loading={loading} error={error} retry={retry} confirmed={confirmed} />
         <BottomActions>
-          <button className="btn btn-secondary" onClick={() => navigate('/sobremesas')}>Ver sobremesas</button>
+          <button className="btn btn-secondary" onClick={() => navigate('/pizzas')}>Ver pizzas</button>
           <button className="btn btn-primary" onClick={() => navigate('/pedido')}>Ver pedido</button>
         </BottomActions>
-        <button className="btn ghost-button wide-button" onClick={() => navigate('/perfil')}>Meu perfil</button>
       </section>
       <BottomNav />
     </AppScreen>

@@ -6,6 +6,7 @@ import { DEFAULT_COMPANY_ID } from '../config/marketplace.js'
 export default function useCatalog(enabled = true, companyId = DEFAULT_COMPANY_ID) {
   const [now, setNow] = useState(Date.now())
   const [rows, setRows] = useState([])
+  const [restaurantName, setRestaurantName] = useState('')
   const [loading, setLoading] = useState(enabled)
   const [error, setError] = useState('')
   const [confirmed, setConfirmed] = useState(false)
@@ -18,9 +19,9 @@ export default function useCatalog(enabled = true, companyId = DEFAULT_COMPANY_I
   }, [enabled])
 
   useEffect(() => {
-    if (!enabled) { setRows([]); setLoading(false); setError(''); setConfirmed(false); return }
+    if (!enabled) { setRows([]); setRestaurantName(''); setLoading(false); setError(''); setConfirmed(false); return }
     if (!supabaseConfigured) {
-      setRows([]); setLoading(false); setConfirmed(false)
+      setRows([]); setRestaurantName(''); setLoading(false); setConfirmed(false)
       setError('Configure o Supabase para carregar preços e disponibilidade.')
       return
     }
@@ -30,13 +31,14 @@ export default function useCatalog(enabled = true, companyId = DEFAULT_COMPANY_I
 
     async function load() {
       setLoading(true)
-      const { data: restaurant, error: restaurantError } = await supabase.from('restaurantes').select('id').eq('slug', companyId).maybeSingle()
+      const { data: restaurant, error: restaurantError } = await supabase.from('restaurantes').select('id,slug,nome').eq('slug', companyId).maybeSingle()
       if (restaurantError) throw restaurantError
       if (!restaurant) throw new Error('Empresa não encontrada.')
       const { data, error: productError } = await supabase.from('products').select('*').eq('restaurant_id', restaurant.id).order('name')
       if (productError) throw productError
       if (!alive) return
       setRows(data || [])
+      setRestaurantName(restaurant.nome || companyId)
       setError('')
       setConfirmed(true)
       setLoading(false)
@@ -65,6 +67,7 @@ export default function useCatalog(enabled = true, companyId = DEFAULT_COMPANY_I
       id: row.slug,
       uuid: row.id,
       companyId,
+      companyName: restaurantName,
       nome: row.name,
       descricao: row.description || '',
       preco: Number(row.price_cents || 0) / 100,
@@ -77,7 +80,7 @@ export default function useCatalog(enabled = true, companyId = DEFAULT_COMPANY_I
       ofertaAtiva: row.active !== false && promotionStatus(promocao, now) === 'ativa',
       disponivel: row.active !== false,
     }
-  }), [rows, companyId, now])
+  }), [rows, companyId, now, restaurantName])
 
   return { catalog, loading, error, confirmed, retry: () => setAttempt(value => value + 1) }
 }

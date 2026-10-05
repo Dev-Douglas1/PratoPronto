@@ -17,6 +17,7 @@ const RedefinirSenha = lazy(() => import('./pages/RedefinirSenha.jsx'))
 const VerificarEmail = lazy(() => import('./pages/VerificarEmail.jsx'))
 const Pizzas = lazy(() => import('./pages/Pizzas.jsx'))
 const Bebidas = lazy(() => import('./pages/Bebidas.jsx'))
+const Sobremesas = lazy(() => import('./pages/Sobremesas.jsx'))
 const Pedido = lazy(() => import('./pages/Pedido.jsx'))
 const Pagamento = lazy(() => import('./pages/Pagamento.jsx'))
 const Acompanhamento = lazy(() => import('./pages/Acompanhamento.jsx'))
@@ -51,6 +52,7 @@ export default function App() {
         <Route path="/verificar-email" element={<ProtectedRoute allowUnverified><VerificarEmail /></ProtectedRoute>} />
         <Route path="/pizzas" element={protectedPage(<Pizzas />)} />
         <Route path="/bebidas" element={protectedPage(<Bebidas />)} />
+        <Route path="/sobremesas" element={protectedPage(<Sobremesas />)} />
         <Route path="/pedido" element={protectedPage(<Pedido />)} />
         <Route path="/pagamento" element={protectedPage(<Pagamento />)} />
         <Route path="/acompanhamento" element={protectedPage(<Acompanhamento />)} />

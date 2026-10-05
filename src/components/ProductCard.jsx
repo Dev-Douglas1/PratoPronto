@@ -85,6 +85,7 @@ export default function ProductCard({ produto, readOnly = false }) {
       </div>
       <div className="product-card-content">
         <h3>{produto.nome}</h3>
+        <span className="product-card__company">{produto.companyName || 'PratoPronto'}</span>
         <p>{produto.descricao}</p>
         {displayPrice.oferta && <span className="product-offer-title">{displayPrice.oferta.titulo}</span>}
         <div className="product-card-bottom">
