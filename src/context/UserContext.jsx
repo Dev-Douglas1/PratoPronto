@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { getSupabase, supabaseConfigured } from '../lib/supabase.js'
 import {
   deleteUserData, getAdminStatus, getUserProfile, PRIVACY_POLICY_VERSION,
@@ -156,7 +156,7 @@ export function UserProvider({ children }) {
   }
 
 
-  async function entrarComGoogle() {
+  const entrarComGoogle = useCallback(async function entrarComGoogle() {
     const supabase = ready()
     setAvisoLogin('')
     const { error } = await supabase.auth.signInWithOAuth({
@@ -166,9 +166,9 @@ export function UserProvider({ children }) {
       },
     })
     if (error) throw criarErroSupabase(error)
-  }
+  }, [])
 
-  async function finalizarOAuth(code) {
+  const finalizarOAuth = useCallback(async function finalizarOAuth(code) {
     const supabase = ready()
     if (!code) throw new Error('O Google não retornou um código de autenticação válido.')
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
@@ -178,7 +178,7 @@ export function UserProvider({ children }) {
     const account = await readAccount(user)
     setUsuario(account)
     return account
-  }
+  }, [])
 
   async function enviarCodigoTelefone(telefone) {
     const supabase = ready()
