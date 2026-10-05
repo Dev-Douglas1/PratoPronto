@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom'
 import { useCart } from '../context/CartContext.jsx'
 
 const items = [
-  { to: '/pizzas', icon: '⌂', label: 'Início' },
+  { to: '/pizzas', icon: '⌂', label: 'Cardápio' },
   { to: '/sobremesas', icon: '🍰', label: 'Sobremesas' },
   { to: '/pedido', icon: '🛒', label: 'Carrinho', cart: true },
   { to: '/perfil', icon: '●', label: 'Perfil' },
