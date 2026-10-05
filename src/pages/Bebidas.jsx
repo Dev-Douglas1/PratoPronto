@@ -33,13 +33,14 @@ export default function Bebidas() {
         <div className="category-tabs" role="tablist" aria-label="Categorias">
           <button role="tab" aria-selected="false" onClick={() => navigate('/pizzas')}>🍕 Pizzas</button>
           <button className="is-active" role="tab" aria-selected="true">🥤 Bebidas</button>
+          <button role="tab" aria-selected="false" onClick={() => navigate('/sobremesas')}>🍰 Sobremesas</button>
         </div>
         <button className="offer-filter" type="button" disabled={!confirmed} aria-pressed={confirmed && somenteOfertas} onClick={() => setSomenteOfertas(value => !value)}>{confirmed && somenteOfertas ? '✓ Mostrando ofertas · ver todos' : 'Ver produtos em oferta'}</button>
         <div className="section-heading"><h2>Bebidas</h2><span>{filtradas.length} opções</span></div>
         <StoreInfo />
         <CatalogResults produtos={filtradas} loading={loading} error={error} retry={retry} confirmed={confirmed} />
         <BottomActions>
-          <button className="btn btn-secondary" onClick={() => navigate('/pizzas')}>Ver pizzas</button>
+          <button className="btn btn-secondary" onClick={() => navigate('/sobremesas')}>Ver sobremesas</button>
           <button className="btn btn-primary" onClick={() => navigate('/pedido')}>Ver pedido</button>
         </BottomActions>
         <button className="btn ghost-button wide-button" onClick={() => navigate('/perfil')}>Meu perfil</button>
