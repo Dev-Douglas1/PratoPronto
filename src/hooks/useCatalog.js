@@ -30,7 +30,7 @@ export default function useCatalog(enabled = true, companyId = DEFAULT_COMPANY_I
 
     async function load() {
       setLoading(true)
-      const { data: restaurant, error: restaurantError } = await supabase.from('restaurantes').select('id').eq('slug', companyId).maybeSingle()
+      const { data: restaurant, error: restaurantError } = await supabase.from('restaurantes').select('id,slug,nome').eq('slug', companyId).maybeSingle()
       if (restaurantError) throw restaurantError
       if (!restaurant) throw new Error('Empresa não encontrada.')
       const { data, error: productError } = await supabase.from('products').select('*').eq('restaurant_id', restaurant.id).order('name')
@@ -65,6 +65,7 @@ export default function useCatalog(enabled = true, companyId = DEFAULT_COMPANY_I
       id: row.slug,
       uuid: row.id,
       companyId,
+      companyName: restaurant?.nome || companyId,
       nome: row.name,
       descricao: row.description || '',
       preco: Number(row.price_cents || 0) / 100,
