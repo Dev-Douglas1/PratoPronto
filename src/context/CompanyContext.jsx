@@ -1,70 +1,75 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
+import { getSupabase } from '../lib/supabase.js'
 import { useUser } from './UserContext.jsx'
-import { isPlatformAdmin, loadMyCompanies, loadPilotProfile } from '../services/marketplace.js'
-import { COMPANY_STAFF_ROLES, DEFAULT_COMPANY_ID } from '../config/marketplace.js'
 
-const CompanyContext = createContext(null)
-const STORAGE_KEY = 'pratopronto:empresa-ativa'
+const CompanyContext = createContext({})
 
 export function CompanyProvider({ children }) {
-  const { usuario } = useUser()
-  const [companies, setCompanies] = useState([])
-  const [pilotProfile, setPilotProfile] = useState(null)
-  const [platformAdmin, setPlatformAdmin] = useState(false)
-  const [activeCompanyId, setActiveCompanyId] = useState(() => {
-    try { return localStorage.getItem(STORAGE_KEY) || DEFAULT_COMPANY_ID } catch { return DEFAULT_COMPANY_ID }
-  })
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const { usuario, autenticado } = useUser()
+  const [staffCompanies, setStaffCompanies] = useState([])
+  const [empresaAtiva, setEmpresaAtiva] = useState(null)
+  const [loadingCompany, setLoadingCompany] = useState(true)
 
-  async function refresh() {
-    if (!usuario?.emailVerificado) {
-      setCompanies([]); setPilotProfile(null); setPlatformAdmin(false); return []
+  async function carregarEmpresasDoUsuario() {
+    if (!autenticado || !usuario) {
+      setStaffCompanies([])
+      setEmpresaAtiva(null)
+      setLoadingCompany(false)
+      return
     }
-    setLoading(true); setError('')
+
     try {
-      const [values, pilot, isAdmin] = await Promise.all([loadMyCompanies(), loadPilotProfile(), isPlatformAdmin()])
-      const list = Array.isArray(values) ? values : []
-      setCompanies(list)
-      setPilotProfile(pilot)
-      setPlatformAdmin(isAdmin === true)
-      setActiveCompanyId(current => {
-        const valid = list.some(item => item.companyId === current)
-        const next = valid ? current : list[0]?.companyId || DEFAULT_COMPANY_ID
-        try { localStorage.setItem(STORAGE_KEY, next) } catch {}
-        return next
-      })
-      return list
+      setLoadingCompany(true)
+      const supabase = getSupabase()
+
+      // Busca empresas onde o utilizador é dono ou membro da equipa
+      const { data, error } = await supabase
+        .from('equipe_empresa')
+        .select(`
+          empresa_id,
+          cargo,
+          empresas (*)
+        `)
+        .eq('user_id', usuario.uid || usuario.id)
+
+      if (error) throw error
+
+      const listaEmpresas = (data || [])
+        .map((item) => item.empresas)
+        .filter((emp) => emp && emp.ativo !== false)
+
+      setStaffCompanies(listaEmpresas)
+
+      if (listaEmpresas.length > 0) {
+        // Define a primeira empresa como ativa por padrão se nenhuma estiver selecionada
+        setEmpresaAtiva((prev) => prev || listaEmpresas[0])
+      } else {
+        setEmpresaAtiva(null)
+      }
     } catch (err) {
-      setError(err.message || 'Não foi possível carregar suas empresas.')
-      setCompanies([])
-      setPlatformAdmin(false)
-      return []
-    } finally { setLoading(false) }
+      console.error('Erro ao carregar empresas do utilizador:', err.message)
+    } finally {
+      setLoadingCompany(false)
+    }
   }
 
-  useEffect(() => { refresh() }, [usuario?.uid, usuario?.emailVerificado])
+  useEffect(() => {
+    carregarEmpresasDoUsuario()
+  }, [autenticado, usuario?.uid, usuario?.id])
 
-  function selectCompany(companyId) {
-    const next = String(companyId || '').trim()
-    if (!next) return
-    setActiveCompanyId(next)
-    try { localStorage.setItem(STORAGE_KEY, next) } catch {}
-  }
-
-  const activeCompany = companies.find(item => item.companyId === activeCompanyId) || null
-  const staffCompanies = companies.filter(item => COMPANY_STAFF_ROLES.includes(item.role))
-
-  const value = useMemo(() => ({
-    companies, staffCompanies, pilotProfile, platformAdmin, activeCompanyId, activeCompany,
-    loading, error, refresh, selectCompany,
-  }), [companies, pilotProfile, platformAdmin, activeCompanyId, activeCompany, loading, error])
-
-  return <CompanyContext.Provider value={value}>{children}</CompanyContext.Provider>
+  return (
+    <CompanyContext.Provider
+      value={{
+        staffCompanies,
+        empresaAtiva,
+        setEmpresaAtiva,
+        loadingCompany,
+        recarregarEmpresas: carregarEmpresasDoUsuario,
+      }}
+    >
+      {children}
+    </CompanyContext.Provider>
+  )
 }
 
-export function useCompany() {
-  const context = useContext(CompanyContext)
-  if (!context) throw new Error('useCompany deve ser usado dentro de CompanyProvider')
-  return context
-}
+export const useCompany = () => useContext(CompanyContext)
