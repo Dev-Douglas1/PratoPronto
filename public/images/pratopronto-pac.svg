@@ -1,30 +1,39 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 470" role="img" aria-labelledby="title">
-  <title id="title">Símbolo PAC do PratoPronto</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 550" role="img" aria-labelledby="title">
+  <title id="title">Símbolo PAC amarelo do PratoPronto</title>
   <defs>
-    <linearGradient id="pacYellow" x1="0" y1="0" x2="0.85" y2="1">
-      <stop offset="0" stop-color="#fff52b"/>
-      <stop offset="0.68" stop-color="#ffdf00"/>
-      <stop offset="1" stop-color="#ffb300"/>
+    <linearGradient id="pac" x1="0" y1="0" x2=".8" y2="1">
+      <stop offset="0" stop-color="#fff51a"/>
+      <stop offset=".62" stop-color="#ffdf00"/>
+      <stop offset="1" stop-color="#ffad00"/>
     </linearGradient>
-    <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="10"/>
-    </filter>
+    <linearGradient id="streak" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff51a"/>
+      <stop offset="1" stop-color="#ffbf00"/>
+    </linearGradient>
   </defs>
-  <circle cx="300" cy="235" r="164" fill="#ffdf00" opacity=".12" filter="url(#softGlow)"/>
-  <g fill="none" stroke="#ffdf00" stroke-width="12" stroke-linecap="round">
-    <path d="M250 38 A205 205 0 0 1 492 133"/>
-    <path d="M103 370 A205 205 0 0 0 452 394"/>
+  <!-- Corpo do PAC: contorno preto e abertura voltada para a direita -->
+  <path d="M420 102 A205 205 0 1 0 420 448 L320 275 Z"
+        fill="url(#pac)" stroke="#080808" stroke-width="12" stroke-linejoin="round"/>
+  <!-- Olho expressivo -->
+  <path d="M350 153 Q372 128 395 146" fill="none" stroke="#080808" stroke-width="10" stroke-linecap="round"/>
+  <ellipse cx="382" cy="190" rx="24" ry="34" fill="#050505"/>
+  <ellipse cx="390" cy="178" rx="10" ry="13" fill="#fff"/>
+  <!-- Riscos de velocidade à esquerda -->
+  <g fill="none" stroke="url(#streak)" stroke-width="24" stroke-linecap="round">
+    <path d="M30 205 H166"/>
+    <path d="M0 275 H145"/>
+    <path d="M26 345 H150"/>
   </g>
-  <path d="M390 105 A165 165 0 1 0 390 365 L318 235 Z" fill="url(#pacYellow)" stroke="#080808" stroke-width="13" stroke-linejoin="round"/>
-  <path d="M344 125 Q365 110 382 132" fill="none" stroke="#080808" stroke-width="9" stroke-linecap="round"/>
-  <ellipse cx="365" cy="151" rx="17" ry="25" fill="#050505"/>
-  <ellipse cx="370" cy="141" rx="6" ry="8" fill="#fff"/>
-  <g fill="none" stroke="#ffdf00" stroke-width="17" stroke-linecap="round">
-    <path d="M62 173 H171"/>
-    <path d="M38 235 H151"/>
-    <path d="M62 297 H171"/>
-    <path d="M470 157 L528 116"/>
-    <path d="M483 235 H565"/>
-    <path d="M470 313 L528 354"/>
+  <!-- Arco superior e seta -->
+  <path d="M232 45 C345 5 465 60 525 170" fill="none" stroke="#ffdf00" stroke-width="25" stroke-linecap="round"/>
+  <path d="M495 145 L548 196 L505 224" fill="none" stroke="#ffdf00" stroke-width="25" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Traços de movimento à direita -->
+  <g fill="none" stroke="#ffdf00" stroke-width="24" stroke-linecap="round">
+    <path d="M472 244 L555 213"/>
+    <path d="M480 300 H590"/>
+    <path d="M462 366 L535 415"/>
   </g>
+  <!-- Arco inferior -->
+  <path d="M92 420 C150 520 260 548 360 528 C425 515 475 478 515 430"
+        fill="none" stroke="#ffdf00" stroke-width="25" stroke-linecap="round"/>
 </svg>
