@@ -3,9 +3,6 @@ import { Link, useNavigate } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
 import { useUser } from '../context/UserContext.jsx'
 
-// Compartilha a mesma troca PKCE entre as montagens duplas do StrictMode.
-let oauthCompletion = { code: null, promise: null }
-
 export default function AuthCallback() {
   const navigate = useNavigate()
   const { finalizarOAuth } = useUser()
@@ -22,14 +19,12 @@ export default function AuthCallback() {
 
         const code = params.get('code')
         if (!code) throw new Error('O Google retornou sem o código de autorização. Verifique a URL de retorno OAuth no Supabase e tente novamente.')
-        if (!oauthCompletion.promise || oauthCompletion.code !== code) {
-          oauthCompletion = { code, promise: finalizarOAuth(code) }
-        }
 
-        const conta = await oauthCompletion.promise
+        // detectSessionInUrl=true faz a troca PKCE uma única vez na inicialização
+        // do cliente; esta tela aguarda a sessão persistida pelo próprio SDK.
+        const conta = await finalizarOAuth()
         if (ativo) navigate(conta?.emailVerificado === true ? '/pratos' : '/verificar-email', { replace: true })
       } catch (error) {
-        oauthCompletion = { code: null, promise: null }
         if (ativo) setErro(error?.message || 'Não foi possível concluir o login com Google.')
       }
     }
