@@ -14,9 +14,16 @@ const PILOT_INTRO_KEY = 'pratopronto:pilot-intro-accepted'
 
 const normalizePlate = value => String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7)
 const futureDate = value => {
-  if (!value) return false
-  const date = new Date(value + 'T12:00:00')
-  return Number.isFinite(date.getTime()) && date.getTime() > Date.now()
+  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(String(value || ''))) return false
+  const date = new Date(value + 'T23:59:59')
+  return Number.isFinite(date.getTime()) && date.getTime() >= Date.now()
+}
+
+const pilotFileError = file => {
+  if (!file) return ''
+  if (!['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].includes(file.type)) return 'Use um arquivo JPG, PNG, WEBP ou PDF.'
+  if (file.size > 5 * 1024 * 1024) return 'Cada arquivo pode ter no máximo 5 MB.'
+  return ''
 }
 
 export default function PilotSignup() {
@@ -103,6 +110,8 @@ export default function PilotSignup() {
       setError('Envie a foto do piloto, da moto e as duas imagens da CNH.')
       return
     }
+    const invalidFile = [profilePhoto, motorcyclePhoto, cnhFront, cnhBack].map(pilotFileError).find(Boolean)
+    if (invalidFile) { setError(invalidFile); return }
     if (!consent) {
       setError('Confirme o envio da documentação para análise.')
       return
@@ -220,21 +229,21 @@ export default function PilotSignup() {
 
       <label htmlFor="pilot-profile-photo">Foto atual do piloto</label>
       <input id="pilot-profile-photo" required type="file" accept="image/jpeg,image/png,image/webp"
-        onChange={event => setProfilePhoto(event.target.files?.[0] || null)} />
+        onChange={event => { const file = event.target.files?.[0] || null; const issue = pilotFileError(file); if (issue) { setError(issue); event.target.value = ''; setProfilePhoto(null) } else { setError(''); setProfilePhoto(file) } }} />
       <small>Foto clara do rosto. JPG, PNG ou WEBP, até 5 MB.</small>
 
       <label htmlFor="pilot-motorcycle-photo">Foto da moto</label>
       <input id="pilot-motorcycle-photo" required type="file" accept="image/jpeg,image/png,image/webp"
-        onChange={event => setMotorcyclePhoto(event.target.files?.[0] || null)} />
+        onChange={event => { const file = event.target.files?.[0] || null; const issue = pilotFileError(file); if (issue) { setError(issue); event.target.value = ''; setMotorcyclePhoto(null) } else { setError(''); setMotorcyclePhoto(file) } }} />
       <small>A moto e a placa devem estar legíveis na imagem.</small>
 
       <label htmlFor="pilot-cnh-front">CNH — frente</label>
       <input id="pilot-cnh-front" required type="file" accept="image/jpeg,image/png,image/webp,application/pdf"
-        onChange={event => setCnhFront(event.target.files?.[0] || null)} />
+        onChange={event => { const file = event.target.files?.[0] || null; const issue = pilotFileError(file); if (issue) { setError(issue); event.target.value = ''; setCnhFront(null) } else { setError(''); setCnhFront(file) } }} />
 
       <label htmlFor="pilot-cnh-back">CNH — verso</label>
       <input id="pilot-cnh-back" required type="file" accept="image/jpeg,image/png,image/webp,application/pdf"
-        onChange={event => setCnhBack(event.target.files?.[0] || null)} />
+        onChange={event => { const file = event.target.files?.[0] || null; const issue = pilotFileError(file); if (issue) { setError(issue); event.target.value = ''; setCnhBack(null) } else { setError(''); setCnhBack(file) } }} />
 
       <label className="checkbox-line">
         <input type="checkbox" checked={consent} onChange={event => setConsent(event.target.checked)} />
