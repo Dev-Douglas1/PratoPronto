@@ -5,7 +5,7 @@ import BrandMark from '../components/BrandMark.jsx'
 import { useUser } from '../context/UserContext.jsx'
 import { accountDestination } from '../utils/access.js'
 
-// Evita trocar duas vezes o mesmo código PKCE durante o React StrictMode.
+// Compartilha a mesma troca PKCE entre as montagens duplas do StrictMode.
 let oauthCompletion = { code: null, promise: null }
 
 export default function AuthCallback() {
@@ -15,7 +15,6 @@ export default function AuthCallback() {
 
   useEffect(() => {
     let ativo = true
-    let timeoutId
 
     async function concluir() {
       try {
@@ -25,18 +24,7 @@ export default function AuthCallback() {
 
         const code = params.get('code')
         if (!oauthCompletion.promise || oauthCompletion.code !== code) {
-          oauthCompletion = {
-            code,
-            promise: Promise.race([
-              finalizarOAuth(code),
-              new Promise((_, reject) => {
-                timeoutId = window.setTimeout(
-                  () => reject(new Error('A confirmação do Google demorou mais que o esperado. Volte ao login e tente novamente.')),
-                  20000,
-                )
-              }),
-            ]).finally(() => window.clearTimeout(timeoutId)),
-          }
+          oauthCompletion = { code, promise: finalizarOAuth(code) }
         }
 
         const conta = await oauthCompletion.promise
@@ -48,7 +36,7 @@ export default function AuthCallback() {
     }
 
     concluir()
-    return () => { ativo = false; window.clearTimeout(timeoutId) }
+    return () => { ativo = false }
   }, [finalizarOAuth, navigate])
 
   return (
@@ -58,7 +46,7 @@ export default function AuthCallback() {
         <div className="login-card">
           <span className="eyebrow">LOGIN COM GOOGLE</span>
           <h2>{erro ? 'Não foi possível entrar' : 'Concluindo seu acesso...'}</h2>
-          {!erro && <p role="status">Estamos validando sua sessão. Isso deve levar apenas alguns segundos.</p>}
+          {!erro && <p role="status">Validando sua sessão e preparando sua conta...</p>}
           {erro && (
             <>
               <p className="form-error" role="alert">{erro}</p>
