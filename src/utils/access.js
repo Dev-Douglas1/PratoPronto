@@ -20,5 +20,5 @@ export function accountDestination(user) {
   if (!user) return '/login'
   if (user.emailVerificado !== true) return '/verificar-email'
   if (!profileComplete(user)) return '/perfil'
-  return user.admin ? '/empresa/pedidos' : '/pizzas'
+  return user.admin ? '/empresa/pedidos' : '/pratos'
 }
