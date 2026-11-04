@@ -4,7 +4,7 @@ import { getSupabase } from '../lib/supabase'
 import { useUser } from '../context/UserContext.jsx'
 import AppScreen from '../components/AppScreen.jsx'
 import BrandMark from '../components/BrandMark.jsx'
-import '../styles/home.css'
+import '../styles/login.css'
 
 const MAX_ATTEMPTS = 5
 const LOCKOUT_TIME_MS = 15 * 60 * 1000 // 15 minutos
@@ -135,7 +135,7 @@ export default function Login() {
   return (
     <AppScreen className="login-screen">
       <div className="login-container">
-        <BrandMark showTagline={false} />
+        <BrandMark iconOnly />
         <span className="eyebrow">BEM-VINDO DE VOLTA</span>
         <h1>Entre para fazer seu pedido</h1>
 
