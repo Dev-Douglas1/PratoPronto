@@ -57,42 +57,10 @@
 .centered-screen { display: grid; place-items: center; }
 
 /* Marca */
-.brand-mark { display: flex; flex-direction: column; align-items: center; gap: 16px; }
-.brand-symbol {
-  width: 122px;
-  height: 122px;
-  position: relative;
-  border-radius: 50%;
-  background: var(--yellow);
-  filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.45));
-}
-.brand-symbol::before {
-  content: '';
-  position: absolute;
-  right: -2px;
-  top: 31px;
-  border-top: 30px solid transparent;
-  border-bottom: 30px solid transparent;
-  border-right: 54px solid #0c0c0c;
-}
-.brand-eye { position: absolute; width: 11px; height: 11px; top: 27px; left: 57px; border-radius: 50%; background: #101010; }
-.brand-dot { position: absolute; width: 9px; height: 9px; right: -23px; border-radius: 50%; background: var(--yellow); }
-.brand-dot--one { top: 55px; }
-.brand-dot--two { top: 55px; right: -45px; opacity: 0.7; }
-.brand-dot--three { top: 55px; right: -66px; opacity: 0.35; }
-.brand-copy { display: grid; gap: 4px; text-align: center; }
-.brand-copy strong { font-size: 34px; line-height: 1; letter-spacing: -1.6px; }
-.brand-copy strong span { color: var(--yellow); }
-.brand-copy small { color: #8e8e8e; font-size: 9px; font-weight: 900; letter-spacing: 2.2px; }
-.brand-mark--compact { gap: 10px; margin: 0 auto 24px; }
-.brand-mark--compact .brand-symbol { width: 70px; height: 70px; }
-.brand-mark--compact .brand-symbol::before { top: 18px; border-top-width: 17px; border-bottom-width: 17px; border-right-width: 31px; }
-.brand-mark--compact .brand-eye { width: 7px; height: 7px; top: 15px; left: 33px; }
-.brand-mark--compact .brand-dot { top: 31px; width: 6px; height: 6px; right: -14px; }
-.brand-mark--compact .brand-dot--two { right: -27px; }
-.brand-mark--compact .brand-dot--three { right: -40px; }
-.brand-mark--compact .brand-copy strong { font-size: 25px; }
-.brand-mark--compact .brand-copy small { font-size: 7px; letter-spacing: 1.5px; }
+.brand-mark { display: flex; flex-direction: column; align-items: center; gap: 0; }
+.brand-logo-image { display: block; width: min(100%, 270px); height: auto; aspect-ratio: 1; object-fit: contain; }
+.brand-mark--compact { gap: 0; margin: 0 auto 24px; }
+.brand-mark--compact .brand-logo-image { width: min(100%, 154px); }
 
 
 /* Pesquisa do marketplace */
