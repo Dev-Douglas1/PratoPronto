@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import AppScreen from '../components/AppScreen.jsx'
@@ -7,6 +7,7 @@ import useAuth from '../hooks/useAuth.js'
 import { useCompany } from '../context/CompanyContext.jsx'
 
 import '../styles/home.css'
+import InstallApp from '../components/InstallApp.jsx'
 
 // =========================================================
 // LISTAS DE FRASES ALEATÓRIAS
@@ -34,69 +35,12 @@ export default function Home() {
   const isUserLoggedIn = Boolean(autenticado || user || usuario)
   const { staffCompanies = [], pilotProfile } = useCompany()
 
-  const [deferredPrompt, setDeferredPrompt] = useState(null)
-  const [isAppInstalled, setIsAppInstalled] = useState(false)
-  const [instalando, setInstalando] = useState(false)
 
   const [textosHero] = useState(() => ({
     titulo: TITULOS[Math.floor(Math.random() * TITULOS.length)],
     subtitulo: SUBTITULOS[Math.floor(Math.random() * SUBTITULOS.length)],
     frase: FRASES[Math.floor(Math.random() * FRASES.length)],
   }))
-
-  useEffect(() => {
-    // 1. Verifica se a aplicação já está a correr como PWA instalada
-    const isStandalone =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      window.navigator.standalone === true
-
-    if (isStandalone) {
-      setIsAppInstalled(true)
-      return
-    }
-
-    // 2. Captura o evento nativo de instalação
-    const handleBeforeInstallPrompt = (e) => {
-      e.preventDefault()
-      setDeferredPrompt(e)
-    }
-
-    const handleAppInstalled = () => {
-      setIsAppInstalled(true)
-      setDeferredPrompt(null)
-      setInstalando(false)
-    }
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-    window.addEventListener('appinstalled', handleAppInstalled)
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
-      window.removeEventListener('appinstalled', handleAppInstalled)
-    }
-  }, [])
-
-  async function handleInstalarApp() {
-    setInstalando(true)
-
-    if (!deferredPrompt) {
-      setTimeout(() => setInstalando(false), 1800)
-      return
-    }
-
-    try {
-      await deferredPrompt.prompt()
-      const { outcome } = await deferredPrompt.userChoice
-      if (outcome === 'accepted') {
-        setIsAppInstalled(true)
-      }
-      setDeferredPrompt(null)
-    } catch {
-      // Falha silenciosa
-    } finally {
-      setInstalando(false)
-    }
-  }
 
   return (
     <AppScreen className="home-screen">
@@ -143,20 +87,8 @@ export default function Home() {
           <span>⚡ Lojas locais e entregas diretas na sua região</span>
         </div>
 
-        {/* 2. Crachá de instalação interativo com estado de carregamento */}
-        {!isAppInstalled && (
-          <button
-            type="button"
-            className="subtle-badge interactive-badge"
-            onClick={handleInstalarApp}
-            disabled={instalando}
-            style={{ marginTop: '8px' }}
-          >
-            <span>
-              {instalando ? '⏳ A preparar instalação...' : '⚡ Instalar aplicativo'}
-            </span>
-          </button>
-        )}
+        {/* Instalação PWA compartilhada: prompt nativo ou instruções do navegador. */}
+        <InstallApp />
       </section>
 
       <footer className="home-footer">
