@@ -58,7 +58,7 @@ export default function Home() {
   }, [search])
 
   return (
-    <AppScreen className="home-screen">
+    <AppScreen className="home-screen screen-with-nav">
       <header className="home-status">
         <AddressSelector
           enderecoAtual={enderecoAtivo}
