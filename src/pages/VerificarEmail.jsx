@@ -25,7 +25,7 @@ export default function VerificarEmail() {
 
   async function handleVerificar(e) {
     e.preventDefault()
-    if (codigo.length < 6) {
+    if (!/^\\d{6}$/.test(codigo)) {
       setErro('Digite o código completo de 6 dígitos.')
       return
     }
@@ -101,12 +101,13 @@ export default function VerificarEmail() {
               name="codigo"
               type="text"
               inputMode="numeric"
-              pattern="[0-9]*"
+              pattern="[0-9]{6}"
               maxLength={6}
               value={codigo}
               onChange={(e) => setCodigo(e.target.value.replace(/\D/g, ''))}
               placeholder="000000"
               className="otp-input"
+              autoComplete="one-time-code"
               autoFocus
               disabled={enviando}
             />
@@ -123,7 +124,7 @@ export default function VerificarEmail() {
             <button
               className="btn btn-primary"
               type="submit"
-              disabled={enviando || codigo.length < 6}
+              disabled={enviando || !/^\\d{6}$/.test(codigo)}
             >
               {enviando ? 'A verificar...' : 'Confirmar código'}
             </button>
@@ -135,8 +136,8 @@ export default function VerificarEmail() {
               disabled={tempoRestante > 0}
             >
               {tempoRestante > 0
-                ? `Reenviar código em ${tempoRestante}s`
-                : 'Reenviar novo código'}
+                ? `Enviar código de confirmação em ${tempoRestante}s`
+                : 'Enviar código de confirmação'}
             </button>
 
             <button
