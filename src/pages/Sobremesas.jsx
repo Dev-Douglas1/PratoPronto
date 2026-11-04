@@ -36,7 +36,7 @@ export default function Sobremesas() {
           <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar sobremesa..." />
         </label>
         <div className="category-tabs" role="tablist" aria-label="Categorias">
-          <button role="tab" aria-selected="false" onClick={() => navigate('/pizzas')}>🍕 Pizzas</button>
+          <button role="tab" aria-selected="false" onClick={() => navigate('/pratos')}>🍽️ Pratos</button>
           <button role="tab" aria-selected="false" onClick={() => navigate('/bebidas')}>🥤 Bebidas</button>
           <button className="is-active" role="tab" aria-selected="true">🍰 Sobremesas</button>
         </div>
@@ -47,7 +47,7 @@ export default function Sobremesas() {
         <StoreInfo />
         <CatalogResults produtos={filtradas} loading={loading} error={error} retry={retry} confirmed={confirmed} />
         <BottomActions>
-          <button className="btn btn-secondary" onClick={() => navigate('/pizzas')}>Ver pizzas</button>
+          <button className="btn btn-secondary" onClick={() => navigate('/pizzas')}>Ver pratos</button>
           <button className="btn btn-primary" onClick={() => navigate('/carrinho')}>Ver pedido</button>
         </BottomActions>
       </section>
