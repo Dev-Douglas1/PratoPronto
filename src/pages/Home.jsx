@@ -6,6 +6,7 @@ import InstallApp from '../components/InstallApp.jsx'
 import AddressSelector from '../components/AddressSelector.jsx'
 import AddressModal from '../components/AddressModal.jsx'
 import StoreFeed from '../components/StoreFeed.jsx'
+import BottomNav from '../components/BottomNav.jsx'
 import useNearbyStores from '../hooks/useNearbyStores.js'
 import { useUser } from '../context/UserContext.jsx'
 import { useCompany } from '../context/CompanyContext.jsx'
@@ -169,6 +170,7 @@ export default function Home() {
         <InstallApp />
       </div>
 
+      <BottomNav />
       <AddressModal
         isOpen={modalEnderecoAberto}
         onClose={() => setModalEnderecoAberto(false)}
