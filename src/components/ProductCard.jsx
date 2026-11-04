@@ -104,7 +104,7 @@ export default function ProductCard({ produto, readOnly = false }) {
       {personalizando && createPortal(
           <dialog ref={modal} className="customizer-modal" aria-labelledby={`customizer-${produto.id}`} onCancel={() => setPersonalizando(false)}>
             <div className="customizer-header">
-              <div><small>PERSONALIZE SEU PRATO</small><h2 id={`customizer-${produto.id}`}>{produto.nome}</h2></div>
+              <div><small>PERSONALIZE SUA PIZZA</small><h2 id={`customizer-${produto.id}`}>{produto.nome}</h2></div>
               <button type="button" onClick={() => setPersonalizando(false)} aria-label="Fechar">×</button>
             </div>
             <fieldset className="customizer-options">
