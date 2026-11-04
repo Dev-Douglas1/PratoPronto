@@ -135,7 +135,7 @@ export default function Login() {
   return (
     <AppScreen className="login-screen">
       <div className="login-container">
-        <BrandMark />
+        <BrandMark showTagline={false} />
         <span className="eyebrow">BEM-VINDO DE VOLTA</span>
         <h1>Entre para fazer seu pedido</h1>
 
