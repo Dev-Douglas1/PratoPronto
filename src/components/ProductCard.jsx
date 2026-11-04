@@ -4,6 +4,7 @@ import { useCart } from '../context/CartContext.jsx'
 import { tamanhos, bordas, extras } from '../data/produtos.js'
 import { productPrice } from '../utils/productPrice.js'
 import { formatarMoeda } from '../utils/moeda.js'
+import { productCategoryLabel } from '../shared/catalog-category.js'
 
 export default function ProductCard({ produto, readOnly = false }) {
   const { adicionar } = useCart()
@@ -81,7 +82,7 @@ export default function ProductCard({ produto, readOnly = false }) {
     <article className={`product-card ${displayPrice.oferta ? 'has-offer' : ''}`}>
       <div className="product-card__image">
         <img src={produto.imagem} alt={produto.nome} loading="lazy" />
-        <span className="product-card__tag">{readOnly ? 'Disponibilidade a confirmar' : produto.disponivel === false ? 'Indisponível' : displayPrice.oferta ? `−${displayPrice.oferta.percentual}%` : produto.personalizavel ? 'Feita na hora' : 'Gelada'}</span>
+        <span className="product-card__tag">{readOnly ? 'Disponibilidade a confirmar' : produto.disponivel === false ? 'Indisponível' : displayPrice.oferta ? `−${displayPrice.oferta.percentual}%`  : produto.personalizavel ? 'Feita na hora' : productCategoryLabel(produto)}</span>
       </div>
       <div className="product-card-content">
         <h3>{produto.nome}</h3>
@@ -103,7 +104,7 @@ export default function ProductCard({ produto, readOnly = false }) {
       {personalizando && createPortal(
           <dialog ref={modal} className="customizer-modal" aria-labelledby={`customizer-${produto.id}`} onCancel={() => setPersonalizando(false)}>
             <div className="customizer-header">
-              <div><small>PERSONALIZE SUA PIZZA</small><h2 id={`customizer-${produto.id}`}>{produto.nome}</h2></div>
+              <div><small>PERSONALIZE SEU PRATO</small><h2 id={`customizer-${produto.id}`}>{produto.nome}</h2></div>
               <button type="button" onClick={() => setPersonalizando(false)} aria-label="Fechar">×</button>
             </div>
             <fieldset className="customizer-options">
