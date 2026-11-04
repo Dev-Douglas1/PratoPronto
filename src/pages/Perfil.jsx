@@ -75,6 +75,35 @@ export function ProfileEditor({ usuario, atualizar, area, onSaved }) {
   }, [usuario])
 
   useEffect(() => {
+    const cep = String(form.cep || '').replace(/\\D/g, '')
+    if (cep.length !== 8) return undefined
+    const controller = new AbortController()
+    let active = true
+    fetch(`https://viacep.com.br/ws/${cep}/json/`, { signal: controller.signal })
+      .then(response => {
+        if (!response.ok) throw new Error('Falha na consulta do CEP.')
+        return response.json()
+      })
+      .then(data => {
+        if (!active) return
+        if (data.erro) { setErro('CEP não encontrado. Preencha o endereço manualmente.'); return }
+        setForm(current => ({
+          ...current,
+          endereco: data.logradouro || current.endereco,
+          bairro: data.bairro || current.bairro,
+          cidade: data.localidade || current.cidade,
+          uf: data.uf || current.uf,
+          complemento: data.complemento || current.complemento,
+        }))
+        setErro('')
+      })
+      .catch(error => {
+        if (active && error.name !== 'AbortError') setErro('Não foi possível consultar o CEP. Preencha o endereço manualmente.')
+      })
+    return () => { active = false; controller.abort() }
+  }, [form.cep])
+
+  useEffect(() => {
     const target = document.getElementById(area === 'endereco' ? 'profile-address-title' : 'profile-editor-title')
     target?.focus({ preventScroll: true })
     target?.scrollIntoView({ block: 'start' })
