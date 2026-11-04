@@ -19,7 +19,7 @@ function readLoginGuard() {
 
 function isWrongPassword(error) {
   const message = String(error?.message || '').toLowerCase()
-  return error?.code === 'invalid_credentials' || message.includes('invalid login credentials') || message.includes('invalid email or password')
+  return error?.code === 'invalid_credentials' || message.includes('invalid login credentials') || message.includes('invalid email or password') || message.includes('e-mail ou senha incorretos')
 }
 
 export default function Login() {
