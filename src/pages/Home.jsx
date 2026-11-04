@@ -96,7 +96,7 @@ export default function Home() {
                 <Link
                   className="light-card marketplace-company-card"
                   key={company.id}
-                  to={company.id === DEFAULT_COMPANY_ID ? '/pizzas' : '/loja/' + company.id}
+                  to={company.id === DEFAULT_COMPANY_ID ? '/pratos' : '/loja/' + company.id}
                 >
                   <strong>{company.name}</strong>
                   <small>Ver cardápio →</small>
@@ -114,7 +114,7 @@ export default function Home() {
                 <Link
                   className="light-card marketplace-product-result"
                   key={(product.companyId || '') + ':' + product.id}
-                  to={product.companyId === DEFAULT_COMPANY_ID ? '/pizzas' : '/loja/' + product.companyId}
+                  to={product.companyId === DEFAULT_COMPANY_ID ? '/pratos' : '/loja/' + product.companyId}
                 >
                   <span>
                     {product.imagem ? (
@@ -147,7 +147,7 @@ export default function Home() {
         )}
 
         <div className="home-actions">
-          <Link className="btn btn-primary" to={autenticado ? '/pizzas' : '/login'}>
+          <Link className="btn btn-primary" to={autenticado ? '/pratos' : '/login'}>
             {autenticado ? 'Abrir PratoPronto' : 'Entrar e pedir'}
             <span aria-hidden="true">→</span>
           </Link>
