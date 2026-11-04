@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
 import TopBar from '../components/TopBar.jsx'
-import { createCompany, uploadCompanyRegistrationDocument } from '../services/marketplace.js'
+import { createCompany, uploadCompanyRegistrationDocument, getMyCompanyRegistrationRequest } from '../services/marketplace.js'
 
 export default function CompanyOnboarding() {
   const navigate = useNavigate()
@@ -15,6 +15,14 @@ export default function CompanyOnboarding() {
   const [sent, setSent] = useState(false)
   const [requestId, setRequestId] = useState('')
   const [files, setFiles] = useState({ cnpj_card: null, identity: null, proof_of_address: null })
+  const [currentRequest, setCurrentRequest] = useState(null)
+  const [checking, setChecking] = useState(true)
+
+  useEffect(() => {
+    let active = true
+    getMyCompanyRegistrationRequest().then(row => { if (active) { setCurrentRequest(row); if (row?.status === 'pending') setRequestId(row.id) } }).catch(() => {}).finally(() => { if (active) setChecking(false) })
+    return () => { active = false }
+  }, [])
 
   async function submit(event) {
     event.preventDefault()
@@ -38,6 +46,8 @@ export default function CompanyOnboarding() {
   return <AppScreen>
     <TopBar titulo="Cadastro de empresa" />
     <div className="page-heading"><span className="eyebrow">PRATOPRONTO PARA EMPRESAS</span><h1>Solicitar cadastro empresarial</h1><p>O cadastro é vinculado à sua conta pessoal. A loja só será criada depois da análise da equipe PratoPronto.</p></div>
+    {checking && <section className="light-card">Consultando suas solicitações…</section>}
+    {currentRequest && <section className="light-card" aria-live="polite"><h2>Acompanhamento da solicitação</h2><p><b>Protocolo:</b> {currentRequest.id}</p><p><b>Status:</b> {({pending:'Em análise',approved:'Aprovada',rejected:'Rejeitada'})[currentRequest.status] || currentRequest.status}</p>{currentRequest.review_note && <p><b>Retorno da análise:</b> {currentRequest.review_note}</p>}{currentRequest.status === 'pending' && <p>Se a equipe solicitar correções, você poderá reenviar documentos nesta tela.</p>}</section>}
     {sent ? <section className="light-card" role="status">
       <h2>Solicitação enviada</h2>
       <p>Seu pedido está pendente de análise. Os documentos obrigatórios foram enviados com acesso privado. Protocolo: {requestId}</p>
