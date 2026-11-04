@@ -23,5 +23,5 @@ export default function InstallApp() {
     }
   }
   if (installed && !update) return null
-  return <div className="install-app">{!installed && <button type="button" onClick={install}>↓ Instalar no celular</button>}{help && <p role="status">{help}</p>}{update && <div role="status"><p>Uma atualização está disponível. Conclua seu pedido antes de atualizar.</p><button type="button" onClick={applyAppUpdate}>Atualizar aplicativo</button></div>}</div>
+  return <div className="install-app">{!installed && <button type="button" className="subtle-badge interactive-badge" onClick={install}>↓ Instalar aplicativo</button>}{help && <p className="ios-install-card" role="status">{help}</p>}{update && <div role="status"><p>Uma atualização está disponível. Conclua seu pedido antes de atualizar.</p><button type="button" onClick={applyAppUpdate}>Atualizar aplicativo</button></div>}</div>
 }
