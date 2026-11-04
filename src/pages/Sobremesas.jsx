@@ -7,12 +7,7 @@ import CatalogResults from '../components/CatalogResults.jsx'
 import BottomActions from '../components/BottomActions.jsx'
 import BottomNav from '../components/BottomNav.jsx'
 import useCatalog from '../hooks/useCatalog.js'
-
-function isDessert(product) {
-  return ['sobremesa', 'sobremesas', 'dessert', 'desserts'].includes(
-    String(product.categoria || '').trim().toLowerCase(),
-  )
-}
+import { isDessert } from '../shared/catalog-category.js'
 
 export default function Sobremesas() {
   const navigate = useNavigate()
@@ -53,7 +48,7 @@ export default function Sobremesas() {
         <CatalogResults produtos={filtradas} loading={loading} error={error} retry={retry} confirmed={confirmed} />
         <BottomActions>
           <button className="btn btn-secondary" onClick={() => navigate('/pizzas')}>Ver pizzas</button>
-          <button className="btn btn-primary" onClick={() => navigate('/pedido')}>Ver pedido</button>
+          <button className="btn btn-primary" onClick={() => navigate('/carrinho')}>Ver pedido</button>
         </BottomActions>
       </section>
       <BottomNav />
