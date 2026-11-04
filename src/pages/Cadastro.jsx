@@ -39,7 +39,7 @@ export default function Cadastro() {
   // Busca o CEP com cancelamento para impedir que uma resposta antiga
   // sobrescreva o endereço digitado para um CEP mais recente.
   useEffect(() => {
-    const cepNumerico = dados.cep.replace(/\\D/g, '')
+    const cepNumerico = dados.cep.replace(/\D/g, '')
     if (cepNumerico.length !== 8) {
       setBuscandoCep(false)
       return undefined
