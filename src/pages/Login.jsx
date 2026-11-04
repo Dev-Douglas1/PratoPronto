@@ -200,6 +200,9 @@ export default function Login() {
 
         <div className="login-footer-links">
           <p>
+            <Link to="/login-telefone">Entrar com telefone</Link>
+          </p>
+          <p>
             Ainda não tem uma conta? <Link to="/cadastro">Cadastre-se</Link>
           </p>
         </div>
