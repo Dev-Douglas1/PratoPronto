@@ -3,7 +3,7 @@ export default function BrandMark({ compact = false }) {
     <div className={`brand-mark brand-mark--icon-only ${compact ? 'brand-mark--compact' : ''}`} aria-label="Símbolo PAC do PratoPronto">
       <img
         className="brand-logo-image"
-        src="/images/pratopronto-pac.svg?v=4"
+        src="/images/pratopronto-pac.svg?v=5"
         alt="PAC amarelo do PratoPronto"
         width="600"
         height="550"
