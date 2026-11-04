@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
+import './PilotSignup.css'
 import TopBar from '../components/TopBar.jsx'
 import BottomNav from '../components/BottomNav.jsx'
 import PilotIntroModal from '../components/PilotIntroModal.jsx'
@@ -173,7 +174,7 @@ export default function PilotSignup() {
         setIntroAccepted(true)
       }}
     />
-    <AppScreen className="screen-with-nav">
+    <AppScreen className="screen-with-nav pilot-signup-page">
     <TopBar titulo="Piloto Parceiro" />
     <div className="page-heading">
       <span className="eyebrow">SE TORNE UM PILOTO DAS ENTREGAS</span>
