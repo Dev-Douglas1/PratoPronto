@@ -4,7 +4,7 @@ import { produtos, tamanhos, bordas } from '../src/data/produtos.js'
 import { productPrice } from '../src/utils/productPrice.js'
 import { OFFENSIVE_PATTERN, hasOffensiveLanguage } from '../src/shared/input-policy.js'
 import { companyTabState, initialSources, accessError } from '../src/utils/dataAccess.js'
-import { isMainDish, isBeverage, isDessert, productCategoryLabel } from '../src/shared/catalog-category.js'
+import { isMainDish, isPizza, isBeverage, isDessert, productCategoryLabel } from '../src/shared/catalog-category.js'
 import { isValidFutureDate } from '../src/shared/pilot-validation.js'
 
 test('preço exibido aplica personalização e promoção em centavos', () => {
@@ -39,6 +39,8 @@ test('falha de permissão em uma fonte não bloqueia outras áreas da empresa', 
 test('categorias do catálogo não misturam pratos, bebidas e sobremesas', () => {
   assert.equal(isMainDish({ categoria: 'Pratos' }), true)
   assert.equal(isMainDish({ category: 'Pizza' }), true)
+  assert.equal(isPizza({ category: 'Pizza' }), true)
+  assert.equal(productCategoryLabel({ category: 'Pizza' }), 'Pizza')
   assert.equal(isBeverage({ categoria: 'Bebidas' }), true)
   assert.equal(isBeverage({ categoria: 'Suco' }), true)
   assert.equal(isDessert({ categoria: 'Sobremesas' }), true)
