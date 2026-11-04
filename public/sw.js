@@ -1,4 +1,4 @@
-const CACHE = 'prato-pronto-assets-v8'
+const CACHE = 'prato-pronto-assets-v9'
 const OFFLINE = '/offline.html'
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.add(OFFLINE)))

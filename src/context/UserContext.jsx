@@ -32,20 +32,34 @@ function pendingAccount(userOrEmail) {
   }
 }
 
+async function withTimeout(promise, ms, label) {
+  let timer
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(label)), ms) }),
+    ])
+  } finally { clearTimeout(timer) }
+}
+
 async function readAccount(user) {
   if (!verified(user)) return pendingAccount(user)
-  const [profile, admin] = await Promise.all([
-    getUserProfile(user.id),
-    getAdminStatus(user.id).catch(() => false),
-  ])
-  return {
-    ...profile,
+  const fallback = {
     uid: user.id,
-    email: user.email || profile?.email || '',
-    nome: profile?.nome || user.user_metadata?.nome || user.user_metadata?.name || user.user_metadata?.full_name || '',
+    email: user.email || '',
+    nome: user.user_metadata?.nome || user.user_metadata?.name || user.user_metadata?.full_name || '',
     emailVerificado: true,
-    admin,
+    admin: false,
   }
+  // Perfil e permissões não podem deixar o login OAuth preso indefinidamente.
+  const [profile, admin] = await Promise.all([
+    withTimeout(getUserProfile(user.id), 7000, 'A leitura do perfil demorou demais.').catch(error => {
+      console.warn('Perfil indisponível após autenticação; usando dados básicos.', error)
+      return null
+    }),
+    withTimeout(getAdminStatus(user.id), 5000, 'A verificação de permissões demorou demais.').catch(() => false),
+  ])
+  return { ...fallback, ...(profile || {}), uid: user.id, email: user.email || profile?.email || '', nome: profile?.nome || fallback.nome, emailVerificado: true, admin }
 }
 
 export function UserProvider({ children }) {

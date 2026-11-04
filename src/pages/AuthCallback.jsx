@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
 import BrandMark from '../components/BrandMark.jsx'
 import { useUser } from '../context/UserContext.jsx'
@@ -47,7 +47,7 @@ export default function AuthCallback() {
         <div className="login-card">
           <span className="eyebrow">LOGIN COM GOOGLE</span>
           <h2>{erro ? 'Não foi possível entrar' : 'Concluindo seu acesso...'}</h2>
-          {erro && <p className="form-error" role="alert">{erro}</p>}
+          {erro && <><p className="form-error" role="alert">{erro}</p><Link className="btn btn-primary" to="/login">Voltar ao login</Link></>}
         </div>
       </div>
     </AppScreen>
