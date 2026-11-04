@@ -52,7 +52,7 @@ export default function Sobremesas() {
         <StoreInfo />
         <CatalogResults produtos={filtradas} loading={loading} error={error} retry={retry} confirmed={confirmed} />
         <BottomActions>
-          <button className="btn btn-secondary" onClick={() => navigate('/pizzas')}>Ver pratos</button>
+          <button className="btn btn-secondary" onClick={() => navigate('/pratos')}>Ver pratos</button>
           <button className="btn btn-primary" onClick={() => navigate('/pedido')}>Ver pedido</button>
         </BottomActions>
       </section>
