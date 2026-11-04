@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getSupabase } from '../lib/supabase'
+import { useUser } from '../context/UserContext.jsx'
 import AppScreen from '../components/AppScreen.jsx'
 import BrandMark from '../components/BrandMark.jsx'
 import '../styles/home.css'
@@ -10,10 +11,12 @@ const LOCKOUT_TIME_MS = 15 * 60 * 1000 // 15 minutos
 
 export default function Login() {
   const navigate = useNavigate()
+  const { entrarComGoogle } = useUser()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const [lockoutTimer, setLockoutTimer] = useState(0)
 
   // Verifica bloqueio por e-mail ao alterar o campo de e-mail
@@ -117,22 +120,15 @@ export default function Login() {
   }
 
   async function handleGoogleLogin() {
+    setGoogleLoading(true)
     try {
-      const supabase = getSupabase()
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/pratos`,
-        },
-      })
-
-      if (error) {
-        console.error('Erro Google Auth:', error)
-        alert(`Erro ao conectar com Google: ${error.message}`)
-      }
+      // Reutiliza o fluxo OAuth centralizado, que retorna para /auth/callback
+      // e finaliza a sessão/perfil antes de liberar as rotas protegidas.
+      await entrarComGoogle()
     } catch (err) {
-      console.error('Erro de execução:', err)
-      alert(`Erro no app: ${err.message}`)
+      console.error('Erro Google Auth:', err)
+      alert(`Erro ao conectar com Google: ${err.message}`)
+      setGoogleLoading(false)
     }
   }
 
@@ -196,9 +192,10 @@ export default function Login() {
           type="button"
           className="btn btn-outline"
           onClick={handleGoogleLogin}
+          disabled={loading || googleLoading}
           style={{ marginTop: '12px', width: '100%' }}
         >
-          Continuar com Google
+          {googleLoading ? 'Conectando ao Google...' : 'Continuar com Google'}
         </button>
 
         <div className="login-footer-links">
