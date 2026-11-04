@@ -9,6 +9,11 @@ import BottomNav from '../components/BottomNav.jsx'
 import { useUser } from '../context/UserContext.jsx'
 import useCatalog from '../hooks/useCatalog.js'
 
+function isDish(product) {
+  const category = String(product.categoria || '').trim().toLocaleLowerCase('pt-BR')
+  return product.personalizavel === true || /prato|refei|pizza|massa|lanche|comida|executivo/.test(category)
+}
+
 export default function Pratos() {
   const navigate = useNavigate()
   const { usuario } = useUser()
@@ -16,7 +21,7 @@ export default function Pratos() {
   const [somenteOfertas, setSomenteOfertas] = useState(false)
   const { catalog, loading, error, confirmed, retry } = useCatalog()
   const filtradas = useMemo(
-    () => catalog.filter((prato) => prato.personalizavel && prato.nome.toLowerCase().includes(busca.toLowerCase()) && (!confirmed || !somenteOfertas || prato.ofertaAtiva)),
+    () => catalog.filter((prato) => isDish(prato) && prato.nome.toLowerCase().includes(busca.toLowerCase()) && (!confirmed || !somenteOfertas || prato.ofertaAtiva)),
     [busca, catalog, somenteOfertas, confirmed],
   )
 
