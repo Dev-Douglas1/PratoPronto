@@ -7,22 +7,7 @@ import CatalogResults from '../components/CatalogResults.jsx'
 import BottomActions from '../components/BottomActions.jsx'
 import BottomNav from '../components/BottomNav.jsx'
 import useCatalog from '../hooks/useCatalog.js'
-
-function isMainDish(product) {
-  const category = String(product.categoria || '').trim().toLowerCase()
-  return [
-    'prato',
-    'pratos',
-    'pizza',
-    'pizzas',
-    'refeicao',
-    'refeicoes',
-    'refeição',
-    'refeições',
-    'main',
-    'mains',
-  ].includes(category)
-}
+import { isMainDish } from '../shared/catalog-category.js'
 
 export default function Pizzas() {
   const navigate = useNavigate()
@@ -55,7 +40,7 @@ export default function Pizzas() {
             type="search"
             value={busca}
             onChange={(event) => setBusca(event.target.value)}
-            placeholder="Buscar pratos e pizzas..."
+            placeholder="Buscar pratos..."
             aria-label="Buscar pratos e pizzas"
           />
         </label>
@@ -100,7 +85,7 @@ export default function Pizzas() {
           <button className="btn btn-secondary" type="button" onClick={() => navigate('/bebidas')}>
             Ver bebidas
           </button>
-          <button className="btn btn-primary" type="button" onClick={() => navigate('/pedido')}>
+          <button className="btn btn-primary" type="button" onClick={() => navigate('/carrinho')}>
             Ver pedido
           </button>
         </BottomActions>
