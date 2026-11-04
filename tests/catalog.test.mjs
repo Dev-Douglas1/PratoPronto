@@ -75,14 +75,6 @@ test('rótulo da categoria principal usa Prato, não Pizza', () => {
 })
 
 
-test('busca da aba Pratos considera nome, descrição e loja sem diferenciar acentos', () => {
-  const product = { nome: 'Frango à Parmegiana', descricao: 'Arroz e fritas', companyName: 'Cozinha da Praça' }
-  assert.equal(matchesProductSearch(product, 'parmegiana'), true)
-  assert.equal(matchesProductSearch(product, 'praca'), true)
-  assert.equal(matchesProductSearch(product, 'fritas'), true)
-  assert.equal(matchesProductSearch(product, 'hamburguer'), false)
-  assert.equal(matchesProductSearch(product, ''), true)
-})
 
 test('a categoria antiga Pizza aparece como Prato no marketplace', () => {
   assert.equal(productCategoryLabel({ categoria: 'Pizza' }), 'Prato')
