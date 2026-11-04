@@ -256,7 +256,9 @@ test('login social e telefone usam os fluxos oficiais do Supabase Auth', async (
   assert.match(login, /Continuar com Google/)
   assert.match(login, /Entrar com telefone/)
   assert.match(phone, /one-time-code/)
-  assert.match(callback, /accountDestination/)
+  assert.match(callback, /finalizarOAuth\(code\)/)
+  assert.match(callback, /emailVerificado === true \? '\/pratos' : '\/verificar-email'/)
+  assert.match(callback, /replace: true/)
 })
 
 
