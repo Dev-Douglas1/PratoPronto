@@ -17,6 +17,7 @@ const RecuperarSenha = lazy(() => import('./pages/RecuperarSenha.jsx'))
 const RedefinirSenha = lazy(() => import('./pages/RedefinirSenha.jsx'))
 const VerificarEmail = lazy(() => import('./pages/VerificarEmail.jsx'))
 const Pizzas = lazy(() => import('./pages/Pizzas.jsx'))
+const Pesquisar = lazy(() => import('./pages/Pesquisar.jsx'))
 const Bebidas = lazy(() => import('./pages/Bebidas.jsx'))
 const Sobremesas = lazy(() => import('./pages/Sobremesas.jsx'))
 const Pedido = lazy(() => import('./pages/Pedido.jsx'))
@@ -55,14 +56,15 @@ export default function App() {
         {/* Categorias e Navegação Principal */}
         <Route path="/pratos" element={protectedPage(<Pizzas />)} />
         <Route path="/pizzas" element={<Navigate to="/pratos" replace />} />
+        <Route path="/pesquisar" element={protectedPage(<Pesquisar />)} />
         <Route path="/bebidas" element={protectedPage(<Bebidas />)} />
         <Route path="/sobremesas" element={protectedPage(<Sobremesas />)} />
         
         {/* Rotas Mapeadas para o BottomNav */}
         <Route path="/pedido" element={protectedPage(<Pedido />)} />
-        <Route path="/pedidos" element={protectedPage(<Pedido />)} />
+        <Route path="/pedidos" element={protectedPage(<Acompanhamento />)} />
         <Route path="/pagamento" element={protectedPage(<Pagamento />)} />
-        <Route path="/carrinho" element={protectedPage(<Pagamento />)} />
+        <Route path="/carrinho" element={protectedPage(<Pedido />)} />
         <Route path="/perfil" element={protectedPage(<Perfil />)} />
         
         {/* Gestão e Fluxos Secundários */}
