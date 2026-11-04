@@ -55,6 +55,21 @@ test('confirmação exige OTP de seis números e permite reenvio', async () => {
   assert.match(html, /Confirmar código/)
   assert.match(html, /Enviar código de confirmação/)
 })
+test('pesquisa independente renderiza filtros e navegação sem chamar serviços externos', async () => {
+  const { default: Page } = await server.ssrLoadModule('/src/pages/Pesquisar.jsx')
+  const html = render(Page, {}, '/pesquisar')
+  for (const label of ['Pesquisar', 'Tudo', 'Pratos', 'Bebidas', 'Sobremesas', 'Digite pelo menos 2 caracteres']) {
+    assert.ok(html.includes(label), label)
+  }
+})
+
+test('navegação inferior prioriza pesquisa e carrinho, sem aba separada de pedidos', async () => {
+  const { default: BottomNav } = await server.ssrLoadModule('/src/components/BottomNav.jsx')
+  const html = render(BottomNav)
+  for (const label of ['Pratos', 'Pesquisar', 'Carrinho', 'Perfil']) assert.ok(html.includes(label), label)
+  assert.doesNotMatch(html, />Pedidos</)
+})
+
 test('painel de demonstração abre usando os mesmos providers do aplicativo', async () => {
   const { default: Page } = await server.ssrLoadModule('/src/pages/CompanyDashboard.jsx')
   assert.match(render(Page, { demo: true }, '/demo/empresa/pedidos'), /Pedidos em processo/)
