@@ -1,37 +1,28 @@
 {
   "name": "PratoPronto",
   "short_name": "PratoPronto",
-  "description": "PratoPronto: pedidos, entregas e área da empresa.",
+  "description": "PratoPronto: pratos, bebidas, sobremesas e entregas.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#090909",
   "theme_color": "#ffeb18",
   "icons": [
     {
-      "src": "/images/pratopronto-pac.svg",
-      "sizes": "600x470",
+      "src": "/icons/app-icon.svg?v=2",
+      "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/images/pratopronto-pac.svg",
-      "sizes": "600x470",
+      "src": "/icons/app-icon.svg?v=2",
+      "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/images/pratopronto-pac.svg",
-      "sizes": "600x470",
-      "type": "image/svg+xml",
-      "purpose": "any"
+      "purpose": "maskable"
     }
   ],
   "id": "/",
   "scope": "/",
   "orientation": "any",
-  "categories": [
-    "food",
-    "shopping"
-  ],
+  "categories": ["food", "shopping"],
   "prefer_related_applications": false
 }
