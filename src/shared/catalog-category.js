@@ -2,6 +2,10 @@ import { normalizeSearch } from '../config/marketplace.js'
 
 const valueOf = product => normalizeSearch(product?.categoria || product?.category || '')
 
+export function isPizza(product) {
+  return ['pizza', 'pizzas'].includes(valueOf(product))
+}
+
 export function isMainDish(product) {
   const category = valueOf(product)
   return ['prato', 'pratos', 'pizza', 'pizzas', 'refeicao', 'refeicoes', 'main', 'mains', 'lanche', 'lanches', 'massa', 'massas', 'executivo'].includes(category)
@@ -19,6 +23,7 @@ export function isDessert(product) {
 
 export function productCategoryLabel(product) {
   if (isBeverage(product)) return 'Bebida'
+  if (isPizza(product)) return 'Pizza'
   if (isDessert(product)) return 'Sobremesa'
   if (isMainDish(product)) return 'Prato'
   return 'Produto'
