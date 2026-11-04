@@ -77,7 +77,7 @@ test('cadastro de empresa usa o fluxo multiempresa atual e valida o identificado
   assert.match(html, /id="company-cnpj"/)
   assert.match(html, /id="company-legal-name"/)
   assert.match(html, /id="company-trade-name"/)
-  assert.match(html, /Enviar para análise/)
+  assert.match(html, /Enviar solicitação e documentos/)
   assert.match(html, /não comprova vínculo/)
 })
 
@@ -88,7 +88,7 @@ test('cadastro de produtos oferece categorias padronizadas e restringe personali
     assert.ok(html.includes('>' + category + '</option>'), category)
   }
   const source = (await import('node:fs/promises')).readFile(new URL('../src/components/company/CompanyCatalogManager.jsx', import.meta.url), 'utf8')
-  assert.match(await source, /category === 'Pizzas'/)
+  assert.match(await source, /form\.categoria === 'Pizzas'/)
   assert.match(await source, /Permitir tamanhos, bordas e adicionais de pizza/)
 })
 
