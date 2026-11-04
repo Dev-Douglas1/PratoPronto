@@ -263,7 +263,7 @@ test('login social e telefone usam os fluxos oficiais do Supabase Auth', async (
 test('falha na consulta de empresa não derruba o perfil autenticado', async () => {
   const user = await readFile('src/context/UserContext.jsx', 'utf8')
   const migration = await readFile('supabase/migrations/20260922151000_fix_authenticated_profile_loading.sql', 'utf8')
-  assert.match(user, /getAdminStatus\(user\.id\)\.catch\(\(\) => false\)/)
+  assert.match(user, /withTimeout\(getAdminStatus\(user\.id\), 5000,.*?\)\.catch\(\(\) => false\)/)
   assert.match(migration, /grant execute on function private\.restaurant_membership_exists\(uuid, uuid\) to authenticated/i)
   assert.match(migration, /phone_confirmed_at is not null/)
 })
