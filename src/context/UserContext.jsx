@@ -189,40 +189,28 @@ export function UserProvider({ children }) {
     if (error) throw criarErroSupabase(error)
   }, [])
 
-  const finalizarOAuth = useCallback(async function finalizarOAuth(code) {
+  const finalizarOAuth = useCallback(async function finalizarOAuth() {
     const supabase = ready()
-    let user = null
 
-    // O callback é processado manualmente em /auth/callback. Isso evita a
-    // corrida entre detectSessionInUrl e exchangeCodeForSession no PKCE.
-    if (code) {
-      const { data, error } = await withTimeout(
-        supabase.auth.exchangeCodeForSession(code),
-        45000,
-        'A conexão com o Google está demorando mais que o esperado. Verifique sua internet e tente novamente.',
-      )
-      if (error) throw criarErroSupabase(error)
-      user = data.user || data.session?.user || null
-    }
+    // O cliente Supabase processa o callback PKCE automaticamente durante
+    // a inicialização (detectSessionInUrl). Aqui apenas aguardamos a sessão;
+    // não fazemos uma segunda troca do mesmo authorization code.
+    const { data, error } = await withTimeout(
+      supabase.auth.getSession(),
+      20000,
+      'O Google retornou, mas a sessão segura não ficou disponível. Reinicie o login.',
+    )
+    if (error) throw criarErroSupabase(error)
 
+    const user = data.session?.user
     if (!user) {
-      const { data, error } = await withTimeout(
-        supabase.auth.getSession(),
-        8000,
-        'Não foi possível recuperar a sessão do Google.',
-      )
-      if (error) throw criarErroSupabase(error)
-      user = data.session?.user || null
-    }
-
-    if (!user) {
-      throw new Error('O Google retornou sem uma sessão válida. Volte ao login e tente novamente.')
+      throw new Error('O Google não concluiu uma sessão válida. Volte ao login e tente novamente.')
     }
 
     const account = await withTimeout(
       readAccount(user),
       15000,
-      'Sua conta foi autenticada, mas o perfil demorou para carregar. Tente entrar novamente.',
+      'Sua conta foi autenticada, mas o perfil demorou para carregar. Tente novamente.',
     )
     setUsuario(account)
     return account
