@@ -4,7 +4,7 @@ import { produtos, tamanhos, bordas } from '../src/data/produtos.js'
 import { productPrice } from '../src/utils/productPrice.js'
 import { OFFENSIVE_PATTERN, hasOffensiveLanguage } from '../src/shared/input-policy.js'
 import { companyTabState, initialSources, accessError } from '../src/utils/dataAccess.js'
-import { isMainDish, isPizza, isBeverage, isDessert, productCategoryLabel } from '../src/shared/catalog-category.js'
+import { isMainDish, isPizza, isBeverage, isDessert, productCategoryLabel, matchesProductSearch } from '../src/shared/catalog-category.js'
 import { isValidFutureDate } from '../src/shared/pilot-validation.js'
 
 test('preço exibido aplica personalização e promoção em centavos', () => {
@@ -57,4 +57,19 @@ test('validade da CNH aceita datas futuras válidas e rejeita datas impossíveis
   assert.equal(isValidFutureDate('2026-02-30', now), false)
   assert.equal(isValidFutureDate('04/11/2027', now), false)
   assert.equal(isValidFutureDate('2026-11-03', now), false)
+})
+
+
+test('busca de pratos considera nome, descrição e loja sem diferenciar acentos', () => {
+  const product = { nome: 'Frango à Parmegiana', descricao: 'Arroz e fritas', companyName: 'Cozinha da Praça' }
+  assert.equal(matchesProductSearch(product, 'parmegiana'), true)
+  assert.equal(matchesProductSearch(product, 'praca'), true)
+  assert.equal(matchesProductSearch(product, 'fritas'), true)
+  assert.equal(matchesProductSearch(product, 'hamburguer'), false)
+  assert.equal(matchesProductSearch(product, ''), true)
+})
+
+test('rótulo da categoria principal usa Prato, não Pizza', () => {
+  assert.equal(productCategoryLabel({ categoria: 'Pratos' }), 'Prato')
+  assert.equal(productCategoryLabel({ categoria: 'Pizza' }), 'Prato')
 })
