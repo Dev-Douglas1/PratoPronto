@@ -40,7 +40,7 @@ test('categorias do catálogo não misturam pratos, bebidas e sobremesas', () =>
   assert.equal(isMainDish({ categoria: 'Pratos' }), true)
   assert.equal(isMainDish({ category: 'Pizza' }), true)
   assert.equal(isPizza({ category: 'Pizza' }), true)
-  assert.equal(productCategoryLabel({ category: 'Pizza' }), 'Pizza')
+  assert.equal(productCategoryLabel({ category: 'Pizza' }), 'Prato')
   assert.equal(isBeverage({ categoria: 'Bebidas' }), true)
   assert.equal(isBeverage({ categoria: 'Suco' }), true)
   assert.equal(isDessert({ categoria: 'Sobremesas' }), true)
@@ -72,4 +72,19 @@ test('busca de pratos considera nome, descrição e loja sem diferenciar acentos
 test('rótulo da categoria principal usa Prato, não Pizza', () => {
   assert.equal(productCategoryLabel({ categoria: 'Pratos' }), 'Prato')
   assert.equal(productCategoryLabel({ categoria: 'Pizza' }), 'Prato')
+})
+
+
+test('busca da aba Pratos considera nome, descrição e loja sem diferenciar acentos', () => {
+  const product = { nome: 'Frango à Parmegiana', descricao: 'Arroz e fritas', companyName: 'Cozinha da Praça' }
+  assert.equal(matchesProductSearch(product, 'parmegiana'), true)
+  assert.equal(matchesProductSearch(product, 'praca'), true)
+  assert.equal(matchesProductSearch(product, 'fritas'), true)
+  assert.equal(matchesProductSearch(product, 'hamburguer'), false)
+  assert.equal(matchesProductSearch(product, ''), true)
+})
+
+test('a categoria antiga Pizza aparece como Prato no marketplace', () => {
+  assert.equal(productCategoryLabel({ categoria: 'Pizza' }), 'Prato')
+  assert.equal(productCategoryLabel({ categoria: 'Pratos' }), 'Prato')
 })
