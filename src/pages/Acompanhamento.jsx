@@ -2,6 +2,7 @@ import { callServer, checkoutUrl } from '../services/server.js'
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
+import BottomNav from '../components/BottomNav.jsx'
 import TopBar from '../components/TopBar.jsx'
 import { useUser } from '../context/UserContext.jsx'
 import { submitRefund, submitReview, subscribeCustomerOrders, subscribeOrderRecord } from '../services/company.js'
@@ -65,7 +66,7 @@ export default function Acompanhamento() {
   }
   const stages = ORDER_STATUS_OPTIONS.filter(s => s.id !== 'cancelado')
   const index = stages.findIndex(s => s.id === status)
-  return <AppScreen>
+  return <AppScreen className="screen-with-nav">
     <TopBar titulo="Meus pedidos" perfil />
     <div className="page-heading"><span className="eyebrow">CADA ETAPA DO SEU PEDIDO</span><h1>{loading ? 'Buscando seus pedidos…' : order ? orderStatusLabel(status) : 'Seu histórico de pedidos'}</h1></div>
     {orders.length > 0 && <label className="customer-order-picker">Escolher pedido<select value={order?.id || ''} onChange={event => setParams({ pedido: event.target.value })}>{!order && <option value="">Selecione um pedido</option>}{orders.map(item => <option key={item.id} value={item.id}>#{item.id.slice(-8)} · {new Date(timestampMillis(item.createdAt)).toLocaleDateString('pt-BR')} · {orderStatusLabel(item.status)}</option>)}</select></label>}
@@ -85,5 +86,6 @@ export default function Acompanhamento() {
       {status === 'entregue' && !recordLoading && <section className="light-card customer-review"><h3>{review ? 'Sua avaliação' : 'Como foi seu pedido?'}</h3>{review ? <><p>Comida: {review.notaComida}/5 · Entrega: {review.notaEntrega}/5</p><p>{review.comentario}</p>{review.resposta && <blockquote><strong>A empresa respondeu</strong><p>{review.resposta}</p></blockquote>}</> : <form onSubmit={event => submit(event, () => submitReview({ companyId: order.companyId || DEFAULT_COMPANY_ID, userId: usuario.uid, orderId: order.id, nome: usuario.nome || 'Cliente', notaComida: food, notaEntrega: delivery, comentario: comment }))}><p>Sua opinião ajuda o restaurante a melhorar.</p><label>Comida<select required value={food} onChange={event => setFood(event.target.value)}><option value="">Escolha uma nota</option>{[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n} {n === 1 ? 'estrela' : 'estrelas'}</option>)}</select></label><label>Entrega<select required value={delivery} onChange={event => setDelivery(event.target.value)}><option value="">Escolha uma nota</option>{[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n} {n === 1 ? 'estrela' : 'estrelas'}</option>)}</select></label><label>Comentário (opcional)<textarea maxLength={1000} value={comment} onChange={event => setComment(event.target.value)} /></label><button className="btn btn-primary wide-button" disabled={busy}>{busy ? 'Enviando…' : 'Enviar avaliação'}</button></form>}</section>}
     </>}
     <Link className="btn btn-primary wide-button" to="/pratos">Escolher pratos</Link>
+    <BottomNav />
   </AppScreen>
 }
