@@ -30,7 +30,7 @@ export default function Pizzas() {
         <div className="catalog-heading">
           <small>Cardápios das lojas parceiras</small>
           <h1 id="catalog-title">O que vai pedir hoje?</h1>
-          <p>Explore pratos preparados pelas lojas disponíveis na sua região.</p>
+          <p>Explore pratos dos estabelecimentos parceiros cadastrados no PratoPronto.</p>
         </div>
         <label className="search-box">
           <span aria-hidden="true">⌕</span>
