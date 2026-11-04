@@ -21,9 +21,11 @@ export default function CompanyOnboarding() {
 
   async function submit(event) {
     event.preventDefault()
+    if (name.trim().length < 2) { setError('Informe o nome completo do estabelecimento.'); return }
+    if (!/^[a-z0-9][a-z0-9_-]{1,63}$/.test(companyId)) { setError('Use de 2 a 64 caracteres: letras minúsculas, números, hífen ou sublinhado.'); return }
     setBusy(true); setError('')
     try {
-      const result = await createCompany({ companyId, name })
+      const result = await createCompany({ companyId, name: name.trim() })
       await refresh()
       selectCompany(result.companyId)
       navigate('/empresa/configuracoes', { replace: true })
@@ -35,11 +37,11 @@ export default function CompanyOnboarding() {
     <TopBar titulo="Nova empresa" />
     <div className="page-heading"><span className="eyebrow">PRATOPRONTO PARA EMPRESAS</span><h1>Cadastre sua empresa</h1><p>Depois você poderá montar o cardápio, adicionar membros e Pilotos Parceiros.</p></div>
     <form className="light-card" onSubmit={submit}>
-      <label>Nome da empresa<input required minLength="2" maxLength="100" value={name} onChange={event => setName(event.target.value)} placeholder="Ex.: Pizzaria do Centro" /></label>
-      <label>Identificador da loja<input required minLength="2" maxLength="64" pattern="[a-z0-9][a-z0-9_-]{1,63}" value={companyId} onChange={event => setCustomId(slugify(event.target.value))} /></label>
+      <label htmlFor="company-name">Nome da empresa<input id="company-name" required minLength="2" maxLength="100" autoComplete="organization" value={name} onChange={event => setName(event.target.value)} placeholder="Ex.: Pizzaria do Centro" /></label>
+      <label htmlFor="company-slug">Identificador da loja<input id="company-slug" required minLength="2" maxLength="64" pattern="[a-z0-9][a-z0-9_-]{1,63}" autoCapitalize="none" spellCheck="false" value={companyId} onChange={event => setCustomId(slugify(event.target.value))} /></label>
       <small>Sua loja ficará em /loja/{companyId || 'nome-da-empresa'}.</small>
       {error && <p className="form-error" role="alert">{error}</p>}
-      <button className="btn btn-primary wide-button" disabled={busy || !companyId}>{busy ? 'Criando…' : 'Criar empresa'}</button>
+      <button className="btn btn-primary wide-button" disabled={busy || name.trim().length < 2 || !/^[a-z0-9][a-z0-9_-]{1,63}$/.test(companyId)}>{busy ? 'Criando…' : 'Criar empresa'}</button>
     </form>
   </AppScreen>
 }
