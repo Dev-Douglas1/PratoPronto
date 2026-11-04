@@ -32,7 +32,7 @@ const FRASES = [
 
 export default function Home() {
   const { user, autenticado, usuario } = useAuth()
-  const isUserLoggedIn = Boolean(autenticado || user || usuario)
+  const isUserLoggedIn = Boolean(autenticado || user)
   const { staffCompanies = [], pilotProfile } = useCompany()
 
 
