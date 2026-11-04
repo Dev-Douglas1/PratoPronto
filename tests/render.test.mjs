@@ -70,6 +70,24 @@ test('navegação inferior prioriza pesquisa e carrinho, sem aba separada de ped
   assert.doesNotMatch(html, />Pedidos</)
 })
 
+test('cadastro de empresa usa o fluxo multiempresa atual e valida o identificador', async () => {
+  const { default: Page } = await server.ssrLoadModule('/src/pages/CompanyOnboarding.jsx')
+  const html = render(Page, {}, '/empresa/nova')
+  assert.match(html, /Cadastre sua empresa/)
+  assert.match(html, /id="company-name"/)
+  assert.match(html, /id="company-slug"/)
+  assert.match(html, /Criar empresa/)
+})
+
+test('cadastro de produtos oferece categorias padronizadas e restringe personalização a pizzas', async () => {
+  const { default: Manager } = await server.ssrLoadModule('/src/components/company/CompanyCatalogManager.jsx')
+  const html = render(Manager, { companyId: 'loja-teste' })
+  for (const category of ['Pratos', 'Pizzas', 'Bebidas', 'Sobremesas', 'Lanches', 'Outros']) {
+    assert.ok(html.includes('>' + category + '</option>'), category)
+  }
+  assert.match(html, /Permitir tamanhos, bordas e adicionais de pizza/)
+})
+
 test('painel de demonstração abre usando os mesmos providers do aplicativo', async () => {
   const { default: Page } = await server.ssrLoadModule('/src/pages/CompanyDashboard.jsx')
   assert.match(render(Page, { demo: true }, '/demo/empresa/pedidos'), /Pedidos em processo/)
