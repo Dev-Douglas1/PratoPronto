@@ -49,7 +49,7 @@ export default function Home() {
         <h1 id="home-title">{textosHero.frase}</h1>
 
         <nav className="home-actions" aria-label="Ações principais">
-          <Link className="btn btn-primary" to={isUserLoggedIn ? '/pizzas' : '/login'}>
+          <Link className="btn btn-primary" to={isUserLoggedIn ? '/pratos' : '/login'}>
             {isUserLoggedIn ? 'Abrir PratoPronto' : 'Entrar e pedir'}
             <span aria-hidden="true">→</span>
           </Link>
