@@ -4,55 +4,29 @@ import { useCart } from '../context/CartContext.jsx'
 import '../styles/home.css'
 
 export default function BottomNav() {
-  const { totalItens } = useCart()
+  const { quantidadeTotal = 0 } = useCart()
+  const items = [
+    { to: '/pratos', label: 'Pratos', icon: '🍽️' },
+    { to: '/pesquisar', label: 'Pesquisar', icon: '⌕' },
+    { to: '/pedido', label: 'Carrinho', icon: '🛒', cart: true },
+    { to: '/perfil', label: 'Perfil', icon: '👤' },
+  ]
 
   return (
     <nav className="bottom-nav-container" aria-label="Navegação principal">
       <div className="bottom-nav-pill">
-        <NavLink
-          to="/pratos"
-          className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-        >
-          <span className="nav-icon">🍽️</span>
-          <span className="nav-label">Pratos</span>
-        </NavLink>
-
-        <NavLink
-          to="/bebidas"
-          className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-        >
-          <span className="nav-icon">🥤</span>
-          <span className="nav-label">Bebidas</span>
-        </NavLink>
-
-        <NavLink
-          to="/carrinho"
-          className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-        >
-          <div className="icon-badge-wrapper">
-            <span className="nav-icon">🛒</span>
-            {totalItens > 0 && (
-              <span className="cart-badge">{totalItens}</span>
-            )}
-          </div>
-          <span className="nav-label">Carrinho</span>
-        </NavLink>
-
-        <NavLink
-          to="/pedidos"
-          className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-        >
-          <span className="nav-icon">📋</span>
-          <span className="nav-label">Pedidos</span>
-        </NavLink>
-
-        <NavLink
-          to="/perfil"
-          className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-        >
-          <span className="nav-icon">👤</span>
-          <span className="nav-label">Perfil</span>
-        </NavLink>
+        {items.map(item => (
+          <NavLink key={item.to} to={item.to} end
+            className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+            <span className="icon-badge-wrapper">
+              <span className="nav-icon" aria-hidden="true">{item.icon}</span>
+              {item.cart && quantidadeTotal > 0 && (
+                <span className="cart-badge" aria-label={quantidadeTotal + ' itens no carrinho'}>{quantidadeTotal}</span>
+              )}
+            </span>
+            <span className="nav-label">{item.label}</span>
+          </NavLink>
+        ))}
       </div>
     </nav>
   )
