@@ -1,6 +1,6 @@
-export default function BrandMark({ compact = false, showTagline = true }) {
+export default function BrandMark({ compact = false, showTagline = true, iconOnly = false }) {
   return (
-    <div className={`brand-mark ${compact ? 'brand-mark--compact' : ''}`} aria-label="PratoPronto">
+    <div className={`brand-mark ${compact ? 'brand-mark--compact' : ''} ${iconOnly ? 'brand-mark--icon-only' : ''}`} aria-label="PratoPronto">
       <img
         className="brand-logo-image"
         src="/images/pratopronto-pac.svg?v=3"
