@@ -1,18 +1,14 @@
-export default function BrandMark({ compact = false, showTagline = true, iconOnly = false }) {
+export default function BrandMark({ compact = false }) {
   return (
-    <div className={`brand-mark ${compact ? 'brand-mark--compact' : ''} ${iconOnly ? 'brand-mark--icon-only' : ''}`} aria-label="PratoPronto">
+    <div className={`brand-mark brand-mark--icon-only ${compact ? 'brand-mark--compact' : ''}`} aria-label="Símbolo PAC do PratoPronto">
       <img
         className="brand-logo-image"
-        src="/images/pratopronto-pac.svg?v=3"
-        alt="Símbolo PAC do PratoPronto"
+        src="/images/pratopronto-pac.svg?v=4"
+        alt="PAC amarelo do PratoPronto"
         width="600"
-        height="470"
+        height="550"
         fetchPriority="high"
       />
-      <div className="brand-wordmark" aria-label="PratoPronto">
-        <span>Prato</span><strong>Pronto</strong>
-      </div>
-      {showTagline && <small className="brand-tagline">PRATOS · BEBIDAS · SOBREMESAS</small>}
     </div>
   )
 }
