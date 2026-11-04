@@ -415,12 +415,6 @@ export async function uploadCompanyRegistrationDocument(requestId, documentType,
   return path
 }
 
-export async function getMyCompanyRegistrationRequest() {
-  const { data, error } = await ready().rpc('my_company_registration_request')
-  if (error) throw error
-  return Array.isArray(data) ? data[0] || null : data || null
-}
-
 export async function listCompanyRegistrationDocuments(requestId) {
   const { data, error } = await ready().rpc('list_company_registration_documents',{p_request_id:requestId})
   if (error) throw error
