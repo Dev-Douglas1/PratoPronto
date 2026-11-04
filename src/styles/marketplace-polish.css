@@ -375,3 +375,6 @@
   .app-screen:not(.profile-page) .catalog-heading h1 { font-size: 1.8rem; }
   .app-screen:not(.profile-page) form.light-card { padding: 15px; }
 }
+
+.app-screen:not(.profile-page) .catalog-partner-count { margin: -8px 0 12px; color: #929292; font-size: .76rem; }
+.app-screen:not(.profile-page) .catalog-loading { min-height: 100px; display: grid; place-items: center; color: #bdbdbd; text-align: center; }
