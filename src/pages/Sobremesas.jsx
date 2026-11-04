@@ -7,7 +7,7 @@ import CatalogResults from '../components/CatalogResults.jsx'
 import BottomActions from '../components/BottomActions.jsx'
 import BottomNav from '../components/BottomNav.jsx'
 import useCatalog from '../hooks/useCatalog.js'
-import { isDessert } from '../shared/catalog-category.js'
+import { isDessert, matchesProductSearch } from '../shared/catalog-category.js'
 
 export default function Sobremesas() {
   const navigate = useNavigate()
@@ -17,7 +17,7 @@ export default function Sobremesas() {
   const filtradas = useMemo(
     () => catalog.filter((produto) =>
       isDessert(produto)
-      && produto.nome.toLowerCase().includes(busca.toLowerCase())
+      && matchesProductSearch(produto, busca)
       && (!confirmed || !somenteOfertas || produto.ofertaAtiva),
     ),
     [busca, catalog, somenteOfertas, confirmed],
