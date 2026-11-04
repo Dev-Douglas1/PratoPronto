@@ -7,6 +7,7 @@ import CatalogResults from '../components/CatalogResults.jsx'
 import BottomActions from '../components/BottomActions.jsx'
 import BottomNav from '../components/BottomNav.jsx'
 import useCatalog from '../hooks/useCatalog.js'
+import { isBeverage } from '../shared/catalog-category.js'
 
 export default function Bebidas() {
   const navigate = useNavigate()
@@ -14,7 +15,7 @@ export default function Bebidas() {
   const [somenteOfertas, setSomenteOfertas] = useState(false)
   const { catalog, loading, error, confirmed, retry } = useCatalog()
   const filtradas = useMemo(
-    () => catalog.filter((bebida) => !bebida.personalizavel && bebida.nome.toLowerCase().includes(busca.toLowerCase()) && (!confirmed || !somenteOfertas || bebida.ofertaAtiva)),
+    () => catalog.filter((bebida) => isBeverage(bebida) && bebida.nome.toLowerCase().includes(busca.toLowerCase()) && (!confirmed || !somenteOfertas || bebida.ofertaAtiva)),
     [busca, catalog, somenteOfertas, confirmed],
   )
 
@@ -28,7 +29,7 @@ export default function Bebidas() {
         </div>
         <label className="search-box">
           <span aria-hidden="true">⌕</span>
-          <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar bebida..." />
+          <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar bebida..." aria-label="Buscar bebidas" />
         </label>
         <div className="category-tabs" role="tablist" aria-label="Categorias">
           <button role="tab" aria-selected="false" onClick={() => navigate('/pizzas')}>🍕 Pizzas</button>
@@ -41,7 +42,7 @@ export default function Bebidas() {
         <CatalogResults produtos={filtradas} loading={loading} error={error} retry={retry} confirmed={confirmed} />
         <BottomActions>
           <button className="btn btn-secondary" onClick={() => navigate('/sobremesas')}>Ver sobremesas</button>
-          <button className="btn btn-primary" onClick={() => navigate('/pedido')}>Ver pedido</button>
+          <button className="btn btn-primary" onClick={() => navigate('/carrinho')}>Ver pedido</button>
         </BottomActions>
         <button className="btn ghost-button wide-button" onClick={() => navigate('/perfil')}>Meu perfil</button>
       </section>
