@@ -8,7 +8,7 @@ export default function BottomNav() {
   const items = [
     { to: '/pratos', label: 'Pratos', icon: '🍽️' },
     { to: '/pesquisar', label: 'Pesquisar', icon: '⌕' },
-    { to: '/pedido', label: 'Carrinho', icon: '🛒', cart: true },
+    { to: '/carrinho', label: 'Carrinho', icon: '🛒', cart: true },
     { to: '/perfil', label: 'Perfil', icon: '👤' },
   ]
 
