@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom'
 import { getSupabase } from '../lib/supabase'
 import { useUser } from '../context/UserContext.jsx'
 import AppScreen from '../components/AppScreen.jsx'
-import BrandMark from '../components/BrandMark.jsx'
 import '../styles/login.css'
 
 const MAX_ATTEMPTS = 5
@@ -135,7 +134,6 @@ export default function Login() {
   return (
     <AppScreen className="login-screen">
       <div className="login-container">
-        <BrandMark iconOnly />
         <span className="eyebrow">BEM-VINDO DE VOLTA</span>
         <h1>Entre para fazer seu pedido</h1>
 
