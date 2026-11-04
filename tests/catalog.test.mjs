@@ -5,6 +5,7 @@ import { productPrice } from '../src/utils/productPrice.js'
 import { OFFENSIVE_PATTERN, hasOffensiveLanguage } from '../src/shared/input-policy.js'
 import { companyTabState, initialSources, accessError } from '../src/utils/dataAccess.js'
 import { isMainDish, isBeverage, isDessert, productCategoryLabel } from '../src/shared/catalog-category.js'
+import { isValidFutureDate } from '../src/shared/pilot-validation.js'
 
 test('preço exibido aplica personalização e promoção em centavos', () => {
   const now = Date.now()
@@ -45,4 +46,13 @@ test('categorias do catálogo não misturam pratos, bebidas e sobremesas', () =>
   assert.equal(isBeverage({ categoria: 'Prato executivo' }), false)
   assert.equal(isDessert({ categoria: 'Refrigerante' }), false)
   assert.equal(productCategoryLabel({ categoria: 'Refrigerante' }), 'Bebida')
+})
+
+test('validade da CNH aceita datas futuras válidas e rejeita datas impossíveis', () => {
+  const now = new Date(2026, 10, 4, 12, 0, 0).getTime()
+  assert.equal(isValidFutureDate('2026-11-04', now), true)
+  assert.equal(isValidFutureDate('2026-11-05', now), true)
+  assert.equal(isValidFutureDate('2026-02-30', now), false)
+  assert.equal(isValidFutureDate('04/11/2027', now), false)
+  assert.equal(isValidFutureDate('2026-11-03', now), false)
 })
