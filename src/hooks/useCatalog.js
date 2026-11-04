@@ -64,7 +64,7 @@ export default function useCatalog(enabled = true) {
       setLoading(false)
 
       if (!channel) {
-        channel = supabase.channel('catalog:partner-companies')
+        channel = supabase.channel('catalog:partner-companies:' + crypto.randomUUID())
           .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => load().catch(fail))
           .on('postgres_changes', { event: '*', schema: 'public', table: 'restaurantes' }, () => load().catch(fail))
           .subscribe()
