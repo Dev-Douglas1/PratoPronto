@@ -27,10 +27,10 @@ export default function CompanyOnboarding() {
   async function submit(event) {
     event.preventDefault()
     if (busy) return
-    const digits = cnpj.replace(/\\D/g, '')
+    const digits = cnpj.replace(/\D/g, '')
     if (digits.length !== 14) { setError('Informe um CNPJ com 14 números.'); return }
     if (legalName.trim().length < 2 || name.trim().length < 2) { setError('Preencha a razão social e o nome fantasia.'); return }
-    if (phone.replace(/\\D/g, '').length < 10) { setError('Informe um telefone com DDD.'); return }
+    if (phone.replace(/\D/g, '').length < 10) { setError('Informe um telefone com DDD.'); return }
     setBusy(true); setError('')
     try {
       let id = requestId
