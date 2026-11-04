@@ -28,10 +28,10 @@ export default function CompanyCatalogManager({ companyId }) {
       id: product.id,
       nome: product.nome || '',
       descricao: product.descricao || '',
-      categoria: ['Pizza', 'Pizzas'].includes(product.categoria) ? 'Pizzas' : product.categoria || 'Pratos',
+      categoria: ['Pizza', 'Pizzas'].includes(product.categoria) ? 'Pratos' : product.categoria || 'Pratos',
       preco: String(product.preco ?? ''),
       imagem: product.imagem || '',
-      personalizavel: product.personalizavel === true,
+      personalizavel: false,
       disponivel: product.disponivel !== false,
     })
     setNotice(''); setError('')
@@ -59,12 +59,11 @@ export default function CompanyCatalogManager({ companyId }) {
       <form className="settings-form" onSubmit={save}>
         <div className="settings-grid">
           <label>Nome<input required maxLength="100" value={form.nome} onChange={e => setForm(v => ({ ...v, nome: e.target.value, id: editing ? v.id : '' }))} /></label>
-          <label>Categoria<select required value={form.categoria} onChange={e => setForm(v => ({ ...v, categoria: e.target.value, personalizavel: e.target.value === 'Pizzas' ? v.personalizavel : false }))}><option value="Pratos">Pratos</option><option value="Pizzas">Pizzas</option><option value="Bebidas">Bebidas</option><option value="Sobremesas">Sobremesas</option><option value="Lanches">Lanches</option><option value="Outros">Outros</option></select></label>
+          <label>Categoria<select required value={form.categoria} onChange={e => setForm(v => ({ ...v, categoria: e.target.value, personalizavel: false }))}><option value="Pratos">Pratos</option><option value="Bebidas">Bebidas</option><option value="Sobremesas">Sobremesas</option><option value="Lanches">Lanches</option><option value="Outros">Outros</option></select></label>
           <label>Preço (R$)<input required type="number" min="0.01" max="1000" step="0.01" value={form.preco} onChange={e => setForm(v => ({ ...v, preco: e.target.value }))} /></label>
           <label>Imagem<input maxLength="500" placeholder="https://... ou /images/..." value={form.imagem} onChange={e => setForm(v => ({ ...v, imagem: e.target.value }))} /></label>
         </div>
         <label>Descrição<textarea maxLength="300" value={form.descricao} onChange={e => setForm(v => ({ ...v, descricao: e.target.value }))} /></label>
-        {form.categoria === 'Pizzas' && <label className="company-checkbox"><input type="checkbox" checked={form.personalizavel} onChange={e => setForm(v => ({ ...v, personalizavel: e.target.checked }))} />Permitir tamanhos, bordas e adicionais de pizza</label>}
         <label className="company-checkbox"><input type="checkbox" checked={form.disponivel} onChange={e => setForm(v => ({ ...v, disponivel: e.target.checked }))} />Produto disponível</label>
         <div className="inline-actions">
           {editing && <button type="button" className="company-button secondary" onClick={() => setForm(empty)}>Cancelar edição</button>}
