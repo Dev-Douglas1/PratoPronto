@@ -1,31 +1,66 @@
+import React from 'react'
 import { NavLink } from 'react-router-dom'
-import { useCart } from '../context/CartContext.jsx'
+import '../styles/home.css'
 
-const items = [
-  { to: '/pizzas', icon: '⌂', label: 'Cardápio' },
-  { to: '/sobremesas', icon: '🍰', label: 'Sobremesas' },
-  { to: '/pedido', icon: '🛒', label: 'Carrinho', cart: true },
-  { to: '/perfil', icon: '●', label: 'Perfil' },
-]
-
-export default function BottomNav() {
-  const { quantidadeTotal } = useCart()
-
+export default function BottomNav({ totalCarrinho = 1 }) {
   return (
-    <nav className="bottom-nav" aria-label="Navegação principal">
-      {items.map((item) => (
+    <nav className="bottom-nav-container" aria-label="Navegação principal">
+      <div className="bottom-nav-pill">
         <NavLink
-          key={item.to}
-          to={item.to}
-          className={({ isActive }) => `bottom-nav__item ${isActive ? 'is-active' : ''}`}
+          to="/pizzas"
+          className={({ isActive }) =>
+            `nav-item ${isActive ? 'active' : ''}`
+          }
         >
-          <span className="bottom-nav__icon" aria-hidden="true">{item.icon}</span>
-          <span>{item.label}</span>
-          {item.cart && quantidadeTotal > 0 && (
-            <span className="bottom-nav__count">{quantidadeTotal}</span>
-          )}
+          <span className="nav-icon">🍕</span>
+          <span className="nav-label">Pizzas</span>
         </NavLink>
-      ))}
+
+        <NavLink
+          to="/bebidas"
+          className={({ isActive }) =>
+            `nav-item ${isActive ? 'active' : ''}`
+          }
+        >
+          <span className="nav-icon">🥤</span>
+          <span className="nav-label">Bebidas</span>
+        </NavLink>
+
+        <NavLink
+          to="/carrinho"
+          className={({ isActive }) =>
+            `nav-item ${isActive ? 'active' : ''}`
+          }
+        >
+          <div className="icon-badge-wrapper">
+            <span className="nav-icon">🛒</span>
+            {totalCarrinho > 0 && (
+              <span className="cart-badge">{totalCarrinho}</span>
+            )}
+          </div>
+          <span className="nav-label">Carrinho</span>
+        </NavLink>
+
+        <NavLink
+          to="/pedidos"
+          className={({ isActive }) =>
+            `nav-item ${isActive ? 'active' : ''}`
+          }
+        >
+          <span className="nav-icon">📋</span>
+          <span className="nav-label">Pedidos</span>
+        </NavLink>
+
+        <NavLink
+          to="/perfil"
+          className={({ isActive }) =>
+            `nav-item ${isActive ? 'active' : ''}`
+          }
+        >
+          <span className="nav-icon">👤</span>
+          <span className="nav-label">Perfil</span>
+        </NavLink>
+      </div>
     </nav>
   )
 }

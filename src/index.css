@@ -8,3 +8,38 @@
 body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; }
 
 ::selection { background: #ffeb18; color: #111; }
+
+import React from 'react';
+// Importe o hook ou variável de autenticação (ajuste conforme sua aplicação)
+import { useAuth } from '../hooks/useAuth'; // Exemplo de hook de autenticação
+import AddressSelector from '../components/AddressSelector';
+
+const Home = ({ enderecoAtivo }) => {
+  const { user } = useAuth(); // Obtenha o usuário autenticado (ajuste conforme necessário)
+
+  return (
+    <div className="home">
+      {/* Renderizar a barra de endereço apenas se o usuário estiver autenticado */}
+      {(user || enderecoAtivo) && (
+        <header className="home-status">
+          <AddressSelector />
+        </header>
+      )}
+
+      <div className="service-highlights">
+        <div className="card">Várias empresas</div>
+        <div className="card">Piloto parceiro</div>
+      </div>
+
+      <footer>
+        <button>Instalar no celular</button>
+        <p>
+          <a href="/privacy-policy">Política de Privacidade</a> /{' '}
+          <a href="/terms-of-use">Termos de Uso</a>
+        </p>
+      </footer>
+    </div>
+  );
+};
+
+export default Home;

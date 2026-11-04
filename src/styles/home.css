@@ -1,0 +1,707 @@
+/* ==========================================
+   1. ESTRUTURA GLOBAL E TELAS
+   ========================================== */
+   body, #root {
+    background-color: #0a0a0c !important;
+    color: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+  }
+  
+  .app-screen {
+    min-height: 100vh;
+    background-color: #0d0d0d;
+    background-image: radial-gradient(rgba(255, 235, 24, 0.08) 1px, transparent 1px);
+    background-size: 20px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start; /* Obriga o conteúdo a alinhar no topo */
+    padding: 16px 16px 110px 16px; /* Garante espaço para a navegação flutuante no fundo */
+    box-sizing: border-box;
+  }
+  
+  /* ==========================================
+     2. HERO E TIPOGRAFIA DA HOME
+     ========================================== */
+  .home-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin: auto 0;
+    width: 100%;
+  }
+  
+  .home-hero .brand-mark {
+    margin-bottom: 4px;
+  }
+  
+  .home-hero .brand-mark small,
+  .home-hero .brand-mark p {
+    display: none !important;
+  }
+  
+  .hero-tagline {
+    display: block;
+    background: transparent !important;
+    color: rgba(255, 255, 255, 0.55) !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    letter-spacing: 1.8px !important;
+    text-transform: uppercase !important;
+    margin: 6px auto 16px auto !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    text-align: center;
+  }
+  
+  .home-hero .eyebrow {
+    color: #ffeb18 !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    letter-spacing: 2px !important;
+    text-transform: uppercase !important;
+    margin-bottom: 12px !important;
+    opacity: 0.9;
+  }
+  
+  .home-hero h1,
+  #home-title {
+    font-family: 'Inter', 'Helvetica Neue', sans-serif !important;
+    font-size: 2.5rem !important;
+    font-weight: 800 !important;
+    letter-spacing: +0.05em !important;
+    line-height: 1.1 !important;
+    margin: 12px auto 36px auto !important;
+    max-width: 400px !important;
+  
+    background: linear-gradient(135deg, #ffeb18 0%, #ff0000 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+    color: transparent !important;
+  }
+  
+  /* ==========================================
+     3. ESTRUTURA DOS FORMULÁRIOS (CADASTRO E LOGIN)
+     ========================================== */
+  .auth-header {
+    margin-bottom: 20px;
+    text-align: left;
+  }
+  
+  .auth-title {
+    color: #ffffff !important;
+    font-size: 24px !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.4px !important;
+    margin: 0 0 6px 0 !important;
+  }
+  
+  .auth-subtitle {
+    color: rgba(255, 255, 255, 0.6) !important;
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+    margin: 0 !important;
+  }
+  
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+  }
+  
+  .form-card {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 20px !important;
+    padding: 20px 18px !important;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    text-align: left;
+  }
+  
+  .form-section-title {
+    color: #ffffff !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    margin: 0 0 4px 0 !important;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  
+  .input-group, .form-group {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    width: 100% !important;
+    text-align: left !important;
+  }
+  
+  .input-group label, .form-group label, label {
+    color: rgba(255, 255, 255, 0.85) !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    display: block !important;
+    width: 100% !important;
+  }
+  
+  form input:not([type="checkbox"]):not([type="radio"]):not([type="search"]),
+  form select,
+  .form-card input:not([type="checkbox"]):not([type="radio"]):not([type="search"]),
+  .form-card select,
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="tel"],
+  select {
+    width: 100% !important;
+    height: 48px !important;
+    padding: 0 16px !important;
+    background: #ffffff !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 12px !important;
+    color: #111827 !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    box-sizing: border-box !important;
+    transition: all 0.2s ease !important;
+  }
+  
+  input::placeholder {
+    color: #6b7280 !important;
+  }
+  
+  input:focus, select:focus {
+    outline: none !important;
+    border-color: #ffeb18 !important;
+    box-shadow: 0 0 0 3px rgba(255, 235, 24, 0.3) !important;
+  }
+  
+  select option {
+    background-color: #1a1a1e !important;
+    color: #ffffff !important;
+    padding: 10px !important;
+  }
+  
+  .form-row {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+    width: 100% !important;
+  }
+  
+  /* Campo de senha (Mostrar / Ocultar) */
+  .password-field-wrapper,
+  .password-field {
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+  
+  .password-field-wrapper input,
+  .password-field input {
+    padding-right: 90px !important;
+  }
+  
+  .password-field-wrapper button,
+  .password-field button {
+    position: absolute !important;
+    right: 8px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    height: 32px !important;
+    padding: 0 12px !important;
+    background: #000000 !important;
+    border: none !important;
+    color: #ffeb18 !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    border-radius: 8px !important;
+    z-index: 5 !important;
+    line-height: 1 !important;
+  }
+  
+  .password-field-wrapper button:hover,
+  .password-field button:hover {
+    background: #222222 !important;
+  }
+  
+  small, .field-help {
+    color: rgba(255, 255, 255, 0.5) !important;
+    font-size: 11px !important;
+    margin-top: 2px !important;
+    display: block !important;
+  }
+  
+  .checkbox-group {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+  
+  .checkbox-label, label.checkbox-line {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 10px !important;
+    font-size: 12px !important;
+    color: rgba(255, 255, 255, 0.8) !important;
+    cursor: pointer !important;
+  }
+  
+  input[type="checkbox"] {
+    width: 18px !important;
+    height: 18px !important;
+    accent-color: #ffeb18 !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+  }
+  
+  /* ==========================================
+     4. BOTÕES E CRACHÁ INTERATIVO
+     ========================================== */
+  .home-actions, .btn-group {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    width: 100% !important;
+    margin: 16px 0 !important;
+  }
+  
+  .btn,
+  .btn-primary,
+  .btn-outline,
+  button[type="submit"] {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    width: 100% !important;
+    height: 48px !important;
+    border-radius: 999px !important;
+    font-size: 15px !important;
+    font-weight: 800 !important;
+    text-decoration: none !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    box-sizing: border-box !important;
+    cursor: pointer !important;
+  }
+  
+  .btn-primary,
+  button[type="submit"] {
+    background: #ffeb18 !important;
+    color: #000000 !important;
+    border: none !important;
+    box-shadow: 0 4px 20px rgba(255, 235, 24, 0.2) !important;
+  }
+  
+  .btn-primary:hover,
+  button[type="submit"]:hover {
+    background: #fff056 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 24px rgba(255, 235, 24, 0.35) !important;
+  }
+  
+  .btn-outline {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+  }
+  
+  .btn-outline:hover {
+    background: rgba(255, 255, 255, 0.12) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+  }
+  
+  .subtle-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 16px auto 8px auto;
+    padding: 10px 18px;
+    background: rgba(255, 235, 24, 0.06);
+    border: 1px solid rgba(255, 235, 24, 0.2);
+    border-radius: 999px;
+    color: #ffeb18;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  
+  .subtle-badge.interactive-badge {
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+  }
+  
+  .subtle-badge.interactive-badge:hover {
+    background: rgba(255, 235, 24, 0.14) !important;
+    border-color: rgba(255, 235, 24, 0.4) !important;
+  }
+  
+  /* ==========================================
+     5. LISTA DE EMPRESAS PARCEIRAS
+     ========================================== */
+  .partner-companies-card {
+    width: 100%;
+    margin-top: 12px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    text-align: left;
+    box-sizing: border-box;
+  }
+  
+  .partner-companies-card h3 {
+    font-size: 12px;
+    font-weight: 700;
+    color: #ffeb18;
+    margin: 0 0 10px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .partner-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .partner-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    color: #ffffff;
+    text-decoration: none;
+    transition: background 0.2s ease;
+  }
+  
+  .partner-item:hover {
+    background: rgba(255, 255, 255, 0.12);
+  }
+  
+  .partner-logo {
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+  }
+  
+  .partner-name {
+    font-size: 13px;
+    font-weight: 600;
+    flex: 1;
+    margin-left: 10px;
+  }
+  
+  .partner-arrow {
+    color: #ffeb18;
+    font-weight: bold;
+  }
+  
+  /* ==========================================
+     6. RODAPÉ E LINKS LEGAIS
+     ========================================== */
+  .home-footer {
+    margin-top: 24px;
+    padding-top: 12px;
+    width: 100%;
+  }
+  
+  .legal-links {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 20px !important;
+  }
+  
+  .legal-links a {
+    color: #666673 !important;
+    font-size: 12px !important;
+    text-decoration: none !important;
+    transition: color 0.2s ease !important;
+  }
+  
+  .legal-links a:hover {
+    color: #ffffff !important;
+  }
+  
+  button.subtle-badge.interactive-badge {
+    background: rgba(255, 235, 24, 0.08) !important;
+    border: 1px solid rgba(255, 235, 24, 0.25) !important;
+    color: #ffeb18 !important;
+    cursor: pointer !important;
+    font-family: inherit !important;
+    transition: all 0.2s ease !important;
+  }
+  
+  button.subtle-badge.interactive-badge:hover {
+    background: rgba(255, 235, 24, 0.16) !important;
+    border-color: rgba(255, 235, 24, 0.4) !important;
+    transform: translateY(-1px);
+  }
+  /* ==========================================
+   GUIA DE INSTALAÇÃO iOS (IPHONE)
+   ========================================== */
+.ios-install-card {
+  width: 100%;
+  margin-top: 12px;
+  padding: 14px 16px;
+  background: rgba(255, 235, 24, 0.08);
+  border: 1px solid rgba(255, 235, 24, 0.3);
+  border-radius: 16px;
+  text-align: left;
+  box-sizing: border-box;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.ios-install-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.ios-install-header strong {
+  font-size: 13px;
+  color: #ffeb18;
+}
+
+.ios-close-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px 6px;
+}
+
+.ios-steps {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ios-steps strong {
+  color: #ffffff;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+/* ==========================================
+   ESTRUTURA DE TELA E CARTÃO PRINCIPAL
+   ========================================== */
+   .app-screen {
+    min-height: 100vh;
+    background-color: #0d0d0d;
+    background-image: radial-gradient(rgba(255, 235, 24, 0.08) 1px, transparent 1px);
+    background-size: 20px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 12px 90px 12px;
+    box-sizing: border-box;
+  }
+  
+  /* Cartão Branco Arredondado Interno */
+  .main-content-card {
+    width: 100%;
+    max-width: 480px;
+    background: #ffffff;
+    border-radius: 28px;
+    padding: 24px 20px;
+    box-sizing: border-box;
+    color: #1a1a1a;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    margin-top: 0; /* Remove qualquer margem no topo que empurre o cartão */
+    margin-bottom: 20px;
+  }
+  
+  /* ==========================================
+     BARRA DE NAVEGAÇÃO INFERIOR (BOTTOM NAV)
+     ========================================== */
+     
+    .bottom-nav-container {
+      position: fixed;
+      bottom: 16px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      z-index: 1000;
+      padding: 0 16px;
+      pointer-events: none;
+    }
+  
+  .bottom-nav-pill {
+    pointer-events: auto;
+    background: #1e1e1e;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 6px 12px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+  }
+  
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    text-decoration: none;
+    color: #8e8e93;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 6px 10px;
+    border-radius: 16px;
+    transition: all 0.2s ease;
+  }
+  
+  .nav-item.active {
+    color: #ffeb18;
+    background: rgba(255, 235, 24, 0.12);
+  }
+  
+  .nav-icon {
+    font-size: 18px;
+  }
+  
+  /* Badge Amarela do Carrinho */
+  .icon-badge-wrapper {
+    position: relative;
+    display: inline-flex;
+  }
+  
+  .cart-badge {
+    position: absolute;
+    top: -4px;
+    right: -8px;
+    background: #ffeb18;
+    color: #000000;
+    font-size: 10px;
+    font-weight: 700;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* ==========================================
+     BOTÕES E ELEMENTOS EM PÍLULA (AMARELO)
+     ========================================== */
+  .btn-yellow-toggle {
+    background: #ffeb18;
+    color: #000000;
+    border-radius: 14px;
+    font-weight: 700;
+    border: none;
+    padding: 10px 16px;
+  }
+  
+  .subtle-status-banner {
+    background: #fffdf0;
+    border: 1px solid #fce96a;
+    border-radius: 16px;
+    padding: 12px 14px;
+    color: #4a4000;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+  /* ==========================================
+   CORREÇÃO DE EMERGÊNCIA - LAYOUT E IMAGENS
+   ========================================== */
+
+/* 1. Garante que a ecrã não estoure nem crie barras de rolagem laterais */
+html, body {
+  overflow-x: hidden;
+  background-color: #0d0d0d;
+}
+
+.app-screen {
+  min-height: 100vh !important;
+  width: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  padding: 16px 16px 120px 16px !important;
+  box-sizing: border-box !important;
+}
+
+/* 2. Mantém o cartão branco centralizado e sem estourar altura */
+.main-content-card,
+.light-card {
+  width: 100% !important;
+  max-width: 480px !important;
+  background: #ffffff !important;
+  border-radius: 28px !important;
+  padding: 20px 16px !important;
+  box-sizing: border-box !important;
+  margin: 0 auto 20px auto !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3) !important;
+  overflow: hidden !important;
+}
+
+/* 3. Limita o tamanho das imagens para não cobrirem a ecrã toda */
+.products-grid img,
+.product-card img,
+.main-content-card img {
+  width: 100% !important;
+  max-height: 150px !important;
+  object-fit: contain !important;
+  display: block !important;
+  margin: 0 auto 8px auto !important;
+}
+
+/* 4. Grelha de produtos proporcional */
+.products-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 12px !important;
+  width: 100% !important;
+  margin-top: 12px !important;
+}
+
+/* 5. Fixa a barra flutuante no fundo */
+.bottom-nav-container {
+  position: fixed !important;
+  bottom: 16px !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 9999 !important;
+  pointer-events: none !important;
+}
+
+.bottom-nav-pill {
+  pointer-events: auto !important;
+}

@@ -6,6 +6,7 @@ import PilotRoute from './components/PilotRoute.jsx'
 import PlatformAdminRoute from './components/PlatformAdminRoute.jsx'
 import SessionNotice from './components/SessionNotice.jsx'
 import './App.css'
+import './styles/global.css'
 
 const Home = lazy(() => import('./pages/Home.jsx'))
 const Login = lazy(() => import('./pages/Login.jsx'))
@@ -53,8 +54,13 @@ export default function App() {
         <Route path="/pizzas" element={protectedPage(<Pizzas />)} />
         <Route path="/bebidas" element={protectedPage(<Bebidas />)} />
         <Route path="/sobremesas" element={protectedPage(<Sobremesas />)} />
+        
+        {/* Mapeamento de rotas para o BottomNav */}
         <Route path="/pedido" element={protectedPage(<Pedido />)} />
+        <Route path="/pedidos" element={protectedPage(<Pedido />)} />
         <Route path="/pagamento" element={protectedPage(<Pagamento />)} />
+        <Route path="/carrinho" element={protectedPage(<Pagamento />)} />
+        
         <Route path="/acompanhamento" element={protectedPage(<Acompanhamento />)} />
         <Route path="/perfil" element={protectedPage(<Perfil />)} />
         <Route path="/privacidade" element={protectedPage(<PrivacidadeDados />)} />

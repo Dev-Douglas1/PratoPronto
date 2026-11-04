@@ -1,183 +1,170 @@
-import { useEffect, useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+
 import AppScreen from '../components/AppScreen.jsx'
 import BrandMark from '../components/BrandMark.jsx'
-import InstallApp from '../components/InstallApp.jsx'
-import AddressSelector from '../components/AddressSelector.jsx'
-import AddressModal from '../components/AddressModal.jsx'
-import StoreFeed from '../components/StoreFeed.jsx'
-import useNearbyStores from '../hooks/useNearbyStores.js'
-import { useUser } from '../context/UserContext.jsx'
+import useAuth from '../hooks/useAuth.js'
 import { useCompany } from '../context/CompanyContext.jsx'
-import { searchMarketplace } from '../services/marketplace.js'
-import { formatarMoeda as money } from '../utils/moeda.js'
-import { DEFAULT_COMPANY_ID } from '../config/marketplace.js'
+
+import '../styles/home.css'
+
+// =========================================================
+// LISTAS DE FRASES ALEATÓRIAS
+// =========================================================
+const TITULOS = [
+  'Pratos Irresistíveis • Bebidas Geladas • Sobremesas Incríveis',
+  'Tudo o que você mais gosta, em um só lugar.',
+  'O cardápio perfeito para qualquer momento do seu dia.',
+]
+
+const SUBTITULOS = [
+  'ENCONTRE A SUA PRÓXIMA REFEIÇÃO',
+  'O SEU DELIVERY PREFERIDO',
+  'SABORES DA SUA REGIÃO',
+]
+
+const FRASES = [
+  'Mate sua fome em poucos cliques',
+  'Seu próximo pedido está a um toque',
+  'Escolha o seu sabor de hoje!',
+]
 
 export default function Home() {
-  const { autenticado, usuario } = useUser()
-  const { staffCompanies, pilotProfile } = useCompany()
+  const { user, autenticado, usuario } = useAuth()
+  const isUserLoggedIn = Boolean(autenticado || user || usuario)
+  const { staffCompanies = [], pilotProfile } = useCompany()
 
-  const [enderecoAtivo, setEnderecoAtivo] = useState(() => {
-    const salvo = localStorage.getItem('pratopronto_endereco')
-    return salvo ? JSON.parse(salvo) : null
-  })
-  const [modalEnderecoAberto, setModalEnderecoAberto] = useState(false)
+  const [deferredPrompt, setDeferredPrompt] = useState(null)
+  const [isAppInstalled, setIsAppInstalled] = useState(false)
+  const [instalando, setInstalando] = useState(false)
 
-  const { empresas, loading: loadingStores, erro: errorStores, recarregar } = useNearbyStores(enderecoAtivo)
-
-  const [search, setSearch] = useState('')
-  const [results, setResults] = useState({ companies: [], products: [] })
-  const [loadingSearch, setLoadingSearch] = useState(false)
-  const [errorSearch, setErrorSearch] = useState('')
+  const [textosHero] = useState(() => ({
+    titulo: TITULOS[Math.floor(Math.random() * TITULOS.length)],
+    subtitulo: SUBTITULOS[Math.floor(Math.random() * SUBTITULOS.length)],
+    frase: FRASES[Math.floor(Math.random() * FRASES.length)],
+  }))
 
   useEffect(() => {
-    const term = search.trim()
-    if (term.length < 2) {
-      setResults({ companies: [], products: [] })
-      setErrorSearch('')
+    // 1. Verifica se a aplicação já está a correr como PWA instalada
+    const isStandalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true
+
+    if (isStandalone) {
+      setIsAppInstalled(true)
       return
     }
-    let live = true
-    const timer = setTimeout(async () => {
-      setLoadingSearch(true)
-      setErrorSearch('')
-      try {
-        const value = await searchMarketplace(term)
-        if (live) setResults(value)
-      } catch {
-        if (live) setErrorSearch('Não foi possível pesquisar empresas agora.')
-      } finally {
-        if (live) setLoadingSearch(false)
-      }
-    }, 250)
-    return () => {
-      live = false
-      clearTimeout(timer)
+
+    // 2. Captura o evento nativo de instalação
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault()
+      setDeferredPrompt(e)
     }
-  }, [search])
+
+    const handleAppInstalled = () => {
+      setIsAppInstalled(true)
+      setDeferredPrompt(null)
+      setInstalando(false)
+    }
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    window.addEventListener('appinstalled', handleAppInstalled)
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+      window.removeEventListener('appinstalled', handleAppInstalled)
+    }
+  }, [])
+
+  async function handleInstalarApp() {
+    setInstalando(true)
+
+    if (!deferredPrompt) {
+      setTimeout(() => setInstalando(false), 1800)
+      return
+    }
+
+    try {
+      await deferredPrompt.prompt()
+      const { outcome } = await deferredPrompt.userChoice
+      if (outcome === 'accepted') {
+        setIsAppInstalled(true)
+      }
+      setDeferredPrompt(null)
+    } catch {
+      // Falha silenciosa
+    } finally {
+      setInstalando(false)
+    }
+  }
 
   return (
     <AppScreen className="home-screen">
-      <header className="home-status">
-        <AddressSelector
-          enderecoAtual={enderecoAtivo}
-          onClick={() => setModalEnderecoAberto(true)}
-        />
-      </header>
-
-      <div className="home-hero">
+      <section className="home-hero" aria-labelledby="home-title">
         <BrandMark />
-        <span className="eyebrow">ENCONTRE A SUA PRÓXIMA REFEIÇÃO</span>
-        <h1>Empresas perto de si.<br /><em>Pedido pronto.</em></h1>
-        <p>Pesquise pelo nome da empresa ou pelo prato. Cada loja administra o seu próprio cardápio, equipa e entregas.</p>
 
-        <label className="search-box marketplace-search">
-          <span aria-hidden="true">⌕</span>
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Buscar empresa ou prato..."
-            aria-label="Buscar empresa ou prato"
-          />
-        </label>
+        <span className="hero-tagline">{textosHero.titulo}</span>
+        <p className="eyebrow">{textosHero.subtitulo}</p>
+        <h1 id="home-title">{textosHero.frase}</h1>
 
-        {loadingSearch && <div className="light-card" role="status">A pesquisar…</div>}
-        {errorSearch && <p className="form-error" role="alert">{errorSearch}</p>}
-
-        {search.trim().length >= 2 && !loadingSearch && !errorSearch && (
-          <section className="marketplace-results" aria-label="Resultados da busca">
-            <div className="section-heading">
-              <h2>Empresas</h2>
-              <span>{results.companies.length}</span>
-            </div>
-            <div className="marketplace-company-grid">
-              {results.companies.map((company) => (
-                <Link
-                  className="light-card marketplace-company-card"
-                  key={company.id}
-                  to={company.id === DEFAULT_COMPANY_ID ? '/pizzas' : '/loja/' + company.id}
-                >
-                  <strong>{company.name}</strong>
-                  <small>Ver cardápio →</small>
-                </Link>
-              ))}
-              {!results.companies.length && <p className="muted">Nenhuma empresa com esse nome.</p>}
-            </div>
-
-            <div className="section-heading">
-              <h2>Pratos</h2>
-              <span>{results.products.length}</span>
-            </div>
-            <div className="marketplace-product-list">
-              {results.products.slice(0, 30).map((product) => (
-                <Link
-                  className="light-card marketplace-product-result"
-                  key={(product.companyId || '') + ':' + product.id}
-                  to={product.companyId === DEFAULT_COMPANY_ID ? '/pizzas' : '/loja/' + product.companyId}
-                >
-                  <span>
-                    {product.imagem ? (
-                      <img src={product.imagem} alt="" width="56" height="56" loading="lazy" />
-                    ) : (
-                      '🍽️'
-                    )}
-                  </span>
-                  <div>
-                    <strong>{product.nome}</strong>
-                    <small>
-                      {product.companyName || product.companyId} · {product.categoria || 'Prato'} ·{' '}
-                      {product.preco ? money(Number(product.preco)) : 'Preço na loja'}
-                    </small>
-                  </div>
-                </Link>
-              ))}
-              {!results.products.length && <p className="muted">Nenhum prato encontrado.</p>}
-            </div>
-          </section>
-        )}
-
-        {search.trim().length < 2 && (
-          <StoreFeed
-            empresas={empresas}
-            loading={loadingStores}
-            erro={errorStores}
-            onRecarregar={recarregar}
-          />
-        )}
-
-        <div className="home-actions">
-          <Link className="btn btn-primary" to={autenticado ? '/pizzas' : '/login'}>
-            {autenticado ? 'Abrir PratoPronto' : 'Entrar e pedir'}
+        <nav className="home-actions" aria-label="Ações principais">
+          <Link className="btn btn-primary" to={isUserLoggedIn ? '/pizzas' : '/login'}>
+            {isUserLoggedIn ? 'Abrir PratoPronto' : 'Entrar e pedir'}
             <span aria-hidden="true">→</span>
           </Link>
-          {!autenticado && <Link className="btn btn-outline" to="/cadastro">Criar a minha conta</Link>}
-          {autenticado && <Link className="btn btn-outline" to="/empresa/nova">Cadastrar uma empresa</Link>}
-          {!!staffCompanies.length && <Link className="btn btn-outline" to="/empresa/pedidos">Área da empresa</Link>}
-          {autenticado && pilotProfile && <Link className="btn btn-outline" to="/piloto">Área Piloto Parceiro</Link>}
-          {!autenticado && <Link className="btn btn-outline" to="/demo/empresa/pedidos">Conhecer a área da empresa 2.0 →</Link>}
+
+          {!isUserLoggedIn && (
+            <Link className="btn btn-outline" to="/cadastro">
+              Criar a minha conta
+            </Link>
+          )}
+
+          {isUserLoggedIn && (
+            <Link className="btn btn-outline" to="/empresa/nova">
+              Cadastrar uma empresa
+            </Link>
+          )}
+
+          {staffCompanies.length > 0 && (
+            <Link className="btn btn-outline" to="/empresa/pedidos">
+              Área da empresa
+            </Link>
+          )}
+
+          {isUserLoggedIn && pilotProfile && (
+            <Link className="btn btn-outline" to="/piloto">
+              Área Piloto Parceiro
+            </Link>
+          )}
+        </nav>
+
+        {/* 1. Informação de serviço estática */}
+        <div className="subtle-badge" aria-label="Informações de serviço">
+          <span>⚡ Lojas locais e entregas diretas na sua região</span>
         </div>
 
-        <div className="service-highlights">
-          <div><strong>🏪</strong><span><b>Várias empresas</b><small>Cardápios e equipas separados</small></span></div>
-          <div><strong>🛵</strong><span><b>Piloto Parceiro</b><small>Entrega confirmada por código</small></span></div>
-        </div>
+        {/* 2. Crachá de instalação interativo com estado de carregamento */}
+        {!isAppInstalled && (
+          <button
+            type="button"
+            className="subtle-badge interactive-badge"
+            onClick={handleInstalarApp}
+            disabled={instalando}
+            style={{ marginTop: '8px' }}
+          >
+            <span>
+              {instalando ? '⏳ A preparar instalação...' : '⚡ Instalar aplicativo'}
+            </span>
+          </button>
+        )}
+      </section>
 
-        <div className="legal-links centered-links">
+      <footer className="home-footer">
+        <nav className="legal-links" aria-label="Informações legais">
           <Link to="/politica-de-privacidade">Política de Privacidade</Link>
           <Link to="/termos-de-uso">Termos de Uso</Link>
-        </div>
-        <InstallApp />
-      </div>
-
-      <AddressModal
-        isOpen={modalEnderecoAberto}
-        onClose={() => setModalEnderecoAberto(false)}
-        usuarioId={usuario?.uid || usuario?.id}
-        onSelectAddress={(endereco) => {
-          setEnderecoAtivo(endereco)
-          localStorage.setItem('pratopronto_endereco', JSON.stringify(endereco))
-        }}
-      />
+        </nav>
+      </footer>
     </AppScreen>
   )
 }
