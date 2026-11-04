@@ -396,3 +396,39 @@ export async function reviewCompanyRegistration(requestId, approve, note = '') {
   if (error) throw error
   return data
 }
+
+export async function uploadCompanyRegistrationDocument(requestId, documentType, file) {
+  if (!file) throw new Error('Selecione o documento.')
+  const allowed = new Set(['application/pdf','image/jpeg','image/png','image/webp'])
+  if (!allowed.has(file.type) || file.size < 1 || file.size > 5 * 1024 * 1024) throw new Error('Use PDF, JPG, PNG ou WEBP de até 5 MB.')
+  const supabase = ready()
+  const { data: userData, error: userError } = await supabase.auth.getUser()
+  if (userError) throw userError
+  const uid = userData.user?.id
+  if (!uid) throw new Error('Entre novamente antes de enviar documentos.')
+  const ext = ({'application/pdf':'pdf','image/jpeg':'jpg','image/png':'png','image/webp':'webp'})[file.type]
+  const path = uid + '/' + requestId + '/' + documentType + '.' + ext
+  const { error: uploadError } = await supabase.storage.from('company-registration-documents').upload(path,file,{upsert:true,contentType:file.type,cacheControl:'3600'})
+  if (uploadError) throw uploadError
+  const { error } = await supabase.rpc('register_company_document',{p_request_id:requestId,p_type:documentType,p_path:path,p_mime:file.type,p_size:file.size})
+  if (error) throw error
+  return path
+}
+
+export async function getMyCompanyRegistrationRequest() {
+  const { data, error } = await ready().rpc('my_company_registration_request')
+  if (error) throw error
+  return Array.isArray(data) ? data[0] || null : data || null
+}
+
+export async function listCompanyRegistrationDocuments(requestId) {
+  const { data, error } = await ready().rpc('list_company_registration_documents',{p_request_id:requestId})
+  if (error) throw error
+  return data || []
+}
+
+export async function createCompanyDocumentUrl(path) {
+  const { data, error } = await ready().storage.from('company-registration-documents').createSignedUrl(path,300)
+  if (error) throw error
+  return data?.signedUrl || ''
+}
