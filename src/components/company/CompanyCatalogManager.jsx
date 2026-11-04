@@ -28,7 +28,7 @@ export default function CompanyCatalogManager({ companyId }) {
       id: product.id,
       nome: product.nome || '',
       descricao: product.descricao || '',
-      categoria: product.categoria || 'Pratos',
+      categoria: ['Pizza', 'Pizzas'].includes(product.categoria) ? 'Pizzas' : product.categoria || 'Pratos',
       preco: String(product.preco ?? ''),
       imagem: product.imagem || '',
       personalizavel: product.personalizavel === true,
