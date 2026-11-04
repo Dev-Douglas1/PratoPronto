@@ -73,10 +73,12 @@ test('navegação inferior prioriza pesquisa e carrinho, sem aba separada de ped
 test('cadastro de empresa usa o fluxo multiempresa atual e valida o identificador', async () => {
   const { default: Page } = await server.ssrLoadModule('/src/pages/CompanyOnboarding.jsx')
   const html = render(Page, {}, '/empresa/nova')
-  assert.match(html, /Cadastre sua empresa/)
-  assert.match(html, /id="company-name"/)
-  assert.match(html, /id="company-slug"/)
-  assert.match(html, /Criar empresa/)
+  assert.match(html, /Solicitar cadastro empresarial/)
+  assert.match(html, /id="company-cnpj"/)
+  assert.match(html, /id="company-legal-name"/)
+  assert.match(html, /id="company-trade-name"/)
+  assert.match(html, /Enviar para análise/)
+  assert.match(html, /não comprova vínculo/)
 })
 
 test('cadastro de produtos oferece categorias padronizadas e restringe personalização a pizzas', async () => {
@@ -85,7 +87,9 @@ test('cadastro de produtos oferece categorias padronizadas e restringe personali
   for (const category of ['Pratos', 'Pizzas', 'Bebidas', 'Sobremesas', 'Lanches', 'Outros']) {
     assert.ok(html.includes('>' + category + '</option>'), category)
   }
-  assert.match(html, /Permitir tamanhos, bordas e adicionais de pizza/)
+  const source = (await import('node:fs/promises')).readFile(new URL('../src/components/company/CompanyCatalogManager.jsx', import.meta.url), 'utf8')
+  assert.match(await source, /category === 'Pizzas'/)
+  assert.match(await source, /Permitir tamanhos, bordas e adicionais de pizza/)
 })
 
 test('painel de demonstração abre usando os mesmos providers do aplicativo', async () => {
