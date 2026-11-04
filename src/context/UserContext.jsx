@@ -104,9 +104,16 @@ export function UserProvider({ children }) {
       }
     }
 
-    supabase.auth.getSession().then(({ data }) => applySession(data.session)).catch(() => {
-      if (alive) { setLoading(false); setAvisoLogin('Não foi possível iniciar a sessão segura.') }
-    })
+    // Na rota OAuth, não iniciar getSession em paralelo com
+    // exchangeCodeForSession: ambos disputam o lock interno do Auth e podem
+    // atrasar a troca PKCE no retorno do Google, especialmente em celular.
+    const isOAuthCallback = window.location.pathname === '/auth/callback'
+    if (!isOAuthCallback) {
+      supabase.auth.getSession().then(({ data }) => applySession(data.session)).catch(() => {
+        if (alive) { setLoading(false); setAvisoLogin('Não foi possível iniciar a sessão segura.') }
+      })
+    }
+
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       queueMicrotask(() => applySession(session))
     })
@@ -191,8 +198,8 @@ export function UserProvider({ children }) {
     if (code) {
       const { data, error } = await withTimeout(
         supabase.auth.exchangeCodeForSession(code),
-        12000,
-        'A confirmação do Google expirou. Inicie o login novamente.',
+        45000,
+        'A conexão com o Google está demorando mais que o esperado. Verifique sua internet e tente novamente.',
       )
       if (error) throw criarErroSupabase(error)
       user = data.user || data.session?.user || null
