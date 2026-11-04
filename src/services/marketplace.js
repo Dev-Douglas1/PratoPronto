@@ -374,3 +374,25 @@ export async function searchMarketplace(term = '') {
       .filter(product => product.companyId && (!needle || [product.nome, product.descricao, product.categoria, product.companyName].some(value => normalizeSearch(value).includes(needle)))),
   }
 }
+
+export async function getMyCompanyRegistrationRequest() {
+  const { data, error } = await ready().rpc('my_company_registration_request')
+  if (error) throw error
+  return Array.isArray(data) ? data[0] || null : data || null
+}
+
+export async function listCompanyRegistrationRequests() {
+  const { data, error } = await ready().rpc('list_company_registration_requests')
+  if (error) throw error
+  return data || []
+}
+
+export async function reviewCompanyRegistration(requestId, approve, note = '') {
+  const { data, error } = await ready().rpc('review_company_registration', {
+    p_request_id: requestId,
+    p_approve: approve === true,
+    p_note: note,
+  })
+  if (error) throw error
+  return data
+}
