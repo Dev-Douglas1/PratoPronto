@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
 import { useUser } from '../context/UserContext.jsx'
-import { accountDestination } from '../utils/access.js'
 
 // Compartilha a mesma troca PKCE entre as montagens duplas do StrictMode.
 let oauthCompletion = { code: null, promise: null }
@@ -28,7 +27,7 @@ export default function AuthCallback() {
         }
 
         const conta = await oauthCompletion.promise
-        if (ativo) navigate(accountDestination(conta), { replace: true })
+        if (ativo) navigate(conta?.emailVerificado === true ? '/pratos' : '/verificar-email', { replace: true })
       } catch (error) {
         oauthCompletion = { code: null, promise: null }
         if (ativo) setErro(error?.message || 'Não foi possível concluir o login com Google.')
