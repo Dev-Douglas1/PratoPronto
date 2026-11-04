@@ -7,7 +7,7 @@ import CatalogResults from '../components/CatalogResults.jsx'
 import BottomActions from '../components/BottomActions.jsx'
 import BottomNav from '../components/BottomNav.jsx'
 import useCatalog from '../hooks/useCatalog.js'
-import { isBeverage } from '../shared/catalog-category.js'
+import { isBeverage, matchesProductSearch } from '../shared/catalog-category.js'
 
 export default function Bebidas() {
   const navigate = useNavigate()
@@ -15,7 +15,7 @@ export default function Bebidas() {
   const [somenteOfertas, setSomenteOfertas] = useState(false)
   const { catalog, loading, error, confirmed, retry } = useCatalog()
   const filtradas = useMemo(
-    () => catalog.filter((bebida) => isBeverage(bebida) && bebida.nome.toLowerCase().includes(busca.toLowerCase()) && (!confirmed || !somenteOfertas || bebida.ofertaAtiva)),
+    () => catalog.filter((bebida) => isBeverage(bebida) && matchesProductSearch(bebida, busca) && (!confirmed || !somenteOfertas || bebida.ofertaAtiva)),
     [busca, catalog, somenteOfertas, confirmed],
   )
 
