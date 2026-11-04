@@ -14,12 +14,12 @@ export default function Pedido() {
 
   return (
     <AppScreen className="screen-with-nav menu-screen">
-      <TopBar titulo="Pedidos" perfil />
+      <TopBar titulo="Carrinho" perfil />
       <section className="catalog-surface order-surface">
         <div className="page-heading">
-          <span className="eyebrow">SEU CARRINHO</span>
-          <h1>Revise o pedido</h1>
-          <p>Confira os itens antes de seguir para o pagamento.</p>
+          <span className="eyebrow">REVISE SUA SELEÇÃO</span>
+          <h1>O que você escolheu?</h1>
+          <p>Ajuste as quantidades e confirme os itens para consultar o valor final e a taxa do entregador.</p>
         </div>
         {usuario && (
           <div className="delivery-summary">
@@ -34,7 +34,7 @@ export default function Pedido() {
         <div className="cart-panel">
           {lista.length === 0 ? (
             <div className="empty-state">
-              <span>🍕</span>
+              <span>🛒</span>
               <p>Seu pedido ainda está vazio.</p>
             </div>
           ) : (
@@ -59,14 +59,14 @@ export default function Pedido() {
 
           <div className="order-breakdown">
             <p><span>Subtotal</span><strong>{formatarMoeda(subtotal)}</strong></p>
-            <p><span>Entrega</span><strong>{taxaEntrega === null ? 'A confirmar' : taxaEntrega ? formatarMoeda(taxaEntrega) : 'Grátis'}</strong></p>
-            <small>Valores estimados. O restaurante confere preços, disponibilidade e entrega na próxima etapa.</small>
+            <p><span>Taxa do motoboy</span><strong>{taxaEntrega === null ? 'Calculada na confirmação' : taxaEntrega ? formatarMoeda(taxaEntrega) : 'Grátis'}</strong></p>
+            <small>Estimativa inicial. O valor definitivo dos pratos e a taxa de entrega serão confirmados pelo estabelecimento na próxima etapa.</small>
             <div className="order-total"><span>Total estimado</span><strong>{formatarMoeda(total)}</strong></div>
           </div>
 
           <div className="two-actions">
-            <button className="btn btn-secondary" onClick={() => navigate(companyId === DEFAULT_COMPANY_ID ? '/pizzas' : '/loja/' + companyId)}>Ver mais</button>
-            <button className="btn btn-primary" disabled={!lista.length} onClick={() => navigate('/pagamento')}>Pagar</button>
+            <button className="btn btn-secondary" onClick={() => navigate(companyId === DEFAULT_COMPANY_ID ? '/pratos' : '/loja/' + companyId)}>Ver mais</button>
+            <button className="btn btn-primary" disabled={!lista.length} onClick={() => navigate('/pagamento')}>Confirmar itens e ver valores</button>
           </div>
         </div>
       </section>
