@@ -75,7 +75,7 @@ export function ProfileEditor({ usuario, atualizar, area, onSaved }) {
   }, [usuario])
 
   useEffect(() => {
-    const cep = String(form.cep || '').replace(/\\D/g, '')
+    const cep = String(form.cep || '').replace(/\D/g, '')
     if (cep.length !== 8) return undefined
     const controller = new AbortController()
     let active = true
