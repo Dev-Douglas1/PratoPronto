@@ -171,9 +171,20 @@ export function UserProvider({ children }) {
   const finalizarOAuth = useCallback(async function finalizarOAuth(code) {
     const supabase = ready()
     if (!code) throw new Error('O Google não retornou um código de autenticação válido.')
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-    if (error) throw criarErroSupabase(error)
-    const user = data.user || data.session?.user
+
+    // Com detectSessionInUrl habilitado, o cliente Supabase pode trocar o
+    // código PKCE durante a inicialização. Primeiro reutilizamos essa sessão;
+    // só fazemos a troca manual se ainda não houver uma sessão ativa.
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+    if (sessionError) throw criarErroSupabase(sessionError)
+
+    let user = sessionData.session?.user
+    if (!user) {
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+      if (error) throw criarErroSupabase(error)
+      user = data.user || data.session?.user
+    }
+
     if (!user) throw new Error('Não foi possível concluir o login com Google.')
     const account = await readAccount(user)
     setUsuario(account)
