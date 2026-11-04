@@ -1,7 +1,6 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
 import { useCart } from '../context/CartContext.jsx'
-import '../styles/home.css'
 
 export default function BottomNav() {
   const { quantidadeTotal = 0 } = useCart()
