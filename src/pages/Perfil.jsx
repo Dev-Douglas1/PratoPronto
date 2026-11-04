@@ -46,7 +46,7 @@ export default function Perfil() {
   return <AppScreen className={`screen-with-nav profile-page${editing ? ' profile-page--editing' : ''}`}>
     <section className="account-sheet" aria-label="Minha conta">
       <header className="account-topbar">
-        <Link to={editing ? '/perfil' : '/pizzas'} className="account-icon-button" aria-label={editing ? 'Voltar ao perfil' : 'Voltar ao cardápio'}>←</Link>
+        <Link to={editing ? '/perfil' : '/pratos'} className="account-icon-button" aria-label={editing ? 'Voltar ao perfil' : 'Voltar ao cardápio'}>←</Link>
         <span ref={title} tabIndex={-1}>{editing ? 'Editar perfil' : 'Meu perfil'}</span>
         {!editing && <button className="account-icon-button" type="button" aria-label="Editar meus dados" onClick={() => edit()}><ProfileIcon name="edit" /></button>}
       </header>
