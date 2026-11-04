@@ -183,7 +183,7 @@ export function UserProvider({ children }) {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin + '/auth/callback',
+        redirectTo: 'https://prato-pronto-tau.vercel.app/auth/callback',
       },
     })
     if (error) throw criarErroSupabase(error)
