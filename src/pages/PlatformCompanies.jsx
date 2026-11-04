@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
 import TopBar from '../components/TopBar.jsx'
 import {
-  listAuditEvents, listPlatformRestaurants, setRestaurantAccountStatus,
+  listAuditEvents, listPlatformRestaurants, setRestaurantAccountStatus,\n  listCompanyRegistrationRequests, reviewCompanyRegistration,
 } from '../services/marketplace.js'
 
 const LABEL = {
@@ -13,7 +13,7 @@ const LABEL = {
 }
 
 export default function PlatformCompanies() {
-  const [companies, setCompanies] = useState([])
+  const [companies, setCompanies] = useState([])\n  const [requests, setRequests] = useState([])\n  const [requestNote, setRequestNote] = useState('')
   const [audit, setAudit] = useState([])
   const [selected, setSelected] = useState(null)
   const [reason, setReason] = useState('')
