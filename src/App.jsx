@@ -15,7 +15,8 @@ const Cadastro = lazy(() => import('./pages/Cadastro.jsx'))
 const RecuperarSenha = lazy(() => import('./pages/RecuperarSenha.jsx'))
 const RedefinirSenha = lazy(() => import('./pages/RedefinirSenha.jsx'))
 const VerificarEmail = lazy(() => import('./pages/VerificarEmail.jsx'))
-const Pizzas = lazy(() => import('./pages/Pizzas.jsx'))
+const Pratos = lazy(() => import('./pages/Pizzas.jsx'))
+const Pesquisar = lazy(() => import('./pages/Pesquisar.jsx'))
 const Bebidas = lazy(() => import('./pages/Bebidas.jsx'))
 const Sobremesas = lazy(() => import('./pages/Sobremesas.jsx'))
 const Pedido = lazy(() => import('./pages/Pedido.jsx'))
@@ -50,7 +51,9 @@ export default function App() {
         <Route path="/recuperar-senha" element={<RecuperarSenha />} />
         <Route path="/redefinir-senha" element={<RedefinirSenha />} />
         <Route path="/verificar-email" element={<ProtectedRoute allowUnverified><VerificarEmail /></ProtectedRoute>} />
-        <Route path="/pizzas" element={protectedPage(<Pizzas />)} />
+        <Route path="/pratos" element={protectedPage(<Pratos />)} />
+        <Route path="/pizzas" element={<Navigate to="/pratos" replace />} />
+        <Route path="/pesquisar" element={<Pesquisar />} />
         <Route path="/bebidas" element={protectedPage(<Bebidas />)} />
         <Route path="/sobremesas" element={protectedPage(<Sobremesas />)} />
         <Route path="/pedido" element={protectedPage(<Pedido />)} />
