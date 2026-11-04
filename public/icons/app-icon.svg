@@ -1,7 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>PratoPronto</title>
   <rect width="512" height="512" rx="112" fill="#090909"/>
-  <circle cx="230" cy="245" r="142" fill="#ffeb18"/>
-  <path d="M230 245 407 132v226z" fill="#090909"/>
-  <circle cx="225" cy="172" r="14" fill="#090909"/>
-  <circle cx="425" cy="245" r="18" fill="#ffeb18"/>
+  <g fill="none" stroke="#ffeb18" stroke-width="18" stroke-linecap="round">
+    <path d="M74 178h82M54 256h74M74 334h82"/>
+  </g>
+  <path d="M350 112a174 174 0 1 0 0 288l-112-144z" fill="#ffeb18"/>
+  <path d="M300 154a27 27 0 0 1 24 8" fill="none" stroke="#090909" stroke-width="11" stroke-linecap="round"/>
+  <ellipse cx="315" cy="178" rx="12" ry="18" fill="#090909"/>
+  <circle cx="319" cy="172" r="4.5" fill="#fff"/>
 </svg>
