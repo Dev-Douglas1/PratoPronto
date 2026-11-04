@@ -1,0 +1,25 @@
+/* Estilos isolados da autenticação: não interferem no marketplace. */
+.login-screen { display:flex; align-items:center; justify-content:center; padding:max(28px,env(safe-area-inset-top)) 24px max(32px,env(safe-area-inset-bottom)); }
+.login-screen .login-container { width:100%; max-width:440px; margin:0 auto; }
+.login-screen .brand-mark--icon-only { margin:0 auto 30px; }
+.login-screen .brand-mark--icon-only .brand-logo-image { width:min(48vw,190px); max-height:150px; aspect-ratio:600/470; object-fit:contain; }
+.login-screen .eyebrow { display:block; margin:0 0 14px; color:var(--yellow,#ffeb18); font-size:.78rem; font-weight:750; letter-spacing:.12em; }
+.login-screen h1 { margin:0 0 30px; color:#fff; font-size:clamp(2rem,8vw,2.65rem); font-weight:750; line-height:1.12; letter-spacing:-.04em; }
+.login-screen .login-form { display:grid; gap:18px; width:100%; }
+.login-screen .form-group { display:grid; gap:8px; width:100%; }
+.login-screen .form-group>label { color:#ededed; font-size:.9rem; font-weight:650; }
+.login-screen .form-group input { display:block; width:100%; min-width:0; height:54px; padding:0 16px; border:1px solid #414141; border-radius:13px; outline:none; background:#171717; color:#fff; box-shadow:none; font-size:16px; color-scheme:dark; }
+.login-screen .form-group input::placeholder { color:#858585; opacity:1; }
+.login-screen .form-group input:focus { border-color:var(--yellow,#ffeb18); box-shadow:0 0 0 3px rgba(255,235,24,.12); }
+.login-screen .password-input-wrapper { display:flex; align-items:stretch; width:100%; min-width:0; overflow:hidden; border:1px solid #414141; border-radius:13px; background:#171717; }
+.login-screen .password-input-wrapper input { flex:1; width:0; border:0; border-radius:0; }
+.login-screen .password-input-wrapper input:focus { box-shadow:none; }
+.login-screen .btn-toggle-password { flex:0 0 auto; padding:0 14px; border-left:1px solid #414141; background:#222; color:#ffeb18; font-size:.88rem; font-weight:650; }
+.login-screen .login-form>.btn,.login-screen .login-container>.btn { display:flex; align-items:center; justify-content:center; width:100%; min-height:54px; padding:12px 18px; border-radius:999px; font-size:1rem; font-weight:750; text-align:center; }
+.login-screen .btn-primary { background:#ffeb18; color:#111; }
+.login-screen .btn-outline { border:1px solid #414141; background:#1b1b1b; color:#fff; }
+.login-screen .btn:disabled { opacity:.6; }
+.login-screen .login-footer-links { display:grid; gap:8px; margin-top:22px; color:#d5d5d5; font-size:.92rem; }
+.login-screen .login-footer-links p { margin:0; }
+.login-screen .login-footer-links a { color:#ffeb18; text-underline-offset:3px; }
+@media(max-width:380px) { .login-screen { padding-inline:18px; } .login-screen .brand-mark--icon-only { margin-bottom:22px; } .login-screen h1 { margin-bottom:24px; } }
