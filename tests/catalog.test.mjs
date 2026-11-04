@@ -4,6 +4,7 @@ import { produtos, tamanhos, bordas } from '../src/data/produtos.js'
 import { productPrice } from '../src/utils/productPrice.js'
 import { OFFENSIVE_PATTERN, hasOffensiveLanguage } from '../src/shared/input-policy.js'
 import { companyTabState, initialSources, accessError } from '../src/utils/dataAccess.js'
+import { isMainDish, isBeverage, isDessert, productCategoryLabel } from '../src/shared/catalog-category.js'
 
 test('preço exibido aplica personalização e promoção em centavos', () => {
   const now = Date.now()
@@ -32,4 +33,16 @@ test('falha de permissão em uma fonte não bloqueia outras áreas da empresa', 
   sources.orders = { loading: false, error: accessError({ code: '42501', message: 'row-level security' }, 'pedidos', true), fromCache: false }
   assert.match(companyTabState(sources, 'pedidos').error, /pedidos/)
   assert.match(companyTabState(sources, 'atendimento').error, /pedidos/)
+})
+
+test('categorias do catálogo não misturam pratos, bebidas e sobremesas', () => {
+  assert.equal(isMainDish({ categoria: 'Pratos' }), true)
+  assert.equal(isMainDish({ category: 'Pizza' }), true)
+  assert.equal(isBeverage({ categoria: 'Bebidas' }), true)
+  assert.equal(isBeverage({ categoria: 'Suco' }), true)
+  assert.equal(isDessert({ categoria: 'Sobremesas' }), true)
+  assert.equal(isDessert({ categoria: 'Pudim' }), true)
+  assert.equal(isBeverage({ categoria: 'Prato executivo' }), false)
+  assert.equal(isDessert({ categoria: 'Refrigerante' }), false)
+  assert.equal(productCategoryLabel({ categoria: 'Refrigerante' }), 'Bebida')
 })
