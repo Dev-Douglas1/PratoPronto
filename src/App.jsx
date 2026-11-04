@@ -51,18 +51,22 @@ export default function App() {
         <Route path="/recuperar-senha" element={<RecuperarSenha />} />
         <Route path="/redefinir-senha" element={<RedefinirSenha />} />
         <Route path="/verificar-email" element={<ProtectedRoute allowUnverified><VerificarEmail /></ProtectedRoute>} />
-        <Route path="/pizzas" element={protectedPage(<Pizzas />)} />
+        
+        {/* Categorias e Navegação Principal */}
+        <Route path="/pratos" element={protectedPage(<Pizzas />)} />
+        <Route path="/pizzas" element={<Navigate to="/pratos" replace />} />
         <Route path="/bebidas" element={protectedPage(<Bebidas />)} />
         <Route path="/sobremesas" element={protectedPage(<Sobremesas />)} />
         
-        {/* Mapeamento de rotas para o BottomNav */}
+        {/* Rotas Mapeadas para o BottomNav */}
         <Route path="/pedido" element={protectedPage(<Pedido />)} />
         <Route path="/pedidos" element={protectedPage(<Pedido />)} />
         <Route path="/pagamento" element={protectedPage(<Pagamento />)} />
         <Route path="/carrinho" element={protectedPage(<Pagamento />)} />
-        
-        <Route path="/acompanhamento" element={protectedPage(<Acompanhamento />)} />
         <Route path="/perfil" element={protectedPage(<Perfil />)} />
+        
+        {/* Gestão e Fluxos Secundários */}
+        <Route path="/acompanhamento" element={protectedPage(<Acompanhamento />)} />
         <Route path="/privacidade" element={protectedPage(<PrivacidadeDados />)} />
         <Route path="/loja/:companyId" element={<MarketplaceStore />} />
         <Route path="/empresa/nova" element={protectedPage(<CompanyOnboarding />)} />

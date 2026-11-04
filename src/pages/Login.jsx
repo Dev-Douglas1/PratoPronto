@@ -1,20 +1,94 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getSupabase } from '../lib/supabase'
 import AppScreen from '../components/AppScreen.jsx'
 import BrandMark from '../components/BrandMark.jsx'
+import '../styles/home.css'
 
-import '../styles/home.css'; // Mantenha o seu ficheiro de estilos de login
+const MAX_ATTEMPTS = 5
+const LOCKOUT_TIME_MS = 15 * 60 * 1000 // 15 minutos
+
 export default function Login() {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [lockoutTimer, setLockoutTimer] = useState(0)
 
-  // Login com E-mail e Senha
+  // Verifica bloqueio por e-mail ao alterar o campo de e-mail
+  useEffect(() => {
+    checkLockout(email)
+  }, [email])
+
+  // Regressão do timer de bloqueio
+  useEffect(() => {
+    let interval = null
+    if (lockoutTimer > 0) {
+      interval = setInterval(() => {
+        setLockoutTimer((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval)
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+    }
+    return () => clearInterval(interval)
+  }, [lockoutTimer])
+
+  function getStorageKey(targetEmail) {
+    return `login_attempts_${targetEmail.trim().toLowerCase()}`
+  }
+
+  function checkLockout(targetEmail) {
+    if (!targetEmail) {
+      setLockoutTimer(0)
+      return false
+    }
+    const key = getStorageKey(targetEmail)
+    const record = JSON.parse(localStorage.getItem(key) || '{}')
+
+    if (record.lockUntil && Date.now() < record.lockUntil) {
+      const remainingSecs = Math.ceil((record.lockUntil - Date.now()) / 1000)
+      setLockoutTimer(remainingSecs)
+      return true
+    } else {
+      setLockoutTimer(0)
+      return false
+    }
+  }
+
+  function registerFailedAttempt(targetEmail) {
+    const key = getStorageKey(targetEmail)
+    const record = JSON.parse(localStorage.getItem(key) || '{ "count": 0 }')
+    const newCount = (record.count || 0) + 1
+
+    if (newCount >= MAX_ATTEMPTS) {
+      const lockUntil = Date.now() + LOCKOUT_TIME_MS
+      localStorage.setItem(key, JSON.stringify({ count: newCount, lockUntil }))
+      setLockoutTimer(LOCKOUT_TIME_MS / 1000)
+      alert('Número máximo de tentativas excedido! Conta temporariamente bloqueada por 15 minutos.')
+    } else {
+      localStorage.setItem(key, JSON.stringify({ count: newCount }))
+      alert(`Falha no login. Tentativa ${newCount} de ${MAX_ATTEMPTS}.`)
+    }
+  }
+
+  function resetAttempts(targetEmail) {
+    const key = getStorageKey(targetEmail)
+    localStorage.removeItem(key)
+  }
+
   async function handleEmailLogin(e) {
     e.preventDefault()
+
+    if (checkLockout(email)) {
+      alert(`Muitas tentativas incorretas. Aguarde ${Math.ceil(lockoutTimer / 60)} minuto(s) para tentar novamente.`)
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -26,12 +100,13 @@ export default function Login() {
 
       if (error) {
         console.error('Erro de Autenticação:', error)
-        alert(`Falha no login: ${error.message}`)
+        registerFailedAttempt(email)
         return
       }
 
       if (data?.session) {
-        navigate('/pizzas')
+        resetAttempts(email)
+        navigate('/pratos')
       }
     } catch (err) {
       console.error('Erro de execução:', err)
@@ -41,14 +116,13 @@ export default function Login() {
     }
   }
 
-  // Login com Google
   async function handleGoogleLogin() {
     try {
       const supabase = getSupabase()
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/pizzas`,
+          redirectTo: `${window.location.origin}/pratos`,
         },
       })
 
@@ -68,6 +142,12 @@ export default function Login() {
         <BrandMark />
         <span className="eyebrow">BEM-VINDO DE VOLTA</span>
         <h1>Entre para fazer seu pedido</h1>
+
+        {lockoutTimer > 0 && (
+          <div style={{ background: '#ffeeee', color: '#cc0000', padding: '12px', borderRadius: '12px', marginBottom: '16px', fontSize: '13px', textAlign: 'center', fontWeight: 'bold' }}>
+            Acesso bloqueado por segurança. Tente novamente em {Math.floor(lockoutTimer / 60)}m {lockoutTimer % 60}s.
+          </div>
+        )}
 
         <form onSubmit={handleEmailLogin} className="login-form">
           <div className="form-group">
@@ -103,8 +183,12 @@ export default function Login() {
             </div>
           </div>
 
-          <button type="submit" className="btn btn-primary" disabled={loading}>
-            {loading ? 'A entrar...' : 'Entrar'}
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={loading || lockoutTimer > 0}
+          >
+            {loading ? 'A entrar...' : lockoutTimer > 0 ? 'Bloqueado' : 'Entrar'}
           </button>
         </form>
 

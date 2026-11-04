@@ -1,26 +1,25 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
+import { useCart } from '../context/CartContext.jsx'
 import '../styles/home.css'
 
-export default function BottomNav({ totalCarrinho = 1 }) {
+export default function BottomNav() {
+  const { totalItens } = useCart()
+
   return (
     <nav className="bottom-nav-container" aria-label="Navegação principal">
       <div className="bottom-nav-pill">
         <NavLink
-          to="/pizzas"
-          className={({ isActive }) =>
-            `nav-item ${isActive ? 'active' : ''}`
-          }
+          to="/pratos"
+          className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
         >
-          <span className="nav-icon">🍕</span>
-          <span className="nav-label">Pizzas</span>
+          <span className="nav-icon">🍽️</span>
+          <span className="nav-label">Pratos</span>
         </NavLink>
 
         <NavLink
           to="/bebidas"
-          className={({ isActive }) =>
-            `nav-item ${isActive ? 'active' : ''}`
-          }
+          className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
         >
           <span className="nav-icon">🥤</span>
           <span className="nav-label">Bebidas</span>
@@ -28,14 +27,12 @@ export default function BottomNav({ totalCarrinho = 1 }) {
 
         <NavLink
           to="/carrinho"
-          className={({ isActive }) =>
-            `nav-item ${isActive ? 'active' : ''}`
-          }
+          className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
         >
           <div className="icon-badge-wrapper">
             <span className="nav-icon">🛒</span>
-            {totalCarrinho > 0 && (
-              <span className="cart-badge">{totalCarrinho}</span>
+            {totalItens > 0 && (
+              <span className="cart-badge">{totalItens}</span>
             )}
           </div>
           <span className="nav-label">Carrinho</span>
@@ -43,9 +40,7 @@ export default function BottomNav({ totalCarrinho = 1 }) {
 
         <NavLink
           to="/pedidos"
-          className={({ isActive }) =>
-            `nav-item ${isActive ? 'active' : ''}`
-          }
+          className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
         >
           <span className="nav-icon">📋</span>
           <span className="nav-label">Pedidos</span>
@@ -53,9 +48,7 @@ export default function BottomNav({ totalCarrinho = 1 }) {
 
         <NavLink
           to="/perfil"
-          className={({ isActive }) =>
-            `nav-item ${isActive ? 'active' : ''}`
-          }
+          className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
         >
           <span className="nav-icon">👤</span>
           <span className="nav-label">Perfil</span>
