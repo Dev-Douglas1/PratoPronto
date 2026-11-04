@@ -16,7 +16,7 @@ export default function Pratos() {
   const [somenteOfertas, setSomenteOfertas] = useState(false)
   const { catalog, loading, error, confirmed, retry } = useCatalog()
   const filtradas = useMemo(
-    () => catalog.filter((prato) => prato.personalizavel && prato.nome.toLowerCase().includes(busca.toLowerCase()) && (!confirmed || !somenteOfertas || pizza.ofertaAtiva)),
+    () => catalog.filter((prato) => prato.personalizavel && prato.nome.toLowerCase().includes(busca.toLowerCase()) && (!confirmed || !somenteOfertas || prato.ofertaAtiva)),
     [busca, catalog, somenteOfertas, confirmed],
   )
 
