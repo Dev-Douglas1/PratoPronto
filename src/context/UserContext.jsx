@@ -184,24 +184,39 @@ export function UserProvider({ children }) {
 
   const finalizarOAuth = useCallback(async function finalizarOAuth(code) {
     const supabase = ready()
+    let user = null
 
-    // detectSessionInUrl=true pode consumir o código PKCE e limpar a query
-    // antes de AuthCallback montar. Por isso a sessão é verificada primeiro.
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
-    if (sessionError) throw criarErroSupabase(sessionError)
-
-    let user = sessionData.session?.user
-    if (!user && code) {
-      const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+    // O callback é processado manualmente em /auth/callback. Isso evita a
+    // corrida entre detectSessionInUrl e exchangeCodeForSession no PKCE.
+    if (code) {
+      const { data, error } = await withTimeout(
+        supabase.auth.exchangeCodeForSession(code),
+        12000,
+        'A confirmação do Google expirou. Inicie o login novamente.',
+      )
       if (error) throw criarErroSupabase(error)
-      user = data.user || data.session?.user
+      user = data.user || data.session?.user || null
     }
 
     if (!user) {
-      throw new Error('O Supabase não encontrou uma sessão Google ativa nem um código OAuth válido. Volte ao login e tente novamente.')
+      const { data, error } = await withTimeout(
+        supabase.auth.getSession(),
+        8000,
+        'Não foi possível recuperar a sessão do Google.',
+      )
+      if (error) throw criarErroSupabase(error)
+      user = data.session?.user || null
     }
 
-    const account = await readAccount(user)
+    if (!user) {
+      throw new Error('O Google retornou sem uma sessão válida. Volte ao login e tente novamente.')
+    }
+
+    const account = await withTimeout(
+      readAccount(user),
+      15000,
+      'Sua conta foi autenticada, mas o perfil demorou para carregar. Tente entrar novamente.',
+    )
     setUsuario(account)
     return account
   }, [])
