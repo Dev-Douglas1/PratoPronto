@@ -6,6 +6,7 @@ import InstallApp from '../components/InstallApp.jsx'
 import AddressSelector from '../components/AddressSelector.jsx'
 import AddressModal from '../components/AddressModal.jsx'
 import StoreFeed from '../components/StoreFeed.jsx'
+import BottomNav from '../components/BottomNav.jsx'
 import useNearbyStores from '../hooks/useNearbyStores.js'
 import { useUser } from '../context/UserContext.jsx'
 import { useCompany } from '../context/CompanyContext.jsx'
@@ -57,7 +58,7 @@ export default function Home() {
   }, [search])
 
   return (
-    <AppScreen className="home-screen">
+    <AppScreen className="home-screen screen-with-nav">
       <header className="home-status">
         <AddressSelector
           enderecoAtual={enderecoAtivo}
@@ -95,7 +96,7 @@ export default function Home() {
                 <Link
                   className="light-card marketplace-company-card"
                   key={company.id}
-                  to={company.id === DEFAULT_COMPANY_ID ? '/pizzas' : '/loja/' + company.id}
+                  to={company.id === DEFAULT_COMPANY_ID ? '/pratos' : '/loja/' + company.id}
                 >
                   <strong>{company.name}</strong>
                   <small>Ver cardápio →</small>
@@ -113,7 +114,7 @@ export default function Home() {
                 <Link
                   className="light-card marketplace-product-result"
                   key={(product.companyId || '') + ':' + product.id}
-                  to={product.companyId === DEFAULT_COMPANY_ID ? '/pizzas' : '/loja/' + product.companyId}
+                  to={product.companyId === DEFAULT_COMPANY_ID ? '/pratos' : '/loja/' + product.companyId}
                 >
                   <span>
                     {product.imagem ? (
@@ -146,7 +147,7 @@ export default function Home() {
         )}
 
         <div className="home-actions">
-          <Link className="btn btn-primary" to={autenticado ? '/pizzas' : '/login'}>
+          <Link className="btn btn-primary" to={autenticado ? '/pratos' : '/login'}>
             {autenticado ? 'Abrir PratoPronto' : 'Entrar e pedir'}
             <span aria-hidden="true">→</span>
           </Link>
@@ -169,6 +170,7 @@ export default function Home() {
         <InstallApp />
       </div>
 
+      <BottomNav />
       <AddressModal
         isOpen={modalEnderecoAberto}
         onClose={() => setModalEnderecoAberto(false)}

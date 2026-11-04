@@ -38,7 +38,7 @@ test('cadastro sem confirmação nunca renderiza uma tela protegida, mesmo marca
   assert.match(guarded({ usuario:{ uid:'ana',emailVerificado:true } }), /DADOS PRIVADOS/)
   assert.match(guarded({ usuario:{ uid:'ana',emailVerificado:false },allowUnverified:true }), /DADOS PRIVADOS/)
   assert.equal(accountDestination({ uid:'ana',emailVerificado:true,admin:false }), '/perfil')
-  assert.equal(accountDestination({ uid:'ana',emailVerificado:true,admin:false,nome:'Ana',telefone:'41999999999',cep:'83415235',cidade:'Colombo',uf:'PR',endereco:'Rua A',numero:'10',bairro:'Centro',privacyPolicyVersion:'2026-09-15',termsVersion:'2026-09-09' }), '/pizzas')
+  assert.equal(accountDestination({ uid:'ana',emailVerificado:true,admin:false,nome:'Ana',telefone:'41999999999',cep:'83415235',cidade:'Colombo',uf:'PR',endereco:'Rua A',numero:'10',bairro:'Centro',privacyPolicyVersion:'2026-09-15',termsVersion:'2026-09-09' }), '/pratos')
 })
 test('início, login, cadastro e recuperação mostram conteúdo sem serviços externos', async () => {
   for (const [name, expected] of [['Home', 'Entrar e pedir'], ['Login', 'Continuar com Google'], ['LoginTelefone', 'Receba um código por SMS'], ['Cadastro', 'Cadastrar'], ['RecuperarSenha', 'e-mail']]) {

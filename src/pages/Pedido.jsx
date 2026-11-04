@@ -34,7 +34,7 @@ export default function Pedido() {
         <div className="cart-panel">
           {lista.length === 0 ? (
             <div className="empty-state">
-              <span>🍕</span>
+              <span>🍽️</span>
               <p>Seu pedido ainda está vazio.</p>
             </div>
           ) : (
@@ -65,7 +65,7 @@ export default function Pedido() {
           </div>
 
           <div className="two-actions">
-            <button className="btn btn-secondary" onClick={() => navigate(companyId === DEFAULT_COMPANY_ID ? '/pizzas' : '/loja/' + companyId)}>Ver mais</button>
+            <button className="btn btn-secondary" onClick={() => navigate(companyId === DEFAULT_COMPANY_ID ? '/pratos' : '/loja/' + companyId)}>Ver mais</button>
             <button className="btn btn-primary" disabled={!lista.length} onClick={() => navigate('/pagamento')}>Pagar</button>
           </div>
         </div>

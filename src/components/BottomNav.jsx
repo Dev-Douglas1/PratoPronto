@@ -2,9 +2,10 @@ import { NavLink } from 'react-router-dom'
 import { useCart } from '../context/CartContext.jsx'
 
 const items = [
-  { to: '/pizzas', icon: '⌂', label: 'Cardápio' },
-  { to: '/sobremesas', icon: '🍰', label: 'Sobremesas' },
+  { to: '/', icon: '⌂', label: 'Início', end: true },
+  { to: '/pesquisar', icon: '⌕', label: 'Pesquisar' },
   { to: '/pedido', icon: '🛒', label: 'Carrinho', cart: true },
+  { to: '/acompanhamento', icon: '▤', label: 'Pedidos' },
   { to: '/perfil', icon: '●', label: 'Perfil' },
 ]
 
@@ -17,6 +18,7 @@ export default function BottomNav() {
         <NavLink
           key={item.to}
           to={item.to}
+          end={item.end}
           className={({ isActive }) => `bottom-nav__item ${isActive ? 'is-active' : ''}`}
         >
           <span className="bottom-nav__icon" aria-hidden="true">{item.icon}</span>
