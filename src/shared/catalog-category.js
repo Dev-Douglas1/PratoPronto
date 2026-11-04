@@ -21,9 +21,15 @@ export function isDessert(product) {
   return ['sobremesa', 'sobremesas', 'dessert', 'desserts', 'doce', 'doces', 'bolo', 'bolos', 'sorvete', 'sorvetes', 'pudim', 'pudins'].includes(category)
 }
 
+export function matchesProductSearch(product, query) {
+  const needle = normalizeSearch(query)
+  if (!needle) return true
+  return [product?.nome, product?.name, product?.descricao, product?.description, product?.companyName]
+    .some(value => normalizeSearch(value).includes(needle))
+}
+
 export function productCategoryLabel(product) {
   if (isBeverage(product)) return 'Bebida'
-  if (isPizza(product)) return 'Pizza'
   if (isDessert(product)) return 'Sobremesa'
   if (isMainDish(product)) return 'Prato'
   return 'Produto'
