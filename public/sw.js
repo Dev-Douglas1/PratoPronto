@@ -1,4 +1,4 @@
-const CACHE = 'prato-pronto-assets-v7'
+const CACHE = 'prato-pronto-assets-v8'
 const OFFLINE = '/offline.html'
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.add(OFFLINE)))
@@ -17,7 +17,7 @@ self.addEventListener('fetch', event => {
     return
   }
   // Somente arquivos estáticos; chamadas de API, login e dados nunca entram no cache.
-  if (!/^\/(assets|images|icons)\//.test(url.pathname) || !/\.(js|css|webp|png|svg|woff2)$/.test(url.pathname)) return
+  if (!/^\/(assets|images|icons)\//.test(url.pathname) || !/\.(js|css|webp|png|jpg|jpeg|svg|woff2)$/.test(url.pathname)) return
   event.respondWith(caches.match(event.request).then(cached => cached || fetch(event.request).then(async response => {
     if (response.ok && /^(image\/|text\/css|.*javascript|font\/)/.test(response.headers.get('Content-Type') || '')) {
       const cache = await caches.open(CACHE)
