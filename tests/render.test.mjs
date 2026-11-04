@@ -41,7 +41,7 @@ test('cadastro sem confirmação nunca renderiza uma tela protegida, mesmo marca
   assert.equal(accountDestination({ uid:'ana',emailVerificado:true,admin:false,nome:'Ana',telefone:'41999999999',cep:'83415235',cidade:'Colombo',uf:'PR',endereco:'Rua A',numero:'10',bairro:'Centro',privacyPolicyVersion:'2026-09-15',termsVersion:'2026-09-09' }), '/pizzas')
 })
 test('início, login, cadastro e recuperação mostram conteúdo sem serviços externos', async () => {
-  for (const [name, expected] of [['Home', 'Entrar e pedir'], ['Login', 'Continuar com Google'], ['LoginTelefone', 'Receba um código por SMS'], ['Cadastro', 'Cadastrar'], ['RecuperarSenha', 'e-mail']]) {
+  for (const [name, expected] of [['Home', 'Entrar e pedir'], ['Login', 'Continuar com Google'], ['LoginTelefone', 'Receba um código por SMS'], ['Cadastro', 'Continuar'], ['RecuperarSenha', 'e-mail']]) {
     const { default: Page } = await server.ssrLoadModule('/src/pages/' + name + '.jsx')
     assert.match(render(Page), new RegExp(expected))
   }
