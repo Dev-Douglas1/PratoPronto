@@ -17,11 +17,8 @@ export default function AuthCallback() {
         const providerError = params.get('error_description') || params.get('error')
         if (providerError) throw new Error(providerError.replace(/\+/g, ' '))
 
-        const code = params.get('code')
-        if (!code) throw new Error('O Google retornou sem o código de autorização. Verifique a URL de retorno OAuth no Supabase e tente novamente.')
-
-        // detectSessionInUrl=true faz a troca PKCE uma única vez na inicialização
-        // do cliente; esta tela aguarda a sessão persistida pelo próprio SDK.
+        // detectSessionInUrl=true faz o SDK processar o código PKCE automaticamente.
+        // O SDK pode limpar o parâmetro "code" após a troca; por isso não o validamos aqui.
         const conta = await finalizarOAuth()
         if (ativo) navigate(conta?.emailVerificado === true ? '/pratos' : '/verificar-email', { replace: true })
       } catch (error) {
