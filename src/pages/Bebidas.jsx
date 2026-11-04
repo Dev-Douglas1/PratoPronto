@@ -32,7 +32,7 @@ export default function Bebidas() {
           <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar bebida..." aria-label="Buscar bebidas" />
         </label>
         <div className="category-tabs" role="tablist" aria-label="Categorias">
-          <button role="tab" aria-selected="false" onClick={() => navigate('/pizzas')}>🍕 Pizzas</button>
+          <button role="tab" aria-selected="false" onClick={() => navigate('/pratos')}>🍽️ Pratos</button>
           <button className="is-active" role="tab" aria-selected="true">🥤 Bebidas</button>
           <button role="tab" aria-selected="false" onClick={() => navigate('/sobremesas')}>🍰 Sobremesas</button>
         </div>
