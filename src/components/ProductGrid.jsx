@@ -14,7 +14,7 @@ export default function ProductGrid({ produtos, readOnly = false }) {
   return (
     <div className="product-grid">
       {produtos.map((produto) => (
-        <ProductCard key={produto.id} produto={produto} readOnly={readOnly} />
+        <ProductCard key={(produto.companyId || 'loja') + ':' + produto.id} produto={produto} readOnly={readOnly} />
       ))}
     </div>
   )
