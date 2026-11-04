@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
 import TopBar from '../components/TopBar.jsx'
 import {
-  listAuditEvents, listPlatformRestaurants, setRestaurantAccountStatus,\n  listCompanyRegistrationRequests, reviewCompanyRegistration, listCompanyRegistrationDocuments, createCompanyDocumentUrl,
+  listAuditEvents, listPlatformRestaurants, setRestaurantAccountStatus,
+  listCompanyRegistrationRequests, reviewCompanyRegistration, listCompanyRegistrationDocuments, createCompanyDocumentUrl,
 } from '../services/marketplace.js'
 
 const LABEL = {
