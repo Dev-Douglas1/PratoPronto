@@ -5,6 +5,7 @@ import TopBar from '../components/TopBar.jsx'
 import BottomNav from '../components/BottomNav.jsx'
 import { searchMarketplace } from '../services/marketplace.js'
 import { DEFAULT_COMPANY_ID, normalizeSearch } from '../config/marketplace.js'
+import { isMainDish, isBeverage, isDessert } from '../shared/catalog-category.js'
 
 const filters = [
   { id: 'todos', label: 'Tudo' },
@@ -15,10 +16,9 @@ const filters = [
 
 function matchesCategory(product, filter) {
   if (filter === 'todos') return true
-  const category = normalizeSearch(product.categoria)
-  if (filter === 'pratos') return product.personalizavel === true || /prato|refei|pizza|massa|lanche|comida|executivo/.test(category)
-  if (filter === 'bebidas') return /bebida|drink|suco|refrigerante|agua|cafe/.test(category)
-  return /sobremesa|dessert|doce|bolo|sorvete|pudim/.test(category)
+  if (filter === 'pratos') return isMainDish(product)
+  if (filter === 'bebidas') return isBeverage(product)
+  return isDessert(product)
 }
 
 function storePath(companyId) {
