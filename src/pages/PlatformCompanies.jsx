@@ -14,7 +14,9 @@ const LABEL = {
 }
 
 export default function PlatformCompanies() {
-  const [companies, setCompanies] = useState([])\n  const [requests, setRequests] = useState([])\n  const [requestNote, setRequestNote] = useState('')
+  const [companies, setCompanies] = useState([])
+  const [requests, setRequests] = useState([])
+  const [requestNote, setRequestNote] = useState('')
   const [requestDocs, setRequestDocs] = useState({})
   const [audit, setAudit] = useState([])
   const [selected, setSelected] = useState(null)
