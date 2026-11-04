@@ -72,6 +72,7 @@ export default function App() {
         <Route path="/privacidade" element={protectedPage(<PrivacidadeDados />)} />
         <Route path="/loja/:companyId" element={<MarketplaceStore />} />
         <Route path="/empresa/nova" element={protectedPage(<CompanyOnboarding />)} />
+        <Route path="/cadastro-empresa" element={protectedPage(<CompanyOnboarding />)} />
         <Route path="/piloto/cadastro" element={protectedPage(<PilotSignup />)} />
         <Route path="/piloto" element={<PilotRoute><PilotPartner /></PilotRoute>} />
         <Route path="/plataforma/pilotos" element={<PlatformAdminRoute><PilotReview /></PlatformAdminRoute>} />
