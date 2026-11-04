@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
-import BrandMark from '../components/BrandMark.jsx'
 import { useUser } from '../context/UserContext.jsx'
 import { accountDestination } from '../utils/access.js'
 
@@ -23,6 +22,7 @@ export default function AuthCallback() {
         if (providerError) throw new Error(providerError.replace(/\+/g, ' '))
 
         const code = params.get('code')
+        if (!code) throw new Error('O Google retornou sem o código de autorização. Verifique a URL de retorno OAuth no Supabase e tente novamente.')
         if (!oauthCompletion.promise || oauthCompletion.code !== code) {
           oauthCompletion = { code, promise: finalizarOAuth(code) }
         }
@@ -42,7 +42,6 @@ export default function AuthCallback() {
   return (
     <AppScreen className="centered-screen">
       <div className="login-wrapper">
-        <BrandMark compact showTagline={false} />
         <div className="login-card">
           <span className="eyebrow">LOGIN COM GOOGLE</span>
           <h2>{erro ? 'Não foi possível entrar' : 'Concluindo seu acesso...'}</h2>
