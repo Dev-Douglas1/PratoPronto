@@ -9,14 +9,14 @@ import BottomNav from '../components/BottomNav.jsx'
 import { useUser } from '../context/UserContext.jsx'
 import useCatalog from '../hooks/useCatalog.js'
 
-export default function Pizzas() {
+export default function Pratos() {
   const navigate = useNavigate()
   const { usuario } = useUser()
   const [busca, setBusca] = useState('')
   const [somenteOfertas, setSomenteOfertas] = useState(false)
   const { catalog, loading, error, confirmed, retry } = useCatalog()
   const filtradas = useMemo(
-    () => catalog.filter((pizza) => pizza.personalizavel && pizza.nome.toLowerCase().includes(busca.toLowerCase()) && (!confirmed || !somenteOfertas || pizza.ofertaAtiva)),
+    () => catalog.filter((prato) => prato.personalizavel && prato.nome.toLowerCase().includes(busca.toLowerCase()) && (!confirmed || !somenteOfertas || pizza.ofertaAtiva)),
     [busca, catalog, somenteOfertas, confirmed],
   )
 
@@ -30,15 +30,15 @@ export default function Pizzas() {
         </div>
         <label className="search-box">
           <span aria-hidden="true">⌕</span>
-          <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar pizza..." />
+          <input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar prato..." />
         </label>
         <div className="category-tabs" role="tablist" aria-label="Categorias">
-          <button className="is-active" role="tab" aria-selected="true">🍕 Pizzas</button>
+          <button className="is-active" role="tab" aria-selected="true">🍽️ Pratos</button>
           <button role="tab" aria-selected="false" onClick={() => navigate('/bebidas')}>🥤 Bebidas</button>
           <button role="tab" aria-selected="false" onClick={() => navigate('/sobremesas')}>🍰 Sobremesas</button>
         </div>
         <button className="offer-filter" type="button" disabled={!confirmed} aria-pressed={confirmed && somenteOfertas} onClick={() => setSomenteOfertas(value => !value)}>{confirmed && somenteOfertas ? '✓ Mostrando ofertas · ver todos' : 'Ver produtos em oferta'}</button>
-        <div className="section-heading"><h2>Pizzas favoritas</h2><span>{filtradas.length} opções</span></div>
+        <div className="section-heading"><h2>Pratos populares</h2><span>{filtradas.length} opções</span></div>
         <StoreInfo />
         <CatalogResults produtos={filtradas} loading={loading} error={error} retry={retry} confirmed={confirmed} />
         <BottomActions>
