@@ -36,35 +36,52 @@ export default function Cadastro() {
   const [enviando, setEnviando] = useState(false)
   const [buscandoCep, setBuscandoCep] = useState(false)
 
-  // Preenchimento automático ao digitar CEP (8 dígitos)
+  // Busca o CEP com cancelamento para impedir que uma resposta antiga
+  // sobrescreva o endereço digitado para um CEP mais recente.
   useEffect(() => {
-    const cepNumerico = dados.cep.replace(/\D/g, '')
+    const cepNumerico = dados.cep.replace(/\\D/g, '')
+    if (cepNumerico.length !== 8) {
+      setBuscandoCep(false)
+      return undefined
+    }
 
-    if (cepNumerico.length === 8) {
-      setBuscandoCep(true)
-      fetch(`https://viacep.com.br/ws/${cepNumerico}/json/`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (!data.erro) {
-            setDados((prev) => ({
-              ...prev,
-              endereco: data.logradouro || prev.endereco,
-              bairro: data.bairro || prev.bairro,
-              cidade: data.localidade || prev.cidade,
-              uf: data.uf || prev.uf,
-              complemento: data.complemento || prev.complemento,
-            }))
-            setErro('')
-          } else {
-            setErro('CEP não encontrado. Preencha o endereço manualmente.')
-          }
-        })
-        .catch(() => {
+    const controller = new AbortController()
+    let active = true
+    setBuscandoCep(true)
+
+    fetch(`https://viacep.com.br/ws/${cepNumerico}/json/`, { signal: controller.signal })
+      .then(response => {
+        if (!response.ok) throw new Error('Falha na consulta do CEP.')
+        return response.json()
+      })
+      .then(data => {
+        if (!active) return
+        if (!data.erro) {
+          setDados(prev => ({
+            ...prev,
+            endereco: data.logradouro || prev.endereco,
+            bairro: data.bairro || prev.bairro,
+            cidade: data.localidade || prev.cidade,
+            uf: data.uf || prev.uf,
+            complemento: data.complemento || prev.complemento,
+          }))
+          setErro('')
+        } else {
+          setErro('CEP não encontrado. Preencha o endereço manualmente.')
+        }
+      })
+      .catch(error => {
+        if (active && error.name !== 'AbortError') {
           setErro('Erro ao consultar o CEP. Verifique a conexão.')
-        })
-        .finally(() => {
-          setBuscandoCep(false)
-        })
+        }
+      })
+      .finally(() => {
+        if (active) setBuscandoCep(false)
+      })
+
+    return () => {
+      active = false
+      controller.abort()
     }
   }, [dados.cep])
 
