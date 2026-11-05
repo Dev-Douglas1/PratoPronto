@@ -26,6 +26,7 @@ const Pedido = lazy(() => import('./pages/Pedido.jsx'))
 const Pagamento = lazy(() => import('./pages/Pagamento.jsx'))
 const Acompanhamento = lazy(() => import('./pages/Acompanhamento.jsx'))
 const Perfil = lazy(() => import('./pages/Perfil.jsx'))
+const Favoritos = lazy(() => import('./pages/Favoritos.jsx'))
 const PoliticaPrivacidade = lazy(() => import('./pages/PoliticaPrivacidade.jsx'))
 const TermosUso = lazy(() => import('./pages/TermosUso.jsx'))
 const PrivacidadeDados = lazy(() => import('./pages/PrivacidadeDados.jsx'))
@@ -69,6 +70,7 @@ export default function App() {
         <Route path="/pagamento" element={protectedPage(<Pagamento />)} />
         <Route path="/carrinho" element={protectedPage(<Pedido />)} />
         <Route path="/perfil" element={protectedPage(<Perfil />)} />
+        <Route path="/favoritos" element={protectedPage(<Favoritos />)} />
         
         {/* Gestão e Fluxos Secundários */}
         <Route path="/acompanhamento" element={protectedPage(<Acompanhamento />)} />
