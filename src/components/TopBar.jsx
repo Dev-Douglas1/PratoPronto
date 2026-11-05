@@ -16,7 +16,7 @@ export default function TopBar({ titulo, voltar = true, carrinho = false, perfil
       )}
 
       <div className="title-pill">
-        <span className="mini-brand" aria-hidden="true" />
+        <img className="mini-brand" src="/images/pratopronto-logo.svg" alt="" aria-hidden="true" />
         <span>{titulo}</span>
       </div>
 
