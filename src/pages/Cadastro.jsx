@@ -6,7 +6,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
 import { useUser } from '../context/UserContext.jsx'
 import { traduzirErroSupabase } from '../utils/supabaseError.js'
-import '../styles/home.css'
+import '../styles/auth.css'
 
 const initialState = {
   nome: '',
