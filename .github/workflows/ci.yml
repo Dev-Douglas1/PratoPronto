@@ -2,7 +2,7 @@ name: Verificar PratoPronto
 
 on:
   push:
-    branches: [main, codex/multiempresa-piloto-parceiro]
+    branches: [main, codex/multiempresa-piloto-parceiro, codex/company-settings]
   pull_request:
     branches: [main]
 
