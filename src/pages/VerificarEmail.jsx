@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
 import { useUser } from '../context/UserContext.jsx'
-import '../styles/home.css'
+import '../styles/auth.css'
 
 export default function VerificarEmail() {
   const navigate = useNavigate()
