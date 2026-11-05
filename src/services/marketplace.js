@@ -1,6 +1,7 @@
 import { getSupabase, supabaseConfigured } from '../lib/supabase.js'
 import { callServer } from './server.js'
 import { normalizeSearch, DEFAULT_COMPANY_ID } from '../config/marketplace.js'
+import { matchingCompanies, matchingProducts } from '../shared/marketplace-search.js'
 import { orderFromRow } from './storage.js'
 import { restaurantIdForSlug, settingFromProduct } from './company.js'
 
@@ -347,32 +348,31 @@ export async function searchMarketplace(term = '') {
   const supabase = ready()
   const needle = normalizeSearch(term)
   const [{ data: companies, error: companiesError }, { data: products, error: productsError }] = await Promise.all([
-    supabase.from('restaurantes').select('id,slug,nome,descricao,telefone,endereco,ativo').eq('ativo', true).limit(100),
-    supabase.from('products').select('id,restaurant_id,name,description,category,price_cents,image_url,active,slug,config,promotion').eq('active', true).limit(300),
+    supabase.from('restaurantes').select('id,slug,nome,ativo').eq('ativo', true).order('nome').limit(100),
+    supabase.from('products').select('id,restaurant_id,name,description,category,price_cents,image_url,active,slug,config,promotion').eq('active', true).order('name').limit(500),
   ])
   if (companiesError) throw companiesError
   if (productsError) throw productsError
+
   const companyMap = new Map((companies || []).map(company => [company.id, company]))
-  return {
-    companies: (companies || [])
-      .filter(company => !needle || normalizeSearch(company.nome).includes(needle))
-      .map(company => ({ id: company.slug, name: company.nome, active: company.ativo })),
-    products: (products || [])
-      .map(row => ({
-        id: row.slug,
-        companyId: companyMap.get(row.restaurant_id)?.slug,
-        companyName: companyMap.get(row.restaurant_id)?.nome,
-        nome: row.name,
-        descricao: row.description,
-        categoria: row.category,
-        preco: Number(row.price_cents || 0) / 100,
-        imagem: row.image_url || '',
-        personalizavel: row.config?.personalizavel === true,
-        disponivel: row.active,
-        promocao: row.promotion,
-      }))
-      .filter(product => product.companyId && (!needle || [product.nome, product.descricao, product.categoria, product.companyName].some(value => normalizeSearch(value).includes(needle)))),
-  }
+  const mappedProducts = (products || []).map(row => ({
+    id: row.slug,
+    companyId: companyMap.get(row.restaurant_id)?.slug,
+    companyName: companyMap.get(row.restaurant_id)?.nome,
+    nome: row.name,
+    descricao: row.description || '',
+    categoria: row.category || '',
+    preco: Number(row.price_cents || 0) / 100,
+    imagem: row.image_url || '',
+    personalizavel: row.config?.personalizavel === true,
+    disponivel: row.active,
+    promocao: row.promotion,
+  })).filter(product => product.companyId)
+
+  const filteredProducts = matchingProducts(mappedProducts, needle)
+  const filteredCompanies = matchingCompanies((companies || []).map(company => ({ id: company.slug, name: company.nome, active: company.ativo })), filteredProducts, needle)
+
+  return { companies: filteredCompanies, products: filteredProducts }
 }
 
 export async function getMyCompanyRegistrationRequest() {
