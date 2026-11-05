@@ -1,8 +1,8 @@
-name: Verificar PratoPronto
+name: Verificar PratoPronto (configurações)
 
 on:
   push:
-    branches: [main, codex/multiempresa-piloto-parceiro]
+    branches: [main, codex/multiempresa-piloto-parceiro, codex/company-settings]
   pull_request:
     branches: [main]
 
