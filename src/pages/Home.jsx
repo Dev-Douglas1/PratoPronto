@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import AppScreen from '../components/AppScreen.jsx'
+import BrandMark from '../components/BrandMark.jsx'
 import useAuth from '../hooks/useAuth.js'
 import { useCompany } from '../context/CompanyContext.jsx'
 
@@ -44,6 +45,7 @@ export default function Home() {
   return (
     <AppScreen className="home-screen">
       <section className="home-hero" aria-labelledby="home-title">
+        <BrandMark />
         <span className="hero-tagline">{textosHero.titulo}</span>
         <p className="eyebrow">{textosHero.subtitulo}</p>
         <h1 id="home-title">{textosHero.frase}</h1>
