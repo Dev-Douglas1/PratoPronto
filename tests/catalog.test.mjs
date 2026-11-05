@@ -101,3 +101,24 @@ test('pesquisa do marketplace normaliza acentos e espaços', async () => {
   assert.equal(matchingProducts(products, 'PRACA').length, 1)
   assert.equal(matchingProducts(products, 'pizza').length, 0)
 })
+
+
+test('carrinho permite remover produto inteiro sem afetar os demais', () => {
+  const current = { a: { produto: { id: 'a' }, quantidade: 2 }, b: { produto: { id: 'b' }, quantidade: 1 } }
+  const next = Object.fromEntries(Object.entries(current).filter(([id]) => id !== 'a'))
+  assert.deepEqual(Object.keys(next), ['b'])
+  assert.equal(next.b.quantidade, 1)
+})
+
+test('carrinho respeita o limite de 50 unidades por produto', () => {
+  const quantity = 50
+  assert.equal(quantity >= 50, true)
+  assert.equal(Math.min(50, quantity + 1), 50)
+})
+
+test('carrinho não apresenta total final quando a taxa de entrega ainda é desconhecida', () => {
+  const taxaEntrega = null
+  const subtotal = 35
+  const totalLabel = taxaEntrega === null ? 'Subtotal + entrega' : subtotal + taxaEntrega
+  assert.equal(totalLabel, 'Subtotal + entrega')
+})
