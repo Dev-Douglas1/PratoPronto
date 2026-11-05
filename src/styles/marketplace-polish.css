@@ -417,3 +417,31 @@
 .app-screen:not(.profile-page) .product-card-detail-link:focus-visible { outline: 2px solid var(--yellow); outline-offset: 3px; border-radius: 16px; }
 .app-screen:not(.profile-page) .product-card-content { padding-bottom: 4px; }
 .app-screen:not(.profile-page) .product-card-bottom { padding: 0 11px 11px; }
+
+/* Melhorias da busca: ação de limpar, resumo de resultados e estados acessíveis. */
+.app-screen:not(.profile-page) .search-input-wrap { position: relative; }
+.app-screen:not(.profile-page) .search-input-wrap .search-box { padding-right: 76px; }
+.app-screen:not(.profile-page) .search-clear {
+  position: absolute; top: 50%; right: 12px; transform: translateY(-50%);
+  min-height: 34px; padding: 0 9px; border-radius: 9px;
+  background: #292929; color: var(--yellow); font-size: .76rem; font-weight: 700;
+}
+.app-screen:not(.profile-page) .search-summary { margin: 18px 0 -8px; color: #aaa; font-size: .78rem; }
+.app-screen:not(.profile-page) .search-company-list,
+.app-screen:not(.profile-page) .search-product-list { display: grid; gap: 9px; }
+.app-screen:not(.profile-page) .search-company-item,
+.app-screen:not(.profile-page) .search-product-item {
+  display: flex; align-items: center; gap: 12px; min-width: 0;
+}
+.app-screen:not(.profile-page) .search-company-item > span:nth-child(2),
+.app-screen:not(.profile-page) .search-product-copy { display: grid; flex: 1; gap: 4px; min-width: 0; }
+.app-screen:not(.profile-page) .search-company-item strong,
+.app-screen:not(.profile-page) .search-product-item strong { color: #fff; overflow-wrap: anywhere; }
+.app-screen:not(.profile-page) .search-company-item small,
+.app-screen:not(.profile-page) .search-product-item small { font-size: .73rem; line-height: 1.35; }
+.app-screen:not(.profile-page) .search-result-icon { display: grid; flex: 0 0 42px; width: 42px; height: 42px; place-items: center; border-radius: 12px; background: #292929; color: var(--yellow); font-size: 1.2rem; }
+.app-screen:not(.profile-page) .search-product-item img { width: 66px; height: 66px; flex: 0 0 66px; object-fit: cover; border-radius: 11px; background: #292929; }
+.app-screen:not(.profile-page) .search-product-copy b { margin-top: 2px; font-size: .9rem; }
+.app-screen:not(.profile-page) .search-retry { min-height: 42px; margin-top: 8px; padding: 0 16px; border-radius: 11px; background: var(--yellow); color: #111; font-weight: 750; }
+.app-screen:not(.profile-page) .search-company-item:focus-visible,
+.app-screen:not(.profile-page) .search-product-item:focus-visible { outline: 2px solid var(--yellow); outline-offset: 3px; }
