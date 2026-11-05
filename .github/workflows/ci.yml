@@ -1,4 +1,4 @@
-name: Verificar PratoPronto
+name: Verificar PratoPronto (configurações)
 
 on:
   push:
