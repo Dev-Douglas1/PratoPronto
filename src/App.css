@@ -90,3 +90,10 @@
   .search-category-tabs { gap: 6px; }
   .search-category-tabs button { padding-inline: 10px; }
 }
+
+
+/* Símbolo da marca usado no cabeçalho. */
+.app-screen:not(.profile-page) .mini-brand {
+  display: block; width: 30px; height: 30px; flex: 0 0 30px; object-fit: contain;
+}
+.brand-logo-image { aspect-ratio: 1; }
