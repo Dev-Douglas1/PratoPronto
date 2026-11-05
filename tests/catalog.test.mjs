@@ -80,3 +80,24 @@ test('a categoria antiga Pizza aparece como Prato no marketplace', () => {
   assert.equal(productCategoryLabel({ categoria: 'Pizza' }), 'Prato')
   assert.equal(productCategoryLabel({ categoria: 'Pratos' }), 'Prato')
 })
+
+
+test('pesquisa do marketplace inclui a loja quando o produto dela corresponde ao termo', async () => {
+  const { matchingCompanies, matchingProducts } = await import('../src/shared/marketplace-search.js')
+  const companies = [{ id: 'loja-a', name: 'Cozinha da Praça' }, { id: 'loja-b', name: 'Mercado Central' }]
+  const products = [
+    { id: '1', companyId: 'loja-a', companyName: 'Cozinha da Praça', nome: 'Frango à Parmegiana' },
+    { id: '2', companyId: 'loja-b', companyName: 'Mercado Central', nome: 'Suco de laranja' },
+  ]
+  assert.deepEqual(matchingProducts(products, 'parmegiana').map(item => item.id), ['1'])
+  assert.deepEqual(matchingCompanies(companies, matchingProducts(products, 'parmegiana'), 'parmegiana').map(item => item.id), ['loja-a'])
+  assert.deepEqual(matchingCompanies(companies, [], 'central').map(item => item.id), ['loja-b'])
+})
+
+test('pesquisa do marketplace normaliza acentos e espaços', async () => {
+  const { matchingProducts } = await import('../src/shared/marketplace-search.js')
+  const products = [{ nome: 'Açaí com granola', companyName: 'Sabor da Praça' }]
+  assert.equal(matchingProducts(products, ' acai ').length, 1)
+  assert.equal(matchingProducts(products, 'PRACA').length, 1)
+  assert.equal(matchingProducts(products, 'pizza').length, 0)
+})
