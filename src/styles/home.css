@@ -103,3 +103,16 @@
   .home-screen { padding-inline: 14px; }
   .home-screen .hero-tagline { font-size: .68rem; }
 }
+
+
+/* Proteção contra overflow em janelas estreitas e quando o DevTools está acoplado. */
+.home-screen { width: 100%; min-width: 0; overflow-x: clip; }
+.home-screen > *, .home-screen .home-hero > * { min-width: 0; max-width: 100%; }
+.home-screen .hero-tagline, .home-screen .subtle-badge { overflow-wrap: anywhere; }
+.home-screen .home-hero h1 { width: 100%; overflow-wrap: anywhere; }
+.home-screen .home-actions .btn { min-width: 0; white-space: normal; }
+@media (max-width: 380px) {
+  .home-screen { padding-inline: 14px; }
+  .home-screen .home-hero h1 { font-size: clamp(1.55rem, 8vw, 2rem); }
+  .home-screen .subtle-badge { border-radius: 14px; line-height: 1.45; }
+}
