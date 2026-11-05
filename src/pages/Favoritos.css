@@ -1,0 +1,11 @@
+.favorites-surface { width: 100%; max-width: 620px; margin: 0 auto; }
+.favorites-heading { margin: 12px 0 24px; }
+.favorites-eyebrow { color: var(--yellow); font-size: .72rem; font-weight: 800; letter-spacing: .12em; }
+.favorites-heading h1 { margin: 9px 0; color: #fff; font-size: clamp(1.8rem, 7vw, 2.4rem); letter-spacing: -.045em; }
+.favorites-heading p { max-width: 38rem; color: #aaa; font-size: .92rem; line-height: 1.55; }
+.favorites-empty { display: grid; justify-items: center; gap: 10px; margin: 28px 0; padding: 36px 20px; border: 1px dashed #484323; border-radius: 20px; background: rgba(255,235,24,.045); text-align: center; }
+.favorites-empty__icon { display: grid; width: 64px; height: 64px; place-items: center; border-radius: 20px; background: rgba(255,235,24,.12); color: var(--yellow); font-size: 2.5rem; }
+.favorites-empty h2 { margin: 4px 0 0; color: #fff; font-size: 1.15rem; }
+.favorites-empty p { max-width: 290px; margin: 0 0 8px; color: #aaa; font-size: .88rem; line-height: 1.5; }
+.favorites-empty .btn { display: inline-flex; min-height: 46px; align-items: center; padding: 0 18px; border-radius: 12px; color: #111; text-decoration: none; font-weight: 750; }
+.favorites-page .bottom-nav-pill { grid-template-columns: repeat(5, minmax(0, 1fr)); }
