@@ -41,6 +41,12 @@ export function CartProvider({ children }) {
       error.code = 'different-company'
       throw error
     }
+    const currentQuantity = itens[produto.id]?.quantidade ?? 0
+    if (currentQuantity >= 50) {
+      const error = new Error('O limite é de 50 unidades por produto.')
+      error.code = 'quantity-limit'
+      throw error
+    }
     setItens((atual) => ({
       ...atual,
       [produto.id]: {
@@ -68,6 +74,15 @@ export function CartProvider({ children }) {
     })
   }
 
+  function removerItem(produtoId) {
+    setItens(atual => {
+      if (!atual[produtoId]) return atual
+      const proximo = { ...atual }
+      delete proximo[produtoId]
+      return proximo
+    })
+  }
+
   function limpar() {
     setItens({})
   }
@@ -89,7 +104,7 @@ export function CartProvider({ children }) {
   const total = subtotal + (taxaEntrega ?? 0)
 
   const valor = useMemo(
-    () => ({ itens, lista, companyId, quantidadeTotal, subtotal, taxaEntrega, total, adicionar, remover, limpar }),
+    () => ({ itens, lista, companyId, quantidadeTotal, subtotal, taxaEntrega, total, adicionar, remover, removerItem, limpar }),
     [itens, lista, companyId, quantidadeTotal, subtotal, taxaEntrega, total],
   )
 
