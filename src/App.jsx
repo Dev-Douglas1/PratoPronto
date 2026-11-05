@@ -18,6 +18,7 @@ const RecuperarSenha = lazy(() => import('./pages/RecuperarSenha.jsx'))
 const RedefinirSenha = lazy(() => import('./pages/RedefinirSenha.jsx'))
 const VerificarEmail = lazy(() => import('./pages/VerificarEmail.jsx'))
 const Pizzas = lazy(() => import('./pages/Pizzas.jsx'))
+const ProdutoDetalhes = lazy(() => import('./pages/ProdutoDetalhes.jsx'))
 const Pesquisar = lazy(() => import('./pages/Pesquisar.jsx'))
 const Bebidas = lazy(() => import('./pages/Bebidas.jsx'))
 const Sobremesas = lazy(() => import('./pages/Sobremesas.jsx'))
@@ -56,6 +57,7 @@ export default function App() {
         
         {/* Categorias e Navegação Principal */}
         <Route path="/pratos" element={protectedPage(<Pizzas />)} />
+        <Route path="/produto/:companyId/:productId" element={protectedPage(<ProdutoDetalhes />)} />
         <Route path="/pizzas" element={<Navigate to="/pratos" replace />} />
         <Route path="/pesquisar" element={protectedPage(<Pesquisar />)} />
         <Route path="/bebidas" element={protectedPage(<Bebidas />)} />
