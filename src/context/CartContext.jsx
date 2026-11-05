@@ -5,6 +5,7 @@ import useStorefront from '../hooks/useStorefront.js'
 import { useUser } from './UserContext.jsx'
 import { estimarEntrega } from '../utils/entrega.js'
 import { DEFAULT_COMPANY_ID } from '../config/marketplace.js'
+import { nextCartItemQuantity, removeCartItem } from '../shared/cart.js'
 
 const CartContext = createContext(null)
 const STORAGE_KEY = 'prato-pronto:carrinho'
@@ -42,16 +43,12 @@ export function CartProvider({ children }) {
       throw error
     }
     const currentQuantity = itens[produto.id]?.quantidade ?? 0
-    if (currentQuantity >= 50) {
-      const error = new Error('O limite é de 50 unidades por produto.')
-      error.code = 'quantity-limit'
-      throw error
-    }
+    const nextQuantity = nextCartItemQuantity(currentQuantity)
     setItens((atual) => ({
       ...atual,
       [produto.id]: {
         produto: { ...produto, companyId: incomingCompanyId },
-        quantidade: Math.min(50, (atual[produto.id]?.quantidade ?? 0) + 1),
+        quantidade: Math.min(50, (atual[produto.id]?.quantidade ?? 0) + 1, nextQuantity),
       },
     }))
   }
@@ -75,12 +72,7 @@ export function CartProvider({ children }) {
   }
 
   function removerItem(produtoId) {
-    setItens(atual => {
-      if (!atual[produtoId]) return atual
-      const proximo = { ...atual }
-      delete proximo[produtoId]
-      return proximo
-    })
+    setItens(atual => removeCartItem(atual, produtoId))
   }
 
   function limpar() {
