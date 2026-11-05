@@ -1,6 +1,6 @@
 const DAYS = 7
 
-const digits = value => String(value ?? '').replace(/\\D/g, '')
+const digits = value => String(value ?? '').replace(/\D/g, '')
 const text = value => String(value ?? '').trim()
 
 export function validateCompanySettings(form) {
@@ -9,7 +9,7 @@ export function validateCompanySettings(form) {
   if (text(form.legalName).length < 2 || text(form.legalName).length > 160) errors.push('Informe o nome do responsável legal (2 a 160 caracteres).')
   const phone = digits(form.phone)
   if (phone.length < 10 || phone.length > 13) errors.push('Informe um telefone válido com DDD.')
-  if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(text(form.privacyEmail))) errors.push('Informe um e-mail de privacidade válido.')
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text(form.privacyEmail))) errors.push('Informe um e-mail de privacidade válido.')
 
   const address = form.address || {}
   if (text(address.endereco).length < 2) errors.push('Informe a rua ou avenida.')
@@ -46,7 +46,7 @@ export function validateCompanySettings(form) {
     const seen = new Set()
     form.zones.forEach(zone => {
       const name = text(zone.bairro)
-      const key = name.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLocaleLowerCase('pt-BR')
+      const key = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR')
       if (name.length < 2 || name.length > 100) errors.push('Cada bairro precisa ter entre 2 e 100 caracteres.')
       if (seen.has(key)) errors.push('Remova bairros duplicados da área de entrega.')
       seen.add(key)
