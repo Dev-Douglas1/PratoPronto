@@ -50,9 +50,9 @@ export default function ProductCard({ produto, readOnly = false }) {
       </Link>
       <div className="product-card-bottom">
         <div className="product-price">
-          <small>{readOnly ? 'Preço de referência' : 'Por unidade'}</small>
-          {displayPrice.oferta && <del aria-label="Preço anterior">{formatarMoeda(displayPrice.precoOriginal)}</del>}
-          <strong>{formatarMoeda(displayPrice.preco)}</strong>
+          <small>{readOnly ? 'Preço não confirmado' : 'Por unidade'}</small>
+          {!readOnly && displayPrice.oferta && <del aria-label="Preço anterior">{formatarMoeda(displayPrice.precoOriginal)}</del>}
+          <strong>{readOnly ? 'Indisponível' : formatarMoeda(displayPrice.preco)}</strong>
         </div>
         <div className="product-card-actions">
           <button type="button" className={`favorite-button ${favorite ? 'is-favorite' : ''}`}
