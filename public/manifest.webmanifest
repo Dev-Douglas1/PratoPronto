@@ -8,13 +8,13 @@
   "theme_color": "#ffeb18",
   "icons": [
     {
-      "src": "/icons/app-icon.svg?v=2",
+      "src": "/icons/app-icon.svg?v=3",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/icons/app-icon.svg?v=2",
+      "src": "/icons/app-icon.svg?v=3",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "maskable"
