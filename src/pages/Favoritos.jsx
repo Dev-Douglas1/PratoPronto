@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
 import TopBar from '../components/TopBar.jsx'
 import BottomNav from '../components/BottomNav.jsx'
@@ -30,7 +31,7 @@ export default function Favoritos() {
             <span className="favorites-empty__icon" aria-hidden="true">♡</span>
             <h2>Você ainda não tem favoritos</h2>
             <p>Toque no coração de um produto para salvá-lo nesta lista.</p>
-            <a className="btn btn-primary" href="/pratos">Explorar produtos</a>
+            <Link className="btn btn-primary" to="/pratos">Explorar produtos</Link>
           </section>
         )}
       </main>
