@@ -1,14 +1,17 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useCart } from '../context/CartContext.jsx'
+import { useFavorites } from '../context/FavoritesContext.jsx'
 import { productPrice } from '../utils/productPrice.js'
 import { formatarMoeda } from '../utils/moeda.js'
 import { productCategoryLabel } from '../shared/catalog-category.js'
 
 export default function ProductCard({ produto, readOnly = false }) {
   const { adicionar } = useCart()
+  const { isFavorite, toggleFavorite } = useFavorites()
   const [adicionado, setAdicionado] = useState(false)
   const [cartError, setCartError] = useState('')
+  const favorite = isFavorite(produto)
   const displayPrice = productPrice({ ...produto, personalizavel: false })
   const detailUrl = `/produto/${encodeURIComponent(produto.companyId || 'pratopronto')}/${encodeURIComponent(produto.id)}`
 
@@ -22,6 +25,10 @@ export default function ProductCard({ produto, readOnly = false }) {
     } catch (error) {
       setCartError(error.message || 'Não foi possível adicionar este produto.')
     }
+  }
+
+  function handleFavorite() {
+    toggleFavorite({ ...produto, preco: displayPrice.preco, precoOriginal: displayPrice.precoOriginal })
   }
 
   return (
@@ -47,11 +54,19 @@ export default function ProductCard({ produto, readOnly = false }) {
           {displayPrice.oferta && <del aria-label="Preço anterior">{formatarMoeda(displayPrice.precoOriginal)}</del>}
           <strong>{formatarMoeda(displayPrice.preco)}</strong>
         </div>
-        <button type="button" disabled={readOnly || produto.disponivel === false}
-          className={`add-button ${adicionado ? 'is-added' : ''}`} onClick={handleAdd}
-          aria-label={`Adicionar ${produto.nome} ao carrinho`}>
-          {adicionado ? '✓' : '+'}
-        </button>
+        <div className="product-card-actions">
+          <button type="button" className={`favorite-button ${favorite ? 'is-favorite' : ''}`}
+            onClick={handleFavorite} aria-pressed={favorite}
+            aria-label={favorite ? `Remover ${produto.nome} dos favoritos` : `Adicionar ${produto.nome} aos favoritos`}
+            title={favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}>
+            {favorite ? '♥' : '♡'}
+          </button>
+          <button type="button" disabled={readOnly || produto.disponivel === false}
+            className={`add-button ${adicionado ? 'is-added' : ''}`} onClick={handleAdd}
+            aria-label={`Adicionar ${produto.nome} ao carrinho`}>
+            {adicionado ? '✓' : '+'}
+          </button>
+        </div>
       </div>
       {cartError && <p className="form-error" role="alert">{cartError}</p>}
     </article>
