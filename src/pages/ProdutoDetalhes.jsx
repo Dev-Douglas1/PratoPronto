@@ -12,7 +12,7 @@ export default function ProdutoDetalhes() {
   const { companyId, productId } = useParams()
   const navigate = useNavigate()
   const { catalog, loading, error, confirmed, retry } = useCatalog()
-  const { adicionar, quantidadeTotal } = useCart()
+  const { adicionar, quantidadeTotal, itens } = useCart()
   const [quantity, setQuantity] = useState(1)
   const [feedback, setFeedback] = useState('')
   const [cartError, setCartError] = useState('')
@@ -20,15 +20,21 @@ export default function ProdutoDetalhes() {
   const product = useMemo(() => catalog.find(item => item.companyId === companyId && item.id === productId), [catalog, companyId, productId])
   const price = product ? productPrice({ ...product, personalizavel: false }) : null
   const available = confirmed && product?.disponivel !== false
+  const currentQuantity = product ? (itens[product.id]?.quantidade || 0) : 0
+  const addableQuantity = Math.min(quantity, Math.max(0, 50 - currentQuantity))
 
   function addToCart() {
     if (!product || !available) return
     try {
-      for (let i = 0; i < quantity; i += 1) {
+      if (addableQuantity < 1) {
+        setCartError('Você já atingiu o limite de 50 unidades deste produto no carrinho.')
+        return
+      }
+      for (let i = 0; i < addableQuantity; i += 1) {
         adicionar({ ...product, preco: price.preco, precoOriginal: price.precoOriginal, oferta: price.oferta, personalizavel: false })
       }
       setCartError('')
-      setFeedback(quantity === 1 ? 'Produto adicionado ao carrinho.' : quantity + ' unidades adicionadas ao carrinho.')
+      setFeedback(addableQuantity === 1 ? 'Produto adicionado ao carrinho.' : addableQuantity + ' unidades adicionadas ao carrinho.')
     } catch (err) {
       setCartError(err.message || 'Não foi possível adicionar este produto.')
     }
