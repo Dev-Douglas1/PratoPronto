@@ -104,7 +104,7 @@ export default function CompanyDashboard() {
     if (id === 'configuracoes') return can('company:manage')
     return true
   })
-  const data = useCompanyData(demo, companyId)
+  const data = useCompanyData(companyId)
   const tabState = companyTabState(data.sources, aba)
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('todos')
