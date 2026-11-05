@@ -1,11 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <title>PratoPronto</title>
   <rect width="512" height="512" rx="112" fill="#090909"/>
-  <g fill="none" stroke="#ffeb18" stroke-width="18" stroke-linecap="round">
-    <path d="M74 178h82M54 256h74M74 334h82"/>
-  </g>
-  <path d="M350 112a174 174 0 1 0 0 288l-112-144z" fill="#ffeb18"/>
-  <path d="M300 154a27 27 0 0 1 24 8" fill="none" stroke="#090909" stroke-width="11" stroke-linecap="round"/>
-  <ellipse cx="315" cy="178" rx="12" ry="18" fill="#090909"/>
-  <circle cx="319" cy="172" r="4.5" fill="#fff"/>
+  <defs><radialGradient id="y" cx="34%" cy="28%" r="78%"><stop offset="0" stop-color="#fff75a"/><stop offset=".58" stop-color="#ffeb18"/><stop offset="1" stop-color="#e9b900"/></radialGradient></defs>
+  <path d="M256 54a202 202 0 1 0 0 404c82 0 154-49 185-121L256 256l185-81C410 103 338 54 256 54Z" fill="url(#y)"/>
+  <ellipse cx="292" cy="158" rx="31" ry="39" fill="#080808"/>
+  <circle cx="282" cy="145" r="12" fill="#fff"/>
+  <circle cx="301" cy="170" r="5" fill="#fff" opacity=".72"/>
 </svg>
