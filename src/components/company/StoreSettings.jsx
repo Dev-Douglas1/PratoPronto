@@ -29,7 +29,7 @@ const fromStored = data => {
       bairro: zone.bairro || '',
       fee: Number(zone.feeCents ?? Math.round(Number(zone.fee || 0) * 100)) / 100,
       min: Number(zone.minCents ?? Math.round(Number(zone.min || 0) * 100)) / 100,
-      freeAbove: zone.freeAboveCents == null && zone.freeAbove === '' ? '' : Number(zone.freeAboveCents ?? Math.round(Number(zone.freeAbove || 0) * 100)) / 100,
+      freeAbove: zone.freeAboveCents == null && (zone.freeAbove == null || zone.freeAbove === '') ? '' : Number(zone.freeAboveCents ?? Math.round(Number(zone.freeAbove || 0) * 100)) / 100,
     })),
   }
 }
