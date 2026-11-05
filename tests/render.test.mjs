@@ -8,7 +8,7 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { createClient } from '@supabase/supabase-js'
 import { accountDestination } from '../src/utils/access.js'
 
-let server, UserProvider, CompanyProvider, CartProvider, useCart
+let server, UserProvider, CompanyProvider, CartProvider, FavoritesProvider, useCart
 before(async () => {
   // No browser, external requests, real accounts or listening HTTP server.
   server = await createServer({ configFile: false, plugins: [react()], server: { middlewareMode: true, hmr: false },
@@ -19,10 +19,11 @@ before(async () => {
   ;({ UserProvider } = await server.ssrLoadModule('/src/context/UserContext.jsx'))
   ;({ CompanyProvider } = await server.ssrLoadModule('/src/context/CompanyContext.jsx'))
   ;({ CartProvider, useCart } = await server.ssrLoadModule('/src/context/CartContext.jsx'))
+  ;({ FavoritesProvider } = await server.ssrLoadModule('/src/context/FavoritesContext.jsx'))
 })
 after(async () => { await server?.close() })
-const render = (Page, props = {}, route = '/') => renderToString(h(MemoryRouter, { initialEntries: [route] }, h(UserProvider, null, h(CompanyProvider, null, h(CartProvider, null,
-  route.startsWith('/demo/empresa') ? h(Routes, null, h(Route, { path: '/demo/empresa/:aba?', element: h(Page, props) })) : h(Page, props))))))
+const render = (Page, props = {}, route = '/') => renderToString(h(MemoryRouter, { initialEntries: [route] }, h(UserProvider, null, h(CompanyProvider, null, h(CartProvider, null, h(FavoritesProvider, null,
+  route.startsWith('/demo/empresa') ? h(Routes, null, h(Route, { path: '/demo/empresa/:aba?', element: h(Page, props) })) : h(Page, props)))))))
 
 test('árvore real do aplicativo abre antes de login e carregamento da loja', () => {
   function Summary() { const cart = useCart(); return h('p', null, cart.quantidadeTotal + ' produtos; entrega ' + (cart.taxaEntrega ?? 'a confirmar')) }
@@ -81,15 +82,16 @@ test('cadastro de empresa usa o fluxo multiempresa atual e valida o identificado
   assert.match(html, /não comprova vínculo/)
 })
 
-test('cadastro de produtos oferece categorias padronizadas e restringe personalização a pizzas', async () => {
+test('cadastro de produtos oferece categorias padronizadas sem adicionais ou personalização, async () => {
   const { default: Manager } = await server.ssrLoadModule('/src/components/company/CompanyCatalogManager.jsx')
   const html = render(Manager, { companyId: 'loja-teste' })
-  for (const category of ['Pratos', 'Pizzas', 'Bebidas', 'Sobremesas', 'Lanches', 'Outros']) {
+  for (const category of ['Pratos', 'Bebidas', 'Sobremesas', 'Lanches', 'Outros']) {
     assert.ok(html.includes('>' + category + '</option>'), category)
   }
   const source = (await import('node:fs/promises')).readFile(new URL('../src/components/company/CompanyCatalogManager.jsx', import.meta.url), 'utf8')
-  assert.match(await source, /form\.categoria === 'Pizzas'/)
-  assert.match(await source, /Permitir tamanhos, bordas e adicionais de pizza/)
+  assert.doesNotMatch(await source, /form\.categoria === 'Pizzas'/)
+  assert.doesNotMatch(await source, /Permitir tamanhos, bordas e adicionais de pizza/)
+  assert.match(await source, /personalizavel: false/)
 })
 
 test('painel de demonstração abre usando os mesmos providers do aplicativo', async () => {
