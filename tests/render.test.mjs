@@ -82,7 +82,7 @@ test('cadastro de empresa usa o fluxo multiempresa atual e valida o identificado
   assert.match(html, /não comprova vínculo/)
 })
 
-test('cadastro de produtos oferece categorias padronizadas sem adicionais ou personalização, async () => {
+test('cadastro de produtos oferece categorias padronizadas sem adicionais ou personalização', async () => {
   const { default: Manager } = await server.ssrLoadModule('/src/components/company/CompanyCatalogManager.jsx')
   const html = render(Manager, { companyId: 'loja-teste' })
   for (const category of ['Pratos', 'Bebidas', 'Sobremesas', 'Lanches', 'Outros']) {
