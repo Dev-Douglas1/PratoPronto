@@ -84,14 +84,16 @@ function ProductEditor({ product, setting, onSave, busy }) {
   </article>
 }
 
-export default function CompanyDashboard({ demo = false }) {
+export default function CompanyDashboard() {
+  // Dashboard real: nenhum modo de demonstração pode conceder permissões.
+  const demo = false
   const { aba = 'pedidos' } = useParams()
   const navigate = useNavigate()
   const { usuario, sair, conferirVerificacaoEmail } = useUser()
   const { staffCompanies, activeCompanyId, activeCompany, selectCompany } = useCompany()
-  const companyId = demo ? DEFAULT_COMPANY_ID : activeCompanyId
-  const permissions = demo ? ['company:manage','team:manage','catalog:manage','orders:read','orders:advance','orders:print','reviews:reply','refunds:manage','pilots:assign'] : (activeCompany?.permissions || [])
-  const can = permission => demo || permissions.includes(permission)
+  const companyId = activeCompanyId
+  const permissions = activeCompany?.permissions || []
+  const can = permission => permissions.includes(permission)
   const visibleTabs = tabs.filter(([id]) => {
     if (['pedidos','entregas','concluidos'].includes(id)) return can('orders:read')
     if (['promocoes','cardapio'].includes(id)) return can('catalog:manage')
