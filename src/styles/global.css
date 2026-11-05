@@ -107,3 +107,6 @@
       transition-duration: 0.01ms !important;
     }
   }
+
+/* Evita rolagem horizontal causada por conteúdo em telas estreitas. */
+html, body, #root { width: 100%; max-width: 100%; overflow-x: clip; }
