@@ -6,6 +6,7 @@ import { OFFENSIVE_PATTERN, hasOffensiveLanguage } from '../src/shared/input-pol
 import { companyTabState, initialSources, accessError } from '../src/utils/dataAccess.js'
 import { isMainDish, isPizza, isBeverage, isDessert, productCategoryLabel, matchesProductSearch } from '../src/shared/catalog-category.js'
 import { isValidFutureDate } from '../src/shared/pilot-validation.js'
+import { MAX_CART_ITEM_QUANTITY, nextCartItemQuantity, removeCartItem } from '../src/shared/cart.js'
 
 test('preço exibido aplica personalização e promoção em centavos', () => {
   const now = Date.now()
@@ -103,20 +104,22 @@ test('pesquisa do marketplace normaliza acentos e espaços', async () => {
 })
 
 
-test('carrinho permite remover produto inteiro sem afetar os demais', () => {
+test('carrinho remove produto inteiro sem alterar os demais itens', () => {
   const current = { a: { produto: { id: 'a' }, quantidade: 2 }, b: { produto: { id: 'b' }, quantidade: 1 } }
-  const next = Object.fromEntries(Object.entries(current).filter(([id]) => id !== 'a'))
+  const next = removeCartItem(current, 'a')
   assert.deepEqual(Object.keys(next), ['b'])
   assert.equal(next.b.quantidade, 1)
+  assert.equal(current.a.quantidade, 2)
 })
 
-test('carrinho respeita o limite de 50 unidades por produto', () => {
-  const quantity = 50
-  assert.equal(quantity >= 50, true)
-  assert.equal(Math.min(50, quantity + 1), 50)
+test('carrinho incrementa até 50 unidades e bloqueia a próxima', () => {
+  assert.equal(MAX_CART_ITEM_QUANTITY, 50)
+  assert.equal(nextCartItemQuantity(0), 1)
+  assert.equal(nextCartItemQuantity(49), 50)
+  assert.throws(() => nextCartItemQuantity(50), error => error.code === 'quantity-limit')
 })
 
-test('carrinho não apresenta total final quando a taxa de entrega ainda é desconhecida', () => {
+test('carrinho identifica taxa desconhecida sem anunciar subtotal como total final', () => {
   const taxaEntrega = null
   const subtotal = 35
   const totalLabel = taxaEntrega === null ? 'Subtotal + entrega' : subtotal + taxaEntrega
