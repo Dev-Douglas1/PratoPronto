@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
 import { CartProvider } from './context/CartContext.jsx'
+import { FavoritesProvider } from './context/FavoritesContext.jsx'
 import { UserProvider } from './context/UserContext.jsx'
 import { CompanyProvider } from './context/CompanyContext.jsx'
 import AppErrorBoundary from './components/AppErrorBoundary.jsx'
@@ -23,9 +24,11 @@ createRoot(document.getElementById('root')).render(
       <UserProvider>
         <CompanyProvider>
         <CartProvider>
-          <App />
-          <StartupReady />
-        </CartProvider>
+              <FavoritesProvider>
+                <App />
+                <StartupReady />
+              </FavoritesProvider>
+            </CartProvider>
         </CompanyProvider>
       </UserProvider>
     </BrowserRouter>
