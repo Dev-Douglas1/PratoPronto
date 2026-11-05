@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="logo-title">
+  <title id="logo-title">Símbolo amarelo do PratoPronto</title>
+  <defs>
+    <radialGradient id="yellow" cx="34%" cy="28%" r="78%">
+      <stop offset="0" stop-color="#FFF75A"/>
+      <stop offset=".58" stop-color="#FFEB18"/>
+      <stop offset="1" stop-color="#E9B900"/>
+    </radialGradient>
+  </defs>
+  <path d="M256 54a202 202 0 1 0 0 404c82 0 154-49 185-121L256 256l185-81C410 103 338 54 256 54Z" fill="url(#yellow)"/>
+  <ellipse cx="292" cy="158" rx="31" ry="39" fill="#080808"/>
+  <circle cx="282" cy="145" r="12" fill="#fff"/>
+  <circle cx="301" cy="170" r="5" fill="#fff" opacity=".72"/>
+</svg>
