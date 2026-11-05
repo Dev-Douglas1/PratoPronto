@@ -424,3 +424,9 @@
   .company-selector { margin: 8px 0 14px; }
   .pilot-app .company-orders { grid-template-columns: 1fr; }
 }
+
+
+/* Company settings form state and fieldset reset. */
+.settings-form fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+.settings-unsaved { display: inline-flex; align-items: center; gap: 6px; color: #7a5b00; background: #fff5c7; border: 1px solid #e8d77e; border-radius: 999px; padding: 5px 10px; font-size: .8125rem; font-weight: 650; }
+.settings-actions { margin-top: 20px; flex-wrap: wrap; }
