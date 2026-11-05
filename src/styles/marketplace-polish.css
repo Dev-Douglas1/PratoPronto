@@ -473,3 +473,28 @@
   .app-screen:not(.profile-page) .cart-item > img { width:58px; height:58px; }
   .app-screen:not(.profile-page) .qty-control { grid-column:2; justify-self:start; }
 }
+
+
+/* Favoritos e navegação com cinco destinos. */
+.app-screen:not(.profile-page) .bottom-nav-pill { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.app-screen:not(.profile-page) .product-card-actions { display: flex; align-items: center; gap: 7px; }
+.app-screen:not(.profile-page) .favorite-button {
+  display: grid; width: 38px; height: 38px; flex: 0 0 38px; place-items: center;
+  border: 1px solid #484848; border-radius: 12px; background: #222; color: #d0d0d0;
+  font-size: 1.35rem; line-height: 1;
+}
+.app-screen:not(.profile-page) .favorite-button.is-favorite {
+  border-color: rgba(255,235,24,.5); background: rgba(255,235,24,.13); color: var(--yellow);
+}
+.app-screen:not(.profile-page) .favorite-button:focus-visible { outline: 2px solid var(--yellow); outline-offset: 3px; }
+.app-screen:not(.profile-page) .icon-badge-wrapper { position: relative; display: grid; place-items: center; }
+.app-screen:not(.profile-page) .cart-badge {
+  position: absolute; top: -7px; right: -12px; min-width: 16px; height: 16px; padding: 0 4px;
+  display: grid; place-items: center; border-radius: 999px; background: var(--yellow); color: #111;
+  font-size: .6rem; font-weight: 850; line-height: 1;
+}
+@media (max-width: 360px) {
+  .app-screen:not(.profile-page) .nav-label { font-size: .61rem; }
+  .app-screen:not(.profile-page) .bottom-nav-pill { gap: 1px; padding: 5px; }
+  .app-screen:not(.profile-page) .nav-item { min-height: 54px; }
+}
