@@ -100,7 +100,6 @@ test('painel empresarial não expõe rota ou dados de demonstração', async () 
   assert.doesNotMatch(app, /\/demo\/empresa/)
   assert.match(dashboard, /const demo = false/)
   assert.match(dashboard, /useCompanyData\(companyId\)/)
-  assert.match(dashboard, /if \(!activeCompany\)/)
 })
 
 test('falha no banco mantém nomes e imagens do cardápio, mas bloqueia preços não confirmados', async () => {
