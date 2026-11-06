@@ -94,24 +94,13 @@ test('cadastro de produtos oferece categorias padronizadas sem adicionais ou per
   assert.match(await source, /personalizavel: false/)
 })
 
-test('painel de demonstração abre usando os mesmos providers do aplicativo', async () => {
-  const { default: Page } = await server.ssrLoadModule('/src/pages/CompanyDashboard.jsx')
-  assert.match(render(Page, { demo: true }, '/demo/empresa/pedidos'), /Pedidos em processo/)
-})
-test('todas as abas da empresa abrem e mantêm o acesso ao menu de celular', async () => {
-  const { default: Page } = await server.ssrLoadModule('/src/pages/CompanyDashboard.jsx')
-  for (const [route, title] of [['promocoes', 'Ofertas e promoções'], ['entregas', 'Central de entregas'], ['concluidos', 'Pedidos concluídos'], ['avaliacoes', 'Avaliações dos clientes'], ['cardapio', 'Produtos e disponibilidade'], ['atendimento', 'Central de atendimento'], ['configuracoes', 'Configurações da empresa']]) {
-    const html = render(Page, { demo: true }, '/demo/empresa/' + route)
-    assert.ok(html.includes(title), route + ' precisa renderizar o conteúdo')
-    assert.match(html, /aria-haspopup="dialog"/)
-  }
-})
-
-test('aba de ofertas apresenta criação, preço anterior e ações em uma superfície utilizável', async () => {
-  const { default: Page } = await server.ssrLoadModule('/src/pages/CompanyDashboard.jsx')
-  const html = render(Page, { demo:true }, '/demo/empresa/promocoes')
-  for (const text of ['Criar promoção', 'Especial da casa', 'Editar oferta', 'Pausar', 'Agendadas', '<del>']) assert.ok(html.includes(text), text)
-  assert.doesNotMatch(html, /Resumo dos pedidos carregados/)
+test('painel empresarial não expõe rota ou dados de demonstração', async () => {
+  const app = await (await import('node:fs/promises')).readFile(new URL('../src/App.jsx', import.meta.url), 'utf8')
+  const dashboard = await (await import('node:fs/promises')).readFile(new URL('../src/pages/CompanyDashboard.jsx', import.meta.url), 'utf8')
+  assert.doesNotMatch(app, /\/demo\/empresa/)
+  assert.match(dashboard, /const demo = false/)
+  assert.match(dashboard, /useCompanyData\(companyId\)/)
+  assert.match(dashboard, /if \(!activeCompany\)/)
 })
 
 test('falha no banco mantém nomes e imagens do cardápio, mas bloqueia preços não confirmados', async () => {
