@@ -24,7 +24,7 @@ export default function VerificarEmail() {
   const [tempoRestante, setTempoRestante] = useState(RESEND_COOLDOWN_SECONDS)
 
   const emailUsuario = user?.email || usuario?.email || ''
-  const codigoValido = /^\\d{6}$/.test(codigo)
+  const codigoValido = /^\d{6}$/.test(codigo)
 
   useEffect(() => {
     if (tempoRestante <= 0) return undefined
@@ -125,7 +125,7 @@ export default function VerificarEmail() {
               maxLength={6}
               value={codigo}
               onChange={event => {
-                setCodigo(event.target.value.replace(/\\D/g, '').slice(0, 6))
+                setCodigo(event.target.value.replace(/\D/g, '').slice(0, 6))
                 setErro('')
               }}
               placeholder="000000"
