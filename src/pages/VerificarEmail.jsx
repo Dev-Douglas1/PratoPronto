@@ -12,7 +12,7 @@ export default function VerificarEmail() {
   const [erro, setErro] = useState('')
   const [sucesso, setSucesso] = useState('')
   const [enviando, setEnviando] = useState(false)
-  const [tempoRestante, setTempoRestante] = useState(30)
+  const [tempoRestante, setTempoRestante] = useState(60)
 
   const emailUsuario = usuario?.email || sessionStorage.getItem('pratopronto:pending-email') || ''
 
@@ -35,9 +35,7 @@ export default function VerificarEmail() {
     setEnviando(true)
 
     try {
-      if (verificarCodigo) {
-        await verificarCodigo(codigo)
-      }
+      await confirmarCodigoEmail(codigo)
       navigate('/pizzas', { replace: true })
     } catch (error) {
       setErro(error.message || 'Código inválido ou expirado.')
@@ -52,9 +50,7 @@ export default function VerificarEmail() {
     setSucesso('')
 
     try {
-      if (reenviarCodigo) {
-        await reenviarCodigo(emailUsuario)
-      }
+      await enviarVerificacaoEmail()
       setSucesso('Novo código enviado para o seu e-mail!')
       setTempoRestante(60)
     } catch (error) {
