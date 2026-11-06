@@ -285,3 +285,16 @@ test('cadastro de piloto exige confirmação do aviso antes do formulário', asy
   assert.match(modal, /aria-modal="true"/)
   assert.match(modal, /Entendi, continuar cadastro/)
 })
+
+test('vínculo empresarial consulta a RPC multiempresa protegida, sem tabelas legadas', async () => {
+  const [context, server] = await Promise.all([
+    readFile('src/context/CompanyContext.jsx', 'utf8'),
+    readFile('src/services/server.js', 'utf8'),
+  ])
+  assert.match(context, /callServer\('appMyCompanies'\)/)
+  assert.match(context, /activeCompanyId/)
+  assert.match(context, /activeCompany/)
+  assert.doesNotMatch(context, /from\(['"]equipe_empresa['"]\)|from\(['"]empresas['"]\)/)
+  assert.match(server, /rpc\('my_restaurants'\)/)
+  assert.match(server, /permissions: row\.permissions \|\| \[\]/)
+})
