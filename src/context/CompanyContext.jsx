@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { callServer } from '../services/server.js'
+import { loadPilotProfile } from '../services/marketplace.js'
 import { useUser } from './UserContext.jsx'
 
 const CompanyContext = createContext(null)
@@ -9,70 +10,60 @@ export function CompanyProvider({ children }) {
   const userId = usuario?.uid || ''
   const [staffCompanies, setStaffCompanies] = useState([])
   const [activeCompanyId, setActiveCompanyId] = useState('')
+  const [pilotProfile, setPilotProfile] = useState(null)
   const [loadingCompany, setLoadingCompany] = useState(true)
   const [error, setError] = useState('')
 
-  const carregarEmpresasDoUsuario = useCallback(async () => {
+  const carregarEmpresasDoUsuario = useCallback(async (isCurrent = () => true) => {
     if (!autenticado || !userId) {
-      setStaffCompanies([])
-      setActiveCompanyId('')
-      setError('')
-      setLoadingCompany(false)
+      if (isCurrent()) {
+        setStaffCompanies([])
+        setActiveCompanyId('')
+        setPilotProfile(null)
+        setError('')
+        setLoadingCompany(false)
+      }
       return []
     }
 
-    setLoadingCompany(true)
-    setError('')
+    if (isCurrent()) {
+      setLoadingCompany(true)
+      setError('')
+    }
     try {
-      // A associação empresarial é consultada pela RPC canônica, nunca pelas
-      // tabelas legadas empresas/equipe_empresa que não possuem políticas RLS.
-      const companies = await callServer('appMyCompanies')
+      // Vínculos e permissões vêm da RPC canônica; não consultar tabelas legadas
+      // empresas/equipe_empresa diretamente, pois elas não têm políticas RLS.
+      const [companies, pilot] = await Promise.all([
+        callServer('appMyCompanies'),
+        loadPilotProfile().catch(() => null),
+      ])
+      if (!isCurrent()) return []
       const rows = Array.isArray(companies) ? companies.filter(company =>
         company?.companyId && company?.restaurantId
       ) : []
       setStaffCompanies(rows)
+      setPilotProfile(pilot)
       setActiveCompanyId(current => rows.some(company => company.companyId === current)
         ? current
         : rows[0]?.companyId || '')
       return rows
     } catch (err) {
+      if (!isCurrent()) return []
       setStaffCompanies([])
       setActiveCompanyId('')
+      setPilotProfile(null)
       setError(err?.message || 'Não foi possível carregar as empresas vinculadas à sua conta.')
       return []
     } finally {
-      setLoadingCompany(false)
+      if (isCurrent()) setLoadingCompany(false)
     }
   }, [autenticado, userId])
 
   useEffect(() => {
     let active = true
-    if (!autenticado || !userId) {
-      setStaffCompanies([])
-      setActiveCompanyId('')
-      setError('')
-      setLoadingCompany(false)
-      return () => { active = false }
-    }
-    setLoadingCompany(true)
-    setError('')
-    callServer('appMyCompanies').then(companies => {
-      if (!active) return
-      const rows = Array.isArray(companies) ? companies.filter(company =>
-        company?.companyId && company?.restaurantId
-      ) : []
-      setStaffCompanies(rows)
-      setActiveCompanyId(current => rows.some(company => company.companyId === current)
-        ? current
-        : rows[0]?.companyId || '')
-    }).catch(err => {
-      if (!active) return
-      setStaffCompanies([])
-      setActiveCompanyId('')
-      setError(err?.message || 'Não foi possível carregar as empresas vinculadas à sua conta.')
-    }).finally(() => { if (active) setLoadingCompany(false) })
+    carregarEmpresasDoUsuario(() => active)
     return () => { active = false }
-  }, [autenticado, userId])
+  }, [carregarEmpresasDoUsuario])
 
   const selectCompany = useCallback(companyId => {
     if (staffCompanies.some(company => company.companyId === companyId)) setActiveCompanyId(companyId)
@@ -88,11 +79,12 @@ export function CompanyProvider({ children }) {
     activeCompanyId,
     activeCompany,
     selectCompany,
+    pilotProfile,
     loading: loadingCompany,
     loadingCompany,
     error,
     recarregarEmpresas: carregarEmpresasDoUsuario,
-  }), [staffCompanies, activeCompanyId, activeCompany, selectCompany, loadingCompany, error, carregarEmpresasDoUsuario])
+  }), [staffCompanies, activeCompanyId, activeCompany, selectCompany, pilotProfile, loadingCompany, error, carregarEmpresasDoUsuario])
 
   return <CompanyContext.Provider value={value}>{children}</CompanyContext.Provider>
 }
