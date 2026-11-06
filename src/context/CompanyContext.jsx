@@ -28,8 +28,7 @@ export function CompanyProvider({ children }) {
       // tabelas legadas empresas/equipe_empresa que não possuem políticas RLS.
       const companies = await callServer('appMyCompanies')
       const rows = Array.isArray(companies) ? companies.filter(company =>
-        company?.companyId && company?.restaurantId && company?.accountStatus !== 'blocked' &&
-        company?.accountStatus !== 'suspended'
+        company?.companyId && company?.restaurantId
       ) : []
       setStaffCompanies(rows)
       setActiveCompanyId(current => rows.some(company => company.companyId === current)
@@ -60,8 +59,7 @@ export function CompanyProvider({ children }) {
     callServer('appMyCompanies').then(companies => {
       if (!active) return
       const rows = Array.isArray(companies) ? companies.filter(company =>
-        company?.companyId && company?.restaurantId &&
-        !['blocked', 'suspended'].includes(company?.accountStatus)
+        company?.companyId && company?.restaurantId
       ) : []
       setStaffCompanies(rows)
       setActiveCompanyId(current => rows.some(company => company.companyId === current)
