@@ -211,3 +211,21 @@ test('consulta do perfil conta somente registros próprios e propaga falhas do b
   await assert.rejects(getProfileStats('account-a', client))
   await assert.rejects(getProfileStats('', client))
 })
+
+test('Home mantém mensagem estável e favoritos têm controle acessível e estado vazio', async () => {
+  const { default: Home } = await server.ssrLoadModule('/src/pages/Home.jsx')
+  const { default: ProductCard } = await server.ssrLoadModule('/src/components/ProductCard.jsx')
+  const { default: FavoritesPage } = await server.ssrLoadModule('/src/pages/Favoritos.jsx')
+  const home = render(Home)
+  assert.match(home, /Pratos, bebidas e sobremesas em um só lugar/)
+  assert.match(home, /Seu próximo pedido começa aqui/)
+  const product = render(ProductCard, { produto: {
+    id: 'prato-teste', companyId: 'loja-teste', nome: 'Prato teste',
+    descricao: 'Descrição', imagem: '/icons/app-icon.svg', preco: 29.9,
+  } })
+  assert.match(product, /Adicionar Prato teste aos favoritos/)
+  assert.match(product, /aria-pressed="false"/)
+  const favorites = render(FavoritesPage, {}, '/favoritos')
+  assert.match(favorites, /Você ainda não tem favoritos/)
+  assert.match(favorites, /Explorar produtos/)
+})
