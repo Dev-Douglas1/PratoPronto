@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { Link } from 'react-router-dom'
 
 import AppScreen from '../components/AppScreen.jsx'
@@ -9,46 +9,18 @@ import { useCompany } from '../context/CompanyContext.jsx'
 import '../styles/home.css'
 import InstallApp from '../components/InstallApp.jsx'
 
-// =========================================================
-// LISTAS DE FRASES ALEATÓRIAS
-// =========================================================
-const TITULOS = [
-  'Pratos Irresistíveis • Bebidas Geladas • Sobremesas Incríveis',
-  'Tudo o que você mais gosta, em um só lugar.',
-  'O cardápio perfeito para qualquer momento do seu dia.',
-]
-
-const SUBTITULOS = [
-  'ENCONTRE A SUA PRÓXIMA REFEIÇÃO',
-  'O SEU DELIVERY PREFERIDO',
-  'SABORES DA SUA REGIÃO',
-]
-
-const FRASES = [
-  'Mate sua fome em poucos cliques',
-  'Seu próximo pedido está a um toque',
-  'Escolha o seu sabor de hoje!',
-]
-
 export default function Home() {
-  const { user, autenticado, usuario } = useAuth()
+  const { user, autenticado } = useAuth()
   const isUserLoggedIn = Boolean(autenticado || user)
   const { staffCompanies = [], pilotProfile } = useCompany()
-
-
-  const [textosHero] = useState(() => ({
-    titulo: TITULOS[Math.floor(Math.random() * TITULOS.length)],
-    subtitulo: SUBTITULOS[Math.floor(Math.random() * SUBTITULOS.length)],
-    frase: FRASES[Math.floor(Math.random() * FRASES.length)],
-  }))
 
   return (
     <AppScreen className="home-screen">
       <section className="home-hero" aria-labelledby="home-title">
         <BrandMark />
-        <span className="hero-tagline">{textosHero.titulo}</span>
-        <p className="eyebrow">{textosHero.subtitulo}</p>
-        <h1 id="home-title">{textosHero.frase}</h1>
+        <span className="hero-tagline">Pratos, bebidas e sobremesas em um só lugar.</span>
+        <p className="eyebrow">DELIVERY LOCAL, SIMPLES E DIRETO</p>
+        <h1 id="home-title">Seu próximo pedido começa aqui.</h1>
 
         <nav className="home-actions" aria-label="Ações principais">
           <Link className="btn btn-primary" to={isUserLoggedIn ? '/pratos' : '/login'}>
@@ -81,7 +53,7 @@ export default function Home() {
           )}
         </nav>
 
-        {/* 1. Informação de serviço estática */}
+        {/* Informações de serviço */}
         <div className="subtle-badge" aria-label="Informações de serviço">
           <span>⚡ Lojas locais e entregas diretas na sua região</span>
         </div>

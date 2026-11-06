@@ -84,7 +84,6 @@ export default function App() {
         <Route path="/plataforma/empresas" element={<PlatformAdminRoute><PlatformCompanies /></PlatformAdminRoute>} />
         <Route path="/admin" element={<Navigate to="/empresa/pedidos" replace />} />
         <Route path="/empresa/:aba?" element={<AdminRoute><CompanyDashboard /></AdminRoute>} />
-        <Route path="/demo/empresa/:aba?" element={<CompanyDashboard demo />} />
         <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
         <Route path="/termos-de-uso" element={<TermosUso />} />
         <Route path="*" element={<Navigate to="/" replace />} />
