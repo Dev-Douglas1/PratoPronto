@@ -159,8 +159,8 @@ export default function VerificarEmail() {
               disabled={enviando || tempoRestante > 0 || !emailUsuario}
             >
               {tempoRestante > 0
-                ? `Reenviar código em ${tempoRestante}s`
-                : 'Reenviar código'}
+                ? `Enviar código de confirmação em ${tempoRestante}s`
+                : 'Enviar código de confirmação'}
             </button>
 
             <button
