@@ -1,118 +1,152 @@
-/* Estilos exclusivos da página inicial. Não aplicar regras globais às telas internas. */
+/* Estilos exclusivos da página inicial. Os tokens e o reset ficam em global.css. */
 .home-screen {
+  width: 100%;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  padding: clamp(20px, 5vh, 48px) 20px max(28px, env(safe-area-inset-bottom));
-  background-color: #0d0d0d;
-  background-image: radial-gradient(rgba(255, 235, 24, 0.08) 1px, transparent 1px);
-  background-size: 22px 22px;
+  align-items: stretch;
+  padding: 20px;
+  overflow-x: clip;
 }
-.home-screen .home-hero {
-  display: flex;
+
+.home-status {
+  width: 100%;
+  min-height: 36px;
+}
+
+.home-main {
+  width: 100%;
   flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.home-hero {
+  width: 100%;
+  max-width: 560px;
+  display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  width: 100%;
-  max-width: 440px;
   text-align: center;
 }
-.home-screen .home-hero .brand-mark { margin-bottom: 14px; }
-.home-screen .hero-tagline {
-  display: block;
-  margin: 12px auto 18px;
-  color: rgba(255,255,255,.65);
-  font-size: .76rem;
-  font-weight: 700;
-  letter-spacing: .08em;
-  text-align: center;
-}
-.home-screen .home-hero .eyebrow {
+
+.home-hero .brand-mark { margin: 8px auto 20px; }
+.home-hero .eyebrow {
   margin: 0 0 10px;
-  color: #ffeb18;
+  color: var(--yellow);
   font-size: .72rem;
-  font-weight: 800;
+  font-weight: 850;
   letter-spacing: .14em;
 }
-.home-screen .home-hero h1 {
-  max-width: 390px;
-  margin: 8px auto 24px;
-  color: #fff;
-  font-size: clamp(1.8rem, 8vw, 2.6rem);
-  font-weight: 800;
-  letter-spacing: -.04em;
+.home-hero h1 {
+  margin: 8px 0 14px;
+  color: var(--white);
+  font-size: clamp(1.8rem, 7vw, 2.6rem);
   line-height: 1.12;
+  letter-spacing: -.04em;
 }
-.home-screen .home-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+.home-hero h1 em { color: var(--yellow); font-style: normal; }
+.home-description {
+  max-width: 440px;
+  margin: 0 auto 20px;
+  color: var(--muted);
+  font-size: .95rem;
+  line-height: 1.6;
+}
+.marketplace-search { width: 100%; max-width: 500px; }
+.marketplace-search input { min-width: 0; }
+.home-search-status { width: 100%; margin-top: 12px; }
+.marketplace-results, .home-store-section {
   width: 100%;
-  margin: 12px 0;
+  margin-top: 16px;
+  text-align: left;
 }
-.home-screen .home-actions .btn {
+.home-result-section { margin-top: 16px; }
+.marketplace-company-grid, .marketplace-product-list {
+  display: grid;
+  gap: 10px;
+}
+.marketplace-company-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  color: #171717;
+  text-decoration: none;
+}
+.marketplace-company-card small { color: #665900; font-weight: 750; }
+.marketplace-product-result {
+  min-width: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  gap: 12px;
+  color: #171717;
+  text-align: left;
+  text-decoration: none;
+}
+.marketplace-product-image {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 56px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #ecece6;
+}
+.marketplace-product-image img { width: 100%; height: 100%; object-fit: cover; }
+.marketplace-product-copy { min-width: 0; display: grid; gap: 4px; }
+.marketplace-product-copy strong { overflow-wrap: anywhere; }
+.marketplace-product-copy small { color: #666; line-height: 1.4; }
+.home-actions {
   width: 100%;
-  min-height: 50px;
-  padding: 0 18px;
-  border-radius: 999px;
-  font-size: .95rem;
-  font-weight: 750;
-  text-decoration: none;
+  display: grid;
+  gap: 10px;
+  margin: 24px 0 16px;
 }
-.home-screen .home-actions .btn-primary {
-  background: #ffeb18;
-  color: #111;
+.home-actions .btn { width: 100%; min-height: 48px; }
+.service-highlights {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0 20px;
 }
-.home-screen .home-actions .btn-outline {
-  border: 1px solid rgba(255,255,255,.18);
-  background: rgba(255,255,255,.05);
-  color: #fff;
-}
-.home-screen .subtle-badge {
-  max-width: 100%;
-  margin: 14px auto 8px;
-  padding: 10px 14px;
-  border: 1px solid rgba(255,235,24,.2);
-  border-radius: 999px;
-  background: rgba(255,235,24,.06);
-  color: #ffeb18;
-  font-size: .76rem;
-  text-align: center;
-}
-.home-screen .home-footer { width: 100%; padding-top: 18px; }
-.home-screen .legal-links {
+.service-highlight-card {
+  min-width: 0;
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 18px;
+  align-items: center;
+  gap: 9px;
+  padding: 13px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: rgba(255,255,255,.045);
+  text-align: left;
 }
-.home-screen .legal-links a {
-  color: #929292;
-  font-size: .75rem;
-  text-decoration: none;
+.service-highlight-icon { flex: 0 0 auto; font-size: 22px; }
+.service-highlight-copy { min-width: 0; display: grid; gap: 4px; }
+.service-highlight-copy strong { font-size: .78rem; }
+.service-highlight-copy small { color: var(--muted); font-size: .68rem; line-height: 1.35; }
+.service-highlight-card:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-outline-offset);
 }
-.home-screen .install-app { margin-top: 14px; }
-@media (max-width: 360px) {
-  .home-screen { padding-inline: 14px; }
-  .home-screen .hero-tagline { font-size: .68rem; }
-}
+.home-footer { width: 100%; padding: 18px 0 4px; }
+.home-footer .legal-links { display: flex; flex-wrap: wrap; gap: 16px; }
+.home-footer .legal-links a { color: var(--muted); font-size: .75rem; }
 
-
-/* Proteção contra overflow em janelas estreitas e quando o DevTools está acoplado. */
-.home-screen { width: 100%; min-width: 0; overflow-x: clip; }
-.home-screen > *, .home-screen .home-hero > * { min-width: 0; max-width: 100%; }
-.home-screen .hero-tagline, .home-screen .subtle-badge { overflow-wrap: anywhere; }
-.home-screen .home-hero h1 { width: 100%; overflow-wrap: anywhere; }
-.home-screen .home-actions .btn { min-width: 0; white-space: normal; }
 @media (max-width: 380px) {
   .home-screen { padding-inline: 14px; }
-  .home-screen .home-hero h1 { font-size: clamp(1.55rem, 8vw, 2rem); }
-  .home-screen .subtle-badge { border-radius: 14px; line-height: 1.45; }
+  .service-highlights { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+  .service-highlight-card { padding: 10px 7px; gap: 6px; }
+  .service-highlight-copy strong { font-size: .7rem; }
+  .service-highlight-copy small { font-size: .62rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-screen *, .home-screen *::before, .home-screen *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
 }
