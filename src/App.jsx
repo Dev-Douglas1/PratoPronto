@@ -37,6 +37,8 @@ const PilotPartner = lazy(() => import('./pages/PilotPartner.jsx'))
 const PilotSignup = lazy(() => import('./pages/PilotSignup.jsx'))
 const PilotReview = lazy(() => import('./pages/PilotReview.jsx'))
 const PlatformCompanies = lazy(() => import('./pages/PlatformCompanies.jsx'))
+const DemoCompany = lazy(() => import('./pages/DemoCompany.jsx'))
+const DemoPilot = lazy(() => import('./pages/DemoPilot.jsx'))
 
 function protectedPage(element) {
   return <ProtectedRoute>{element}</ProtectedRoute>
@@ -82,6 +84,8 @@ export default function App() {
         <Route path="/piloto" element={<PilotRoute><PilotPartner /></PilotRoute>} />
         <Route path="/plataforma/pilotos" element={<PlatformAdminRoute><PilotReview /></PlatformAdminRoute>} />
         <Route path="/plataforma/empresas" element={<PlatformAdminRoute><PlatformCompanies /></PlatformAdminRoute>} />
+        <Route path="/demo/empresa" element={<PlatformAdminRoute><DemoCompany /></PlatformAdminRoute>} />
+        <Route path="/demo/piloto" element={<PlatformAdminRoute><DemoPilot /></PlatformAdminRoute>} />
         <Route path="/admin" element={<Navigate to="/empresa/pedidos" replace />} />
         <Route path="/empresa/:aba?" element={<AdminRoute><CompanyDashboard /></AdminRoute>} />
         <Route path="/politica-de-privacidade" element={<PoliticaPrivacidade />} />
