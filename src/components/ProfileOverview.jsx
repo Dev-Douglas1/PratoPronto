@@ -100,6 +100,8 @@ export default function ProfileOverview({ usuario, staffCompanies = [], pilotPro
       {platformAdmin && <>
         <MenuItem icon="shop" title="Administrar empresas" subtitle="Administração da plataforma" to="/plataforma/empresas" />
         <MenuItem icon="bike" title="Analisar cadastros de pilotos" subtitle="Aprovações da plataforma" to="/plataforma/pilotos" />
+        <MenuItem icon="shop" title="Demonstração da empresa" subtitle="Painel empresarial com dados fictícios" to="/demo/empresa" />
+        <MenuItem icon="bike" title="Demonstração do piloto" subtitle="Fluxo de entregas sem operações reais" to="/demo/piloto" />
       </>}
     </div>
     {!usuario.emailVerificado && <button className="account-verify-button" type="button" onClick={verify} disabled={!!busy}>{busy === 'verify' ? 'Enviando...' : 'Enviar verificação'}</button>}
