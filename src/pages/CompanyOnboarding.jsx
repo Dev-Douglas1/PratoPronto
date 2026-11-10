@@ -126,7 +126,7 @@ export default function CompanyOnboarding() {
       {currentRequest.status === 'pending' && <p>Envie novamente os três documentos caso a equipe solicite correções.</p>}
     </section>}
 
-    {sent ? <section className="light-card" role="status">
+    {currentRequest?.status === 'approved' ? <section className="light-card" role="status"><h2>Cadastro já aprovado</h2><p>Esta conta já possui uma solicitação aprovada. Para alterar os dados da loja, acesse a área empresarial vinculada à sua conta.</p><button className="btn btn-primary wide-button" type="button" onClick={() => navigate('/perfil')}>Voltar ao perfil</button></section> : sent ? <section className="light-card" role="status">
       <h2>Solicitação enviada</h2>
       <p>Seu pedido está pendente de análise. Os documentos foram enviados para armazenamento privado. Protocolo: {requestId}</p>
       <button className="btn btn-primary wide-button" type="button" onClick={() => navigate('/perfil', { replace: true })}>Voltar ao perfil</button>
