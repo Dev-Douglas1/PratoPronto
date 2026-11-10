@@ -90,7 +90,7 @@ export default function ProfileOverview({ usuario, staffCompanies = [], pilotPro
     <div className="account-menu account-work">
       <h2>No PratoPronto</h2>
       {!!staffCompanies.length && <MenuItem icon="shop" title="Área da empresa" subtitle="Pedidos, cardápio e equipe" to="/empresa/pedidos" />}
-      <MenuItem icon="shop" title="Quero cadastrar minha empresa" subtitle="Solicite acesso empresarial sujeito à aprovação" to="/empresa/nova" />
+      {!staffCompanies.length && <MenuItem icon="shop" title="Quero cadastrar minha empresa" subtitle="Solicite acesso empresarial sujeito à aprovação" to="/empresa/nova" />}
       {hasPilotArea
         ? <MenuItem icon="bike" title="Área Piloto Parceiro" subtitle="Acompanhe seu cadastro e suas entregas" to="/piloto" />
         : <MenuItem icon="bike" title="Se torne um piloto das entregas" subtitle="Conheça o programa de parceiros" onClick={() => {
@@ -100,6 +100,8 @@ export default function ProfileOverview({ usuario, staffCompanies = [], pilotPro
       {platformAdmin && <>
         <MenuItem icon="shop" title="Administrar empresas" subtitle="Administração da plataforma" to="/plataforma/empresas" />
         <MenuItem icon="bike" title="Analisar cadastros de pilotos" subtitle="Aprovações da plataforma" to="/plataforma/pilotos" />
+        <MenuItem icon="shop" title="Demonstração da empresa" subtitle="Painel empresarial com dados fictícios" to="/demo/empresa" />
+        <MenuItem icon="bike" title="Demonstração do piloto" subtitle="Fluxo de entregas sem operações reais" to="/demo/piloto" />
       </>}
     </div>
     {!usuario.emailVerificado && <button className="account-verify-button" type="button" onClick={verify} disabled={!!busy}>{busy === 'verify' ? 'Enviando...' : 'Enviar verificação'}</button>}

@@ -55,6 +55,37 @@ export default function PlatformCompanies() {
     return companies.filter(item => [item.name, item.slug, item.account_status].some(value => String(value || '').toLowerCase().includes(needle)))
   }, [companies, search])
 
+  async function viewRequestDocuments(requestId) {
+    setRequestDocs(current => ({ ...current, [requestId]: { loading: true, files: [] } }))
+    try {
+      const docs = await listCompanyRegistrationDocuments(requestId)
+      const files = await Promise.all(docs.map(async doc => ({ ...doc, url: await createCompanyDocumentUrl(doc.storage_path) })))
+      setRequestDocs(current => ({ ...current, [requestId]: { loading: false, files } }))
+    } catch (err) {
+      setRequestDocs(current => ({ ...current, [requestId]: { loading: false, error: err.message || 'Não foi possível abrir os documentos.', files: [] } }))
+    }
+  }
+
+  async function decideRequest(requestId, approve) {
+    if (busy) return
+    if (!approve && requestNote.trim().length < 3) {
+      setError('Informe o motivo da rejeição com pelo menos 3 caracteres.')
+      return
+    }
+    setBusy(true); setError(''); setNotice('')
+    try {
+      await reviewCompanyRegistration(requestId, approve, requestNote.trim())
+      setNotice(approve ? 'Cadastro aprovado. A loja foi criada desativada e permanece sem receber pedidos.' : 'Solicitação rejeitada e motivo registrado.')
+      setRequestNote('')
+      setRequestDocs(current => { const next = { ...current }; delete next[requestId]; return next })
+      await load()
+    } catch (err) {
+      setError(err.message || 'Não foi possível analisar a solicitação.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function moderate(nextStatus) {
     if (!selected || busy) return
     if (nextStatus !== 'active' && reason.trim().length < 3) {
@@ -111,6 +142,37 @@ export default function PlatformCompanies() {
         </article>
       )}
       {!loading && !filtered.length && <div className="light-card"><h2>Nenhuma empresa encontrada</h2></div>}
+    </section>
+
+    <section className="light-card">
+      <div className="section-heading"><h2>Solicitações de cadastro</h2><span>{requests.length} pendente(s)</span></div>
+      <p>Confira os dados e os documentos antes de aprovar. A aprovação cria a loja desativada.</p>
+      {requests.length === 0 && <p>Nenhuma solicitação aguardando análise.</p>}
+      {requests.map(request => {
+        const documentState = requestDocs[request.id]
+        const fiscalNumber = request.person_type === 'pf' ? request.cpf : request.cnpj
+        return <article className="company-request-card" key={request.id}>
+          <div className="section-heading">
+            <div><strong>{request.trade_name}</strong><small>{request.person_type === 'pf' ? 'Pessoa física · CPF' : 'Pessoa jurídica · CNPJ'}</small></div>
+            <span>Em análise</span>
+          </div>
+          <p><b>{request.person_type === 'pf' ? 'Responsável' : 'Razão social'}:</b> {request.legal_name}</p>
+          <p><b>{request.person_type === 'pf' ? 'CPF' : 'CNPJ'}:</b> {fiscalNumber}</p>
+          <p><b>Contato:</b> {request.contact_phone}</p>
+          <p><b>Recebida:</b> {new Date(request.created_at).toLocaleString('pt-BR')}</p>
+          <button className="btn btn-secondary" type="button" disabled={documentState?.loading} onClick={() => viewRequestDocuments(request.id)}>
+            {documentState?.loading ? 'Carregando documentos…' : 'Consultar documentos'}
+          </button>
+          {documentState?.error && <p className="form-error dark-error" role="alert">{documentState.error}</p>}
+          {documentState?.files?.map(doc => <p key={doc.storage_path}><a href={doc.url} target="_blank" rel="noreferrer">{doc.document_type.replaceAll('_', ' ')} · abrir arquivo</a></p>)}
+          <label htmlFor={'company-request-note-' + request.id}>Observação da análise (obrigatória para rejeitar)</label>
+          <textarea id={'company-request-note-' + request.id} maxLength={500} value={requestNote} onChange={event => setRequestNote(event.target.value)} />
+          <div className="inline-actions">
+            <button className="btn btn-primary" type="button" disabled={busy} onClick={() => decideRequest(request.id, true)}>Aprovar cadastro</button>
+            <button className="btn btn-secondary" type="button" disabled={busy} onClick={() => decideRequest(request.id, false)}>Rejeitar</button>
+          </div>
+        </article>
+      })}
     </section>
 
     {selected && <section className="light-card">

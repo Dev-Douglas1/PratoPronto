@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { callServer } from '../services/server.js'
-import { loadPilotProfile } from '../services/marketplace.js'
+import { isPlatformAdmin, loadPilotProfile } from '../services/marketplace.js'
 import { useUser } from './UserContext.jsx'
 
 const CompanyContext = createContext(null)
@@ -11,6 +11,7 @@ export function CompanyProvider({ children }) {
   const [staffCompanies, setStaffCompanies] = useState([])
   const [activeCompanyId, setActiveCompanyId] = useState('')
   const [pilotProfile, setPilotProfile] = useState(null)
+  const [platformAdmin, setPlatformAdmin] = useState(false)
   const [loadingCompany, setLoadingCompany] = useState(true)
   const [error, setError] = useState('')
 
@@ -20,6 +21,7 @@ export function CompanyProvider({ children }) {
         setStaffCompanies([])
         setActiveCompanyId('')
         setPilotProfile(null)
+        setPlatformAdmin(false)
         setError('')
         setLoadingCompany(false)
       }
@@ -31,11 +33,10 @@ export function CompanyProvider({ children }) {
       setError('')
     }
     try {
-      // Vínculos e permissões vêm da RPC canônica; não consultar tabelas legadas
-      // empresas/equipe_empresa diretamente, pois elas não têm políticas RLS.
-      const [companies, pilot] = await Promise.all([
+      const [companies, pilot, admin] = await Promise.all([
         callServer('appMyCompanies'),
         loadPilotProfile().catch(() => null),
+        isPlatformAdmin().catch(() => false),
       ])
       if (!isCurrent()) return []
       const rows = Array.isArray(companies) ? companies.filter(company =>
@@ -43,6 +44,7 @@ export function CompanyProvider({ children }) {
       ) : []
       setStaffCompanies(rows)
       setPilotProfile(pilot)
+      setPlatformAdmin(admin === true)
       setActiveCompanyId(current => rows.some(company => company.companyId === current)
         ? current
         : rows[0]?.companyId || '')
@@ -52,6 +54,7 @@ export function CompanyProvider({ children }) {
       setStaffCompanies([])
       setActiveCompanyId('')
       setPilotProfile(null)
+      setPlatformAdmin(false)
       setError(err?.message || 'Não foi possível carregar as empresas vinculadas à sua conta.')
       return []
     } finally {
@@ -80,11 +83,12 @@ export function CompanyProvider({ children }) {
     activeCompany,
     selectCompany,
     pilotProfile,
+    platformAdmin,
     loading: loadingCompany,
     loadingCompany,
     error,
     recarregarEmpresas: carregarEmpresasDoUsuario,
-  }), [staffCompanies, activeCompanyId, activeCompany, selectCompany, pilotProfile, loadingCompany, error, carregarEmpresasDoUsuario])
+  }), [staffCompanies, activeCompanyId, activeCompany, selectCompany, pilotProfile, platformAdmin, loadingCompany, error, carregarEmpresasDoUsuario])
 
   return <CompanyContext.Provider value={value}>{children}</CompanyContext.Provider>
 }
