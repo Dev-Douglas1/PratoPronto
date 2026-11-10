@@ -97,7 +97,7 @@ test('cadastro de produtos oferece categorias padronizadas sem adicionais ou per
 test('demonstrações são somente leitura e protegidas pela administração da plataforma', async () => {
   const app = await (await import('node:fs/promises')).readFile(new URL('../src/App.jsx', import.meta.url), 'utf8')
   const dashboard = await (await import('node:fs/promises')).readFile(new URL('../src/pages/CompanyDashboard.jsx', import.meta.url), 'utf8')
-  assert.match(app, /demo\/empresa/)
+  assert.match(app, /demo\/empresa/) // as rotas demo só existem atrás do PlatformAdminRoute
   assert.match(app, /demo\/piloto/)
   assert.match(app, /PlatformAdminRoute/)
   assert.match(dashboard, /const demo = false/)
