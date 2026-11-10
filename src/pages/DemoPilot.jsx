@@ -13,7 +13,7 @@ export default function DemoPilot() {
     <div className="page-heading">
       <span className="eyebrow">AMBIENTE DE TESTE · SOMENTE LEITURA</span>
       <h1>Painel do piloto parceiro</h1>
-      <p>Conteúdo totalmente fictício. Esta demonstração não consulta ofertas reais nem permite aceitar, iniciar ou concluir entregas.</p>
+      <p>Conteúdo totalmente fictício. Esta demonstração não consulta ofertas reais nem permite operar entregas reais.</p>
     </div>
     <section className="company-demo-grid">
       <article className="light-card"><small>Status ilustrativo</small><h2>Disponível</h2><p>Não altera seu cadastro real</p></article>
