@@ -5,12 +5,12 @@ import TopBar from '../components/TopBar.jsx'
 import { createCompany, uploadCompanyRegistrationDocument, getMyCompanyRegistrationRequest } from '../services/marketplace.js'
 
 function onlyDigits(value) {
-  return String(value || '').replace(/\\D/g, '')
+  return String(value || '').replace(/\D/g, '')
 }
 
 function validCpf(value) {
   const cpf = onlyDigits(value)
-  if (cpf.length !== 11 || /^(.)\\1{10}$/.test(cpf)) return false
+  if (cpf.length !== 11 || /^(.)\1{10}$/.test(cpf)) return false
   let sum = 0
   for (let i = 0; i < 9; i += 1) sum += Number(cpf[i]) * (10 - i)
   let digit = (sum * 10) % 11
