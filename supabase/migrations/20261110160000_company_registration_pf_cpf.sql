@@ -8,12 +8,12 @@ immutable
 set search_path = ''
 as $function$
 declare
-  digits text := regexp_replace(coalesce(p_value, ''), '\\D', '', 'g');
+  digits text := regexp_replace(coalesce(p_value, ''), '[^0-9]', '', 'g');
   total integer;
   check_digit integer;
   i integer;
 begin
-  if length(digits) <> 11 or digits ~ '^(.)\\1{10}$' then
+  if length(digits) <> 11 or digits = repeat(substring(digits from 1 for 1), 11) then
     return false;
   end if;
 
@@ -88,9 +88,9 @@ set search_path = ''
 as $function$
 declare
   uid uuid := auth.uid();
-  cnpj_digits text := regexp_replace(coalesce(p_cnpj, ''), '\\D', '', 'g');
-  cpf_digits text := regexp_replace(coalesce(p_cpf, ''), '\\D', '', 'g');
-  phone_digits text := regexp_replace(coalesce(p_contact_phone, ''), '\\D', '', 'g');
+  cnpj_digits text := regexp_replace(coalesce(p_cnpj, ''), '[^0-9]', '', 'g');
+  cpf_digits text := regexp_replace(coalesce(p_cpf, ''), '[^0-9]', '', 'g');
+  phone_digits text := regexp_replace(coalesce(p_contact_phone, ''), '[^0-9]', '', 'g');
   request_id uuid;
   kind text := lower(trim(coalesce(p_person_type, '')));
 begin
