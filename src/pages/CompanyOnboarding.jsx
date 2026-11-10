@@ -164,7 +164,7 @@ export default function CompanyOnboarding() {
         ['proof_of_address', personType === 'pf' ? 'Comprovante de endereço do responsável ou local de operação' : 'Comprovante de endereço da empresa'],
       ].map(([kind, label]) => <label key={kind}>{label}<input type="file" required accept={ACCEPTED_FILES} onChange={event => setFiles(current => ({ ...current, [kind]: event.target.files?.[0] || null }))} /></label>)}
 
-      <p className="form-hint">O cadastro PF é uma alternativa para quem não possui CNPJ, mas não dispensa licenças, autorizações sanitárias, fiscais ou municipais que sejam exigidas para a atividade e localidade.</p>
+      <p className="form-hint">O documento fiscal, sozinho, não comprova vínculo com a atividade. O cadastro PF é uma alternativa para quem não possui CNPJ, mas não dispensa licenças, autorizações sanitárias, fiscais ou municipais exigidas para a atividade e localidade.</p>
       {error && <p className="form-error" role="alert">{error}</p>}
       <button className="btn btn-primary wide-button" disabled={busy || checking}>
         {busy ? 'Enviando solicitação e documentos…' : requestId ? 'Concluir envio dos documentos' : 'Enviar solicitação e documentos'}
