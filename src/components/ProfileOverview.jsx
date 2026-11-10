@@ -35,7 +35,7 @@ function MenuItem({ icon, title, subtitle, to, onClick }) {
   </Tag>
 }
 
-export default function ProfileOverview({ usuario, staffCompanies = [], pilotProfile, platformAdmin = false, stats = { loading: true }, onEdit, onRefreshStats, incomplete, sair, enviarVerificacaoEmail }) {
+export default function ProfileOverview({ usuario, staffCompanies = [], pilotProfile, platformAdmin = usuario?.admin === true, stats = { loading: true }, onEdit, onRefreshStats, incomplete, sair, enviarVerificacaoEmail }) {
   const navigate = useNavigate()
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
@@ -90,7 +90,7 @@ export default function ProfileOverview({ usuario, staffCompanies = [], pilotPro
     <div className="account-menu account-work">
       <h2>No PratoPronto</h2>
       {!!staffCompanies.length && <MenuItem icon="shop" title="Área da empresa" subtitle="Pedidos, cardápio e equipe" to="/empresa/pedidos" />}
-      <MenuItem icon="shop" title="Quero cadastrar minha empresa" subtitle="Solicite acesso empresarial sujeito à aprovação" to="/empresa/nova" />
+      {!staffCompanies.length && <MenuItem icon="shop" title="Quero cadastrar minha empresa" subtitle="Solicite acesso empresarial sujeito à aprovação" to="/empresa/nova" />}
       {hasPilotArea
         ? <MenuItem icon="bike" title="Área Piloto Parceiro" subtitle="Acompanhe seu cadastro e suas entregas" to="/piloto" />
         : <MenuItem icon="bike" title="Se torne um piloto das entregas" subtitle="Conheça o programa de parceiros" onClick={() => {
