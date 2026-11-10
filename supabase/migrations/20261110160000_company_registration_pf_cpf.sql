@@ -66,6 +66,12 @@ alter table public.restaurantes add column if not exists cpf text;
 create unique index if not exists restaurantes_cpf_unique
   on public.restaurantes(cpf) where cpf is not null;
 
+alter table public.restaurantes
+  drop constraint if exists restaurantes_cpf_format;
+alter table public.restaurantes
+  add constraint restaurantes_cpf_format
+  check (cpf is null or private.valid_cpf(cpf));
+
 alter table public.company_registration_documents
   drop constraint if exists company_registration_documents_document_type_check;
 
@@ -147,17 +153,23 @@ returns table(
   id uuid, person_type text, cnpj text, cpf text, legal_name text,
   trade_name text, contact_phone text, status text, review_note text, created_at timestamptz
 )
-language sql
+language plpgsql
 stable
-security invoker
+security definer
 set search_path = ''
 as $function$
-  select q.id, q.person_type, q.cnpj, q.cpf, q.legal_name, q.trade_name,
-         q.contact_phone, q.status, q.review_note, q.created_at
-  from public.company_registration_requests q
-  where q.user_id = (select auth.uid())
-  order by q.created_at desc
-  limit 1
+begin
+  if auth.uid() is null then
+    raise exception 'Entre na sua conta.' using errcode = '42501';
+  end if;
+  return query
+    select q.id, q.person_type, q.cnpj, q.cpf, q.legal_name, q.trade_name,
+           q.contact_phone, q.status, q.review_note, q.created_at
+    from public.company_registration_requests q
+    where q.user_id = auth.uid()
+    order by q.created_at desc
+    limit 1;
+end
 $function$;
 
 create or replace function public.list_company_registration_requests_v2()
