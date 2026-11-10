@@ -94,7 +94,7 @@ test('cadastro de produtos oferece categorias padronizadas sem adicionais ou per
   assert.match(await source, /personalizavel: false/)
 })
 
-test('painel empresarial não expõe rota ou dados de demonstração', async () => {
+test('demonstrações são somente leitura e protegidas pela administração da plataforma', async () => {
   const app = await (await import('node:fs/promises')).readFile(new URL('../src/App.jsx', import.meta.url), 'utf8')
   const dashboard = await (await import('node:fs/promises')).readFile(new URL('../src/pages/CompanyDashboard.jsx', import.meta.url), 'utf8')
   assert.doesNotMatch(app, /\/demo\/empresa/)
