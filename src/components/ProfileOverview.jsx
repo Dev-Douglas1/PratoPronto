@@ -35,7 +35,7 @@ function MenuItem({ icon, title, subtitle, to, onClick }) {
   </Tag>
 }
 
-export default function ProfileOverview({ usuario, staffCompanies = [], pilotProfile, platformAdmin = usuario?.admin === true, stats = { loading: true }, onEdit, onRefreshStats, incomplete, sair, enviarVerificacaoEmail }) {
+export default function ProfileOverview({ usuario, staffCompanies = [], pilotProfile, platformAdmin = false, stats = { loading: true }, onEdit, onRefreshStats, incomplete, sair, enviarVerificacaoEmail }) {
   const navigate = useNavigate()
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
