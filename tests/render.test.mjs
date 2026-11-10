@@ -97,9 +97,17 @@ test('cadastro de produtos oferece categorias padronizadas sem adicionais ou per
 test('demonstrações são somente leitura e protegidas pela administração da plataforma', async () => {
   const app = await (await import('node:fs/promises')).readFile(new URL('../src/App.jsx', import.meta.url), 'utf8')
   const dashboard = await (await import('node:fs/promises')).readFile(new URL('../src/pages/CompanyDashboard.jsx', import.meta.url), 'utf8')
-  assert.doesNotMatch(app, /\/demo\/empresa/)
+  assert.match(app, /demo\/empresa/)
+  assert.match(app, /demo\/piloto/)
+  assert.match(app, /PlatformAdminRoute/)
   assert.match(dashboard, /const demo = false/)
   assert.match(dashboard, /useCompanyData\(companyId\)/)
+  const companyDemo = await (await import('node:fs/promises')).readFile(new URL('../src/pages/DemoCompany.jsx', import.meta.url), 'utf8')
+  const pilotDemo = await (await import('node:fs/promises')).readFile(new URL('../src/pages/DemoPilot.jsx', import.meta.url), 'utf8')
+  assert.match(companyDemo, /SOMENTE LEITURA/)
+  assert.match(companyDemo, /dados fictícios/)
+  assert.match(pilotDemo, /SOMENTE LEITURA/)
+  assert.match(pilotDemo, /entregas reais/)
 })
 
 test('falha no banco mantém nomes e imagens do cardápio, mas bloqueia preços não confirmados', async () => {
