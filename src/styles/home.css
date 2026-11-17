@@ -175,3 +175,31 @@
   color:#F0C94F;
 }
 .home-screen .legal-links a { color:#858D94; }
+
+/* Tela inicial: carvão, brilho ciano sutil e CTA verde-lima. */
+.home-screen {
+  background-color:#10151A;
+  background-image:
+    radial-gradient(rgba(72,215,232,.035) .8px, transparent .8px),
+    radial-gradient(ellipse at 50% 28%, rgba(72,215,232,.045), transparent 48%),
+    linear-gradient(160deg,#191F25 0%,#12181E 58%,#10151A 100%);
+  background-size:24px 24px,100% 100%,100% 100%;
+}
+.home-screen .home-hero .eyebrow { color:#48D7E8; }
+.home-screen .hero-tagline { color:rgba(243,247,248,.68); }
+.home-screen .home-actions .btn-primary {
+  background:linear-gradient(135deg,#D9FF83 0%,#AEEA4C 100%);
+  color:#14200D;
+  box-shadow:0 8px 26px rgba(200,243,107,.16),inset 0 1px 0 rgba(255,255,255,.32);
+}
+.home-screen .home-actions .btn-outline {
+  border-color:rgba(72,215,232,.24);
+  background:rgba(72,215,232,.045);
+  color:#F3F7F8;
+}
+.home-screen .subtle-badge {
+  border-color:rgba(72,215,232,.22);
+  background:rgba(72,215,232,.06);
+  color:#72E5F0;
+}
+.home-screen .legal-links a { color:#84929B; }
