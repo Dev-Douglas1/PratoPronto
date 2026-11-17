@@ -196,3 +196,35 @@
   background:transparent;
 }
 .login-screen .brand-mark::before { top:18px; width:142px; height:142px; }
+
+/* Estrutura externa mais profunda; brilho decorativo quase imperceptível. */
+.app-shell {
+  background:
+    radial-gradient(circle at 12% 18%, rgba(240,201,79,.022) 0 1px, transparent 2px),
+    radial-gradient(circle at 88% 72%, rgba(233,166,58,.018) 0 1px, transparent 2px),
+    linear-gradient(180deg, #20262B 0%, #191E23 54%, #171B1F 100%);
+  background-size: 48px 48px, 60px 60px, 100% 100%;
+}
+.app-shell::before {
+  border-color: rgba(240,201,79,.045);
+  box-shadow: 0 0 0 38px rgba(240,201,79,.008), 0 0 0 82px rgba(240,201,79,.005);
+}
+/* Halo pequeno e discreto para destacar a marca sem competir com o Pac-Man. */
+.brand-mark::before {
+  top: 34px;
+  width: 138px;
+  height: 138px;
+  background: radial-gradient(circle, #34312A 0%, #292A27 68%, #22262A 100%);
+  border: 1px solid rgba(240,201,79,.16);
+  box-shadow: 0 10px 34px rgba(0,0,0,.32), 0 0 38px rgba(240,201,79,.035);
+}
+.brand-mark--compact::before {
+  top: 2px;
+  width: 27px;
+  height: 27px;
+}
+.login-screen .brand-mark::before {
+  top: 20px;
+  width: 128px;
+  height: 128px;
+}
