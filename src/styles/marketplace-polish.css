@@ -572,3 +572,36 @@
 .app-screen:not(.profile-page) .bottom-nav-pill {
   background: rgba(32,36,41,.97);
 }
+
+/* Camadas de grafite no marketplace; fotos de comida permanecem sem filtro. */
+.app-screen:not(.profile-page) .icon-button,
+.app-screen:not(.profile-page) .search-box,
+.app-screen:not(.profile-page) .category-tabs button,
+.app-screen:not(.profile-page) .search-category-tabs button,
+.app-screen:not(.profile-page) .product-card,
+.app-screen:not(.profile-page) .delivery-summary,
+.app-screen:not(.profile-page) .cart-panel,
+.app-screen:not(.profile-page) .search-empty,
+.app-screen:not(.profile-page) .search-company-item,
+.app-screen:not(.profile-page) .search-product-item,
+.app-screen:not(.profile-page) .light-card,
+.app-screen:not(.profile-page) form.light-card input:not([type=file]),
+.app-screen:not(.profile-page) form.light-card input[type=file],
+.app-screen:not(.profile-page) .quantity-stepper {
+  background-color:#2D333A;
+  border-color:#48515B;
+}
+.app-screen:not(.profile-page) .bottom-nav-pill {
+  background:rgba(34,38,43,.97);
+  border-color:#454D56;
+}
+.app-screen:not(.profile-page) .product-card__image,
+.app-screen:not(.profile-page) .product-detail-image {
+  background:#373F47;
+}
+.app-screen:not(.profile-page) .category-tabs button.is-active,
+.app-screen:not(.profile-page) .search-category-tabs button.is-active {
+  color:#F2D45C;
+  border-color:rgba(242,212,92,.65);
+  background:rgba(242,212,92,.1);
+}
