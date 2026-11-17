@@ -63,3 +63,18 @@
   .app-screen.profile-page .nav-item { min-height: 50px; font-size: 9px; }
   .app-screen.profile-page .nav-icon { font-size: 17px; }
 }
+
+/* Navegação inferior do perfil compatível com a paleta dourada. */
+.app-screen.profile-page .bottom-nav-pill {
+  background:rgba(34,38,43,.97);
+  border-color:#48515B;
+}
+.app-screen.profile-page .nav-item.active {
+  background:rgba(217,169,40,.13);
+  color:#E6C45F;
+}
+.app-screen.profile-page .cart-badge {
+  border-color:#D9A928;
+  background:#D9A928;
+  color:#22262B;
+}
