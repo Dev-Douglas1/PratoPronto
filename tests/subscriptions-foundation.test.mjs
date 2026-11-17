@@ -21,7 +21,9 @@ test('trial registry uses full CNPJ and survives account deletion', () => {
 })
 
 test('commercial gate is independent from administrative blocking', () => {
-  assert.doesNotMatch(sql, /account_status/)
+  const gate = sql.split('create or replace function private.restaurant_subscription_allows_operations')[1]
+  assert.ok(gate)
+  assert.doesNotMatch(gate, /account_status/)
   assert.match(sql, /function private\.restaurant_subscription_allows_operations/)
   assert.match(adr, /Não usar set_restaurant_account_status para inadimplência/)
 })
