@@ -203,3 +203,33 @@
   color:#72E5F0;
 }
 .home-screen .legal-links a { color:#84929B; }
+
+/* Tela inicial: grafite profundo e amarelo dourado como acento da marca. */
+.home-screen {
+  background-color:#22262B;
+  background-image:
+    radial-gradient(rgba(217,169,40,.035) .8px,transparent .8px),
+    radial-gradient(ellipse at 50% 26%,rgba(217,169,40,.035),transparent 48%),
+    linear-gradient(160deg,#2D333A 0%,#252A30 56%,#22262B 100%);
+  background-size:24px 24px,100% 100%,100% 100%;
+}
+.home-screen .home-hero .eyebrow,
+.home-screen .subtle-badge { color:#E5BD55; }
+.home-screen .hero-tagline { color:rgba(245,243,237,.72); }
+.home-screen .home-actions .btn-primary {
+  background:linear-gradient(135deg,#E6C45F 0%,#D1A12D 100%);
+  color:#242321;
+  border:1px solid rgba(255,240,190,.22);
+  box-shadow:0 8px 24px rgba(193,143,28,.16),inset 0 1px 0 rgba(255,255,255,.25);
+}
+.home-screen .home-actions .btn-primary:hover { filter:brightness(1.05); }
+.home-screen .home-actions .btn-outline {
+  border-color:rgba(245,243,237,.18);
+  background:rgba(245,243,237,.035);
+  color:#F5F3ED;
+}
+.home-screen .subtle-badge {
+  border-color:rgba(217,169,40,.24);
+  background:rgba(217,169,40,.07);
+}
+.home-screen .legal-links a { color:#929BA3; }
