@@ -179,3 +179,23 @@ body {
     #171B1F;
 }
 ::selection { background:#F0C94F; color:#171B1F; }
+
+/* Identidade moderna: carvão profundo com acentos luminosos verde-lima e ciano. */
+:root {
+  --yellow: #C8F36B;
+  --yellow-soft: #E4FFAD;
+  --orange: #48D7E8;
+  --black: #10151A;
+  --surface: #191F25;
+  --surface-2: #222B33;
+  --white: #F3F7F8;
+  --muted: #A5B2BB;
+  --line: rgba(222,240,245,.12);
+}
+body {
+  color: var(--white);
+  background:
+    radial-gradient(ellipse at 50% -14%, rgba(72,215,232,.055), transparent 44%),
+    #10151A;
+}
+::selection { background:#C8F36B; color:#10151A; }
