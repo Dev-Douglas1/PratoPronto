@@ -125,3 +125,17 @@ body {
     radial-gradient(circle at 50% 0%, rgba(255,235,24,.07), transparent 33%),
     #292e34;
 }
+
+/* Ajuste experimental: grafite mais escuro e superfícies em camadas. */
+:root {
+  --black: #202429;
+  --surface: #2b3036;
+  --surface-2: #353c44;
+  --muted: #b7bec6;
+  --line: rgba(255,255,255,.14);
+}
+body {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255,235,24,.045), transparent 34%),
+    #202429;
+}
