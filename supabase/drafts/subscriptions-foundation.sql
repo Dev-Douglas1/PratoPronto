@@ -138,7 +138,7 @@ revoke all on table
   private.subscription_events
 from public, anon, authenticated;
 
--- Commercial gate only. Callers must separately enforce administrative status
+-- Commercial gate only. Callers must separately enforce restaurantes.account_status
 -- and the member's role/permission. Basic is perpetual; trial and paid plans
 -- require a future expiry. There is no grace period.
 create or replace function private.restaurant_subscription_allows_operations(
@@ -154,9 +154,7 @@ as $function$
     select 1
     from private.restaurant_subscriptions s
     join private.subscription_plans p on p.code = s.plan_code
-    join public.restaurantes r on r.id = s.restaurant_id
     where s.restaurant_id = p_restaurant_id
-      and r.account_status = 'active'
       and p.active = true
       and (
         (p.code = 'basic' and s.status = 'active')
