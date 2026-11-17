@@ -115,3 +115,35 @@
   background:rgba(242,212,92,.12);
   border-color:rgba(242,212,92,.45);
 }
+
+/* Painel empresarial na mesma identidade carvão + ciano + verde-lima. */
+.company-app {
+  --ink:#F3F7F8;
+  --muted:#A5B2BB;
+  --line:#34414A;
+  --surface:#191F25;
+  --surface-raised:#222B33;
+  --accent:#C8F36B;
+  background:#10151A;
+  color:var(--ink);
+}
+.company-topbar,
+.company-stats > div,.company-order,.company-panel,.company-empty,
+.company-search,.company-toolbar select,.company-product {
+  background:#191F25;
+  color:#F3F7F8;
+  border-color:#34414A;
+}
+.company-content { background:#10151A; color:#F3F7F8; }
+.company-order,.company-panel,.company-dialog { background-color:#191F25; }
+.company-stats strong,.company-empty h3 { color:#C8F36B; }
+.company-store-link { color:#48D7E8; }
+.company-product input,.answer-form textarea,.company-field textarea,
+.company-dialog :is(input,textarea,select) {
+  background:#12181E;
+  color:#F3F7F8;
+  border-color:#34414A !important;
+}
+@media (max-width:900px) {
+  .company-topbar,.company-content { background:#10151A; }
+}
