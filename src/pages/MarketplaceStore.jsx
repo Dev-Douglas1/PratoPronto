@@ -43,7 +43,7 @@ export default function MarketplaceStore() {
         <div className="public-store-meta">
           {store?.address && <span>{[store.address.endereco,store.address.numero,store.address.bairro,store.address.cidade,store.address.uf].filter(Boolean).join(' · ')}</span>}
           {store?.estimateMinutes && <span>Entrega estimada: {store.estimateMinutes} min</span>}
-          {(store?.whatsapp || company?.whatsapp) && <a href={'https://wa.me/' + String(store?.whatsapp || company.whatsapp).replace(/\\D/g,'')} target="_blank" rel="noreferrer">WhatsApp</a>}
+          {(store?.whatsapp || company?.whatsapp) && <a href={'https://wa.me/' + String(store?.whatsapp || company.whatsapp).replace(/\D/g,'')} target="_blank" rel="noreferrer">WhatsApp</a>}
           {(store?.instagram || company?.instagram) && <a href={'https://instagram.com/' + String(store?.instagram || company.instagram).replace(/^@/,'')} target="_blank" rel="noreferrer">Instagram</a>}
         </div>
       </section>
