@@ -8,6 +8,7 @@ import SessionNotice from './components/SessionNotice.jsx'
 import './App.css'
 import './styles/global.css'
 import './styles/marketplace-polish.css'
+import './styles/warm-food-theme.css'
 
 const Home = lazy(() => import('./pages/Home.jsx'))
 const Login = lazy(() => import('./pages/Login.jsx'))
