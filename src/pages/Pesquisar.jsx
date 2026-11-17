@@ -135,8 +135,8 @@ export default function Pesquisar() {
             <div className="search-company-list">
               {results.companies.map(company => (
                 <Link className="search-company-item" key={company.id} to={storePath(company.id)}>
-                  <span className="search-result-icon" aria-hidden="true">⌂</span>
-                  <span><strong>{company.name}</strong><small>Ver estabelecimento e cardápio</small></span><b aria-hidden="true">›</b>
+                  <img className="search-company-logo" src={company.logoUrl || '/icons/app-icon.svg'} alt="" loading="lazy" onError={event => { event.currentTarget.onerror = null; event.currentTarget.src = '/icons/app-icon.svg' }} />
+                  <span className="search-company-copy"><strong>{company.name}</strong><small>{company.category || 'Restaurante'} · {company.active ? 'Consulte disponibilidade' : 'Temporariamente indisponível'}</small>{company.description && <small>{company.description}</small>}</span><b aria-hidden="true">›</b>
                 </Link>
               ))}
               {!results.companies.length && <p className="search-feedback">Nenhum estabelecimento correspondente.</p>}
