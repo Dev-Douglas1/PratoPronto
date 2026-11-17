@@ -139,3 +139,23 @@ body {
     radial-gradient(circle at 50% 0%, rgba(255,235,24,.045), transparent 34%),
     #202429;
 }
+
+/* Paleta refinada: grafite quente, superfícies em camadas e amarelo menos neon. */
+:root {
+  --yellow: #F2D45C;
+  --yellow-soft: #F8E9A7;
+  --orange: #F2D45C;
+  --black: #22262B;
+  --surface: #2D333A;
+  --surface-2: #373F47;
+  --white: #F5F4EF;
+  --muted: #B8BEC5;
+  --line: rgba(245,244,239,.13);
+}
+body {
+  color: var(--white);
+  background:
+    radial-gradient(ellipse at 50% -10%, rgba(242,212,92,.055), transparent 48%),
+    #22262B;
+}
+::selection { background:#F2D45C; color:#22262B; }
