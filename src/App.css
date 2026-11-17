@@ -125,3 +125,25 @@
   border-radius: 50%;
   background: #fff;
 }
+
+/* Grafite escuro em toda a estrutura principal. */
+.app-shell {
+  background:
+    radial-gradient(circle at 12% 18%, rgba(255,235,24,.04) 0 2px, transparent 3px),
+    radial-gradient(circle at 88% 72%, rgba(255,159,28,.035) 0 2px, transparent 3px),
+    linear-gradient(180deg, #252a30 0%, #202429 52%, #1c2126 100%);
+  background-size: 42px 42px, 54px 54px, 100% 100%;
+}
+/* Símbolo com fundo branco menor e contorno preto discreto. */
+.brand-logo-image {
+  padding: 3%;
+  border: 2px solid #111418;
+  border-radius: 50%;
+  background: transparent;
+}
+.brand-mark--compact .brand-logo-image { padding: 2.5%; }
+.app-screen:not(.profile-page) .mini-brand {
+  padding: 2px;
+  border: 1.5px solid #111418;
+  background: transparent;
+}
