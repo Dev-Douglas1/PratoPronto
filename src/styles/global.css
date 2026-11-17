@@ -159,3 +159,23 @@ body {
     #22262B;
 }
 ::selection { background:#F2D45C; color:#22262B; }
+
+/* Tema profundo inspirado em interfaces premium de delivery: carvão neutro, superfícies elevadas e âmbar discreto. */
+:root {
+  --yellow: #F0C94F;
+  --yellow-soft: #F6E4A0;
+  --orange: #E9A63A;
+  --black: #171B1F;
+  --surface: #20262B;
+  --surface-2: #2A3239;
+  --white: #F4F2EC;
+  --muted: #AEB6BD;
+  --line: rgba(244,242,236,.12);
+}
+body {
+  color: var(--white);
+  background:
+    radial-gradient(ellipse at 50% -12%, rgba(226,164,59,.035), transparent 46%),
+    #171B1F;
+}
+::selection { background:#F0C94F; color:#171B1F; }
