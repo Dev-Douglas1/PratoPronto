@@ -3,6 +3,7 @@ import { callServer } from '../../services/server.js'
 import { getSupabase } from '../../lib/supabase.js'
 import { restaurantIdForSlug } from '../../services/company.js'
 import AddressFields from '../AddressFields.jsx'
+import { uploadCompanyProfileImage } from '../../services/marketplace.js'
 import { DEFAULT_COMPANY_ID } from '../../config/marketplace.js'
 
 const days = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado']
@@ -41,6 +42,7 @@ export default function StoreSettings({ demo, companyId = DEFAULT_COMPANY_ID }) 
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState('')
 
   function change(event) {
     const { name, value, type, checked } = event.target
@@ -84,6 +86,18 @@ export default function StoreSettings({ demo, companyId = DEFAULT_COMPANY_ID }) 
     load()
     return () => { alive = false; if (channel) supabase.removeChannel(channel) }
   }, [demo, companyId])
+
+
+  async function uploadProfileImage(kind, file) {
+    if (!file || demo) return
+    setUploadingImage(kind); setError(''); setNotice('')
+    try {
+      const url = await uploadCompanyProfileImage(companyId, kind, file)
+      setForm(current => ({ ...current, publicProfile: { ...current.publicProfile, [kind === 'logo' ? 'logoUrl' : 'coverUrl']: url } }))
+      setNotice(kind === 'logo' ? 'Logo enviada. Salve as configurações para publicar.' : 'Capa enviada. Salve as configurações para publicar.')
+    } catch (err) { setError(err.message || 'Não foi possível enviar a imagem.') }
+    finally { setUploadingImage('') }
+  }
 
   async function save(event) {
     event.preventDefault()
@@ -138,8 +152,8 @@ export default function StoreSettings({ demo, companyId = DEFAULT_COMPANY_ID }) 
       <div className="settings-grid">
         <label>Descrição da loja<textarea name="description" value={form.publicProfile.description} onChange={profileChange} maxLength={500} rows={3} placeholder="Conte o que torna sua loja especial..." /></label>
         <label>Categoria<select name="category" value={form.publicProfile.category} onChange={profileChange}>{['Restaurante','Hamburgueria','Pizzaria','Lanchonete','Padaria','Doceria','Mercado','Bebidas','Outro'].map(value => <option key={value}>{value}</option>)}</select></label>
-        <label>URL da logo (HTTPS)<input name="logoUrl" type="url" value={form.publicProfile.logoUrl} onChange={profileChange} maxLength={1000} placeholder="https://..." /></label>
-        <label>URL da capa (HTTPS)<input name="coverUrl" type="url" value={form.publicProfile.coverUrl} onChange={profileChange} maxLength={1000} placeholder="https://..." /></label>
+        <label>Logo da empresa<input type="file" accept="image/png,image/jpeg,image/webp" disabled={Boolean(uploadingImage) || demo} onChange={event => uploadProfileImage('logo', event.target.files?.[0])} /><small className="muted">JPG, PNG ou WEBP · até 4 MB {uploadingImage === 'logo' ? '· Enviando…' : ''}</small></label>
+        <label>Imagem de capa<input type="file" accept="image/png,image/jpeg,image/webp" disabled={Boolean(uploadingImage) || demo} onChange={event => uploadProfileImage('cover', event.target.files?.[0])} /><small className="muted">JPG, PNG ou WEBP · até 4 MB {uploadingImage === 'cover' ? '· Enviando…' : ''}</small></label>
         <label>WhatsApp da loja<input name="whatsapp" type="tel" value={form.publicProfile.whatsapp} onChange={profileChange} maxLength={20} placeholder="(41) 99999-9999" /></label>
         <label>Instagram<input name="instagram" value={form.publicProfile.instagram} onChange={profileChange} maxLength={80} placeholder="@sualoja" /></label>
       </div>
@@ -183,7 +197,7 @@ export default function StoreSettings({ demo, companyId = DEFAULT_COMPANY_ID }) 
         <label>Retenção operacional (dias)<input name="retentionDays" type="number" min="30" max="3650" value={form.retentionDays} onChange={change} required /></label>
       </div>
       <label className="company-checkbox"><input name="acceptingOrders" type="checkbox" checked={form.acceptingOrders} onChange={change} />Receber pedidos</label>
-      <button className="company-button primary" disabled={busy} type="submit">{busy ? 'Salvando…' : 'Salvar configurações'}</button>
+      <button className="company-button primary" disabled={busy || Boolean(uploadingImage)} type="submit">{busy ? 'Salvando…' : 'Salvar configurações'}</button>
     </form>
   </div>
 }
