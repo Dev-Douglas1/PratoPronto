@@ -228,3 +228,37 @@
   width: 128px;
   height: 128px;
 }
+
+/* Aplicação de carvão profundo e luzes discretas em toda a estrutura. */
+.app-shell {
+  background:
+    radial-gradient(circle at 12% 18%, rgba(72,215,232,.025) 0 1px, transparent 2px),
+    radial-gradient(circle at 88% 72%, rgba(200,243,107,.02) 0 1px, transparent 2px),
+    linear-gradient(180deg, #191F25 0%, #12181E 56%, #10151A 100%);
+  background-size:48px 48px,60px 60px,100% 100%;
+}
+.app-shell::before {
+  border-color:rgba(72,215,232,.045);
+  box-shadow:0 0 0 38px rgba(72,215,232,.008),0 0 0 82px rgba(72,215,232,.004);
+}
+/* Logo sem disco, sem fundo e sem contorno: somente a arte original. */
+.brand-mark::before,
+.login-screen .brand-mark::before {
+  content:none !important;
+  display:none !important;
+}
+.brand-logo-image,
+.brand-mark--compact .brand-logo-image {
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+.app-screen:not(.profile-page) .mini-brand {
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
