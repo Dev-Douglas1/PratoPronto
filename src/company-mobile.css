@@ -56,3 +56,33 @@
  .company-content{padding-inline:11px}
  .company-stats>div{padding:11px}
 }
+
+/* Final mobile visual pass: warm gastronomic palette and shortcut tiles. */
+.company-mobile-brand{display:none}
+.company-mobile-shortcuts{display:none}
+@media(max-width:760px){
+ .company-mobile-brand{display:flex;align-items:center;gap:7px;margin-right:auto;color:#FFF8F0;font-weight:800;font-size:17px;letter-spacing:-.5px}
+ .company-mobile-brand img{width:28px;height:28px;border-radius:50%}
+ .company-mobile-brand>span{color:#FFB800;margin-left:-7px}
+ .company-topbar{background:#181512!important;color:#FFF8F0;border-color:#38312B}
+ .company-store-link{font-size:11px;color:#FFB800;min-height:40px}
+ .company-content,.company-main,.company-topbar{background-color:#181512!important}
+ .company-live-note{background:#241F1B!important;color:#B8AFA6!important;border-bottom:1px solid #38312B}
+ .company-page-heading h1{color:#FFF8F0}
+ .company-page-heading p,.today-label{color:#B8AFA6}
+ .company-stats>div,.company-order,.company-panel,.company-empty,.company-search,.company-toolbar select,.company-product{background:#241F1B!important;color:#FFF8F0!important;border-color:#38312B!important}
+ .company-stats>div.stat-highlight{background:#30271A!important;border-color:rgba(255,184,0,.5)!important}
+ .company-stats strong,.company-empty h3{color:#FFB800!important}
+ .company-nav a.active,.company-nav .company-more.active{color:#FFB800!important;background:rgba(255,184,0,.11)!important}
+ .company-mobile-shortcuts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 18px}
+ .company-mobile-shortcuts a{min-height:104px;display:grid;grid-template-columns:30px 1fr;grid-template-rows:1fr auto;align-items:center;gap:3px 10px;padding:15px;border:1px solid #38312B;border-radius:15px;background:linear-gradient(145deg,#2B241E,#241F1B);color:#FFF8F0;text-decoration:none}
+ .company-mobile-shortcuts a:first-child{background:#FFB800;color:#181512;border-color:#FFB800}
+ .company-mobile-shortcuts svg{grid-row:1/3;width:25px;height:25px}
+ .company-mobile-shortcuts b{align-self:end;font-size:14px}
+ .company-mobile-shortcuts small{align-self:start;color:#B8AFA6;font-size:11px}
+ .company-mobile-shortcuts a:first-child small{color:#49350A}
+ .company-stats{margin-top:0}
+ .company-app .company-button.primary{background:#FFB800!important;color:#181512!important}
+ .company-app .company-button.secondary,.company-app .company-button.subtle{background:#302821!important;color:#FFF8F0!important;border-color:#38312B!important}
+ .company-footer{border-color:#38312B;color:#B8AFA6}
+}
