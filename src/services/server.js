@@ -37,7 +37,7 @@ export async function callServer(name, data = {}) {
       blockedReason: row.blocked_reason || '',
     }))
   }
-  if (name === 'appCreateCompany') return rpc('submit_company_registration', { p_cnpj: data.cnpj, p_legal_name: data.legalName, p_trade_name: data.name, p_contact_phone: data.phone })
+  if (name === 'appCreateCompany') return rpc('submit_company_registration_v2', { p_person_type: data.personType, p_cnpj: data.cnpj || '', p_cpf: data.cpf || '', p_legal_name: data.legalName, p_trade_name: data.name, p_contact_phone: data.phone })
   // p_email is kept for compatibility with already published clients; the RPC also accepts a full account UUID.
   if (name === 'appSaveCompanyMember') return rpc('add_restaurant_member', { p_restaurant_slug: data.companyId, p_email: data.identifier ?? data.email, p_role: data.role })
   if (name === 'appRemoveCompanyMember') return rpc('remove_restaurant_member', { p_restaurant_slug: data.companyId, p_profile_id: data.userId })

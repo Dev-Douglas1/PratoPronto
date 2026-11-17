@@ -23,6 +23,7 @@ import PilotAssignment from '../components/company/PilotAssignment.jsx'
 import CompanyAudit from '../components/company/CompanyAudit.jsx'
 import { DEFAULT_COMPANY_ID, roleLabel } from '../config/marketplace.js'
 import '../company.css'
+import '../company-dark.css'
 import InstallApp from '../components/InstallApp.jsx'
 
 const tabs = [

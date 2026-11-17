@@ -376,13 +376,13 @@ export async function searchMarketplace(term = '') {
 }
 
 export async function getMyCompanyRegistrationRequest() {
-  const { data, error } = await ready().rpc('my_company_registration_request')
+  const { data, error } = await ready().rpc('my_company_registration_request_v2')
   if (error) throw error
   return Array.isArray(data) ? data[0] || null : data || null
 }
 
 export async function listCompanyRegistrationRequests() {
-  const { data, error } = await ready().rpc('list_company_registration_requests')
+  const { data, error } = await ready().rpc('list_company_registration_requests_v2')
   if (error) throw error
   return data || []
 }
