@@ -1,0 +1,237 @@
+/* PRATOPRONTO — tema escuro gastronômico
+   Tokens centralizados e sobrescritas finais para a prévia visual. */
+:root {
+  color-scheme: dark;
+  --yellow: #FFB800;
+  --yellow-soft: #FFD36A;
+  --orange: #FF5A1F;
+  --black: #181512;
+  --surface: #241F1B;
+  --surface-2: #302821;
+  --white: #FFF8F0;
+  --muted: #B8AFA6;
+  --line: rgba(184,175,166,.18);
+  --focus-outline: 3px solid #FFB800;
+}
+
+html, body, #root {
+  background-color: #181512;
+  color: #FFF8F0;
+}
+
+body {
+  color: var(--white);
+  background:
+    radial-gradient(ellipse at 50% -12%, rgba(255,184,0,.075), transparent 46%),
+    #181512;
+}
+
+::selection { background: #FFB800; color: #181512; }
+:focus-visible { outline-color: #FFB800; }
+
+/* Estrutura e superfícies globais */
+.app-shell {
+  background:
+    radial-gradient(circle at 12% 18%, rgba(255,184,0,.025) 0 1px, transparent 2px),
+    radial-gradient(circle at 88% 72%, rgba(255,90,31,.018) 0 1px, transparent 2px),
+    linear-gradient(180deg, #241F1B 0%, #1C1815 54%, #181512 100%);
+  background-size: 48px 48px, 60px 60px, 100% 100%;
+}
+.app-shell::before {
+  border-color: rgba(255,184,0,.055);
+  box-shadow: 0 0 0 38px rgba(255,184,0,.009), 0 0 0 82px rgba(255,184,0,.005);
+}
+.app-screen { color: var(--white); }
+
+/* Marca */
+.brand-wordmark strong { color: #FFB800; }
+.brand-tagline { color: var(--muted); }
+.brand-mark::before,
+.login-screen .brand-mark::before { display: none !important; content: none !important; }
+
+/* Página inicial */
+.home-screen {
+  background-color: #181512;
+  background-image:
+    radial-gradient(rgba(255,184,0,.025) .8px, transparent .8px),
+    radial-gradient(ellipse at 50% 28%, rgba(255,90,31,.035), transparent 48%),
+    linear-gradient(160deg, #241F1B 0%, #1C1815 56%, #181512 100%);
+  background-size: 24px 24px, 100% 100%, 100% 100%;
+}
+.home-screen .home-hero .eyebrow { color: #FFB800; }
+.home-screen .hero-tagline { color: rgba(255,248,240,.72); }
+.home-screen .home-actions .btn-primary {
+  background: #FFB800;
+  color: #21180A;
+  border: 1px solid rgba(255,220,140,.28);
+  box-shadow: 0 8px 24px rgba(255,184,0,.17), inset 0 1px 0 rgba(255,255,255,.24);
+}
+.home-screen .home-actions .btn-primary:hover { background: #FFC533; filter: none; }
+.home-screen .home-actions .btn-outline {
+  border-color: #38312B;
+  background: rgba(255,248,240,.025);
+  color: #FFF8F0;
+}
+.home-screen .subtle-badge {
+  border-color: #38312B;
+  background: rgba(255,248,240,.025);
+  color: #B8AFA6;
+}
+.home-screen .legal-links a { color: #9A9086; }
+.home-screen .install-app button {
+  border: 1px solid #38312B;
+  background: rgba(255,248,240,.025);
+  color: #B8AFA6;
+  box-shadow: none;
+}
+.home-screen .install-app button:hover { border-color: #62564A; color: #FFF8F0; }
+
+/* Autenticação */
+.login-screen .eyebrow,
+.login-screen .login-footer-links a { color: #FFB800; }
+.login-screen h1 { color: #FFF8F0; }
+.login-screen .form-group > label { color: #E8DED3; }
+.login-screen .form-group input,
+.login-screen .password-input-wrapper {
+  border-color: #38312B;
+  background: #241F1B;
+  color: #FFF8F0;
+}
+.login-screen .form-group input::placeholder { color: #8F857B; }
+.login-screen .form-group input:focus { border-color: #FFB800; box-shadow: 0 0 0 3px rgba(255,184,0,.13); }
+.login-screen .btn-toggle-password {
+  border-left-color: #38312B;
+  background: #302821;
+  color: #FFB800;
+}
+.login-screen .btn-primary { background: #FFB800; color: #21180A; }
+.login-screen .btn-outline {
+  border-color: #38312B;
+  background: #241F1B;
+  color: #FFF8F0;
+}
+.login-screen .login-footer-links { color: #B8AFA6; }
+
+/* Marketplace e telas internas */
+.app-screen:not(.profile-page) .icon-button,
+.app-screen:not(.profile-page) .search-box,
+.app-screen:not(.profile-page) .category-tabs button,
+.app-screen:not(.profile-page) .search-category-tabs button,
+.app-screen:not(.profile-page) .delivery-summary,
+.app-screen:not(.profile-page) .cart-panel,
+.app-screen:not(.profile-page) .search-empty,
+.app-screen:not(.profile-page) .search-company-item,
+.app-screen:not(.profile-page) .search-product-item,
+.app-screen:not(.profile-page) .light-card,
+.app-screen:not(.profile-page) form.light-card input:not([type=file]),
+.app-screen:not(.profile-page) form.light-card input[type=file],
+.app-screen:not(.profile-page) .quantity-stepper,
+.app-screen:not(.profile-page) .quantity-stepper button {
+  background-color: #241F1B;
+  border-color: #38312B;
+  color: #FFF8F0;
+}
+.app-screen:not(.profile-page) .bottom-nav-pill {
+  background: rgba(24,21,18,.97);
+  border-color: #38312B;
+}
+.app-screen:not(.profile-page) .nav-item.active {
+  background: rgba(255,184,0,.12);
+  color: #FFB800;
+}
+.app-screen:not(.profile-page) .icon-button,
+.app-screen:not(.profile-page) .delivery-summary__icon,
+.app-screen:not(.profile-page) .product-detail-company,
+.app-screen:not(.profile-page) .product-price strong,
+.app-screen:not(.profile-page) .product-detail-price strong {
+  color: #FFB800;
+}
+.app-screen:not(.profile-page) .catalog-heading small,
+.app-screen:not(.profile-page) .page-heading .eyebrow { color: #FFB800; }
+.app-screen:not(.profile-page) .catalog-heading p,
+.app-screen:not(.profile-page) .page-heading p,
+.app-screen:not(.profile-page) .section-heading > span,
+.app-screen:not(.profile-page) .product-card__company,
+.app-screen:not(.profile-page) .product-card-content p,
+.app-screen:not(.profile-page) .search-company-item small,
+.app-screen:not(.profile-page) .search-product-item small {
+  color: #B8AFA6;
+}
+.app-screen:not(.profile-page) .category-tabs button.is-active,
+.app-screen:not(.profile-page) .search-category-tabs button.is-active {
+  color: #FFB800;
+  border-color: rgba(255,184,0,.62);
+  background: rgba(255,184,0,.10);
+}
+.app-screen:not(.profile-page) .offer-filter {
+  border-color: rgba(255,90,31,.35);
+  background: rgba(255,90,31,.09);
+  color: #FF8A5F;
+}
+.app-screen:not(.profile-page) .product-card__tag,
+.app-screen:not(.profile-page) .product-detail-discount {
+  background: #FFB800;
+  color: #21180A;
+}
+.app-screen:not(.profile-page) .add-button,
+.app-screen:not(.profile-page) .product-detail-add,
+.app-screen:not(.profile-page) .cart-badge {
+  background: #FFB800;
+  color: #21180A;
+}
+.app-screen:not(.profile-page) .btn-primary,
+.app-screen:not(.profile-page) .two-actions .btn-primary,
+.app-screen:not(.profile-page) .bottom-actions .btn-primary {
+  background: #FFB800;
+  color: #21180A;
+}
+
+/* Área de apresentação: fotografia sem filtro e conteúdo em superfície branca. */
+.app-screen:not(.profile-page) .product-card {
+  overflow: hidden;
+  border-color: #E9E2D9;
+  background: #FFFFFF;
+  color: #211B16;
+}
+.app-screen:not(.profile-page) .product-card-content,
+.app-screen:not(.profile-page) .product-card-content h3 {
+  background: #FFFFFF;
+  color: #211B16;
+}
+.app-screen:not(.profile-page) .product-card__company,
+.app-screen:not(.profile-page) .product-card-content p { color: #74695F; }
+.app-screen:not(.profile-page) .product-card__image,
+.app-screen:not(.profile-page) .product-detail-image { background: #FFFFFF; }
+.app-screen:not(.profile-page) .product-detail-info {
+  padding: 20px 16px 10px;
+  border-radius: 18px;
+  background: #FFFFFF;
+  color: #211B16;
+}
+.app-screen:not(.profile-page) .product-detail-info h1,
+.app-screen:not(.profile-page) .product-detail-description h2 { color: #211B16; }
+.app-screen:not(.profile-page) .product-detail-description p { color: #655B52; }
+.app-screen:not(.profile-page) .product-detail-description {
+  border-color: #E9E2D9;
+}
+.app-screen:not(.profile-page) .product-detail-company { color: #9A6500; }
+.app-screen:not(.profile-page) .product-price strong,
+.app-screen:not(.profile-page) .product-detail-price strong { color: #9A6500; }
+
+/* Estados e elementos auxiliares */
+.app-screen:not(.profile-page) .btn-secondary {
+  border-color: #38312B;
+  background: #302821;
+  color: #FFF8F0;
+}
+.app-screen:not(.profile-page) .favorite-button.is-favorite {
+  border-color: rgba(255,184,0,.5);
+  background: rgba(255,184,0,.12);
+  color: #FFB800;
+}
+.app-screen:not(.profile-page) .cart-alert,
+.app-screen:not(.profile-page) .product-detail-offer { color: #FF8A5F; }
+
+@media (prefers-reduced-motion: reduce) {
+  .home-screen .home-actions .btn-primary:hover { filter: none; }
+}
