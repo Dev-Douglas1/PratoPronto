@@ -24,6 +24,7 @@ export default function CompanyOnboarding() {
   const [files, setFiles] = useState({ fiscal_document: null, identity: null, proof_of_address: null })
   const [currentRequest, setCurrentRequest] = useState(null)
   const [checking, setChecking] = useState(true)
+  const [requestLoadError, setRequestLoadError] = useState(false)
 
   const fiscalDocumentType = personType === 'pf' ? 'cpf_card' : 'cnpj_card'
   const fiscalDocumentLabel = personType === 'pf'
@@ -46,14 +47,18 @@ export default function CompanyOnboarding() {
           setPhone(row.contact_phone || '')
         }
       })
-      .catch(() => {})
+      .catch(err => {
+        if (!active) return
+        setRequestLoadError(true)
+        setError(err?.message || 'Não foi possível consultar suas solicitações. Atualize a página antes de enviar um novo cadastro.')
+      })
       .finally(() => { if (active) setChecking(false) })
     return () => { active = false }
   }, [])
 
   async function submit(event) {
     event.preventDefault()
-    if (busy) return
+    if (busy || checking || requestLoadError) return
 
     const fiscalDigits = personType === 'pf' ? onlyDigits(cpf) : onlyDigits(cnpj)
     if (personType === 'pf' && !validCpf(fiscalDigits)) {
@@ -116,6 +121,7 @@ export default function CompanyOnboarding() {
     </div>
 
     {checking && <section className="light-card" role="status">Consultando suas solicitações…</section>}
+    {requestLoadError && <section className="light-card" role="alert">Não foi possível confirmar se já existe uma solicitação em andamento. Atualize a página e tente novamente para evitar cadastros duplicados.</section>}
 
     {currentRequest && <section className="light-card" aria-live="polite">
       <h2>Acompanhamento da solicitação</h2>
@@ -166,7 +172,7 @@ export default function CompanyOnboarding() {
 
       <p className="form-hint">O documento fiscal, sozinho, não comprova vínculo com a atividade. O cadastro PF é uma alternativa para quem não possui CNPJ, mas não dispensa licenças, autorizações sanitárias, fiscais ou municipais exigidas para a atividade e localidade.</p>
       {error && <p className="form-error" role="alert">{error}</p>}
-      <button className="btn btn-primary wide-button" disabled={busy || checking}>
+      <button className="btn btn-primary wide-button" disabled={busy || checking || requestLoadError}>
         {busy ? 'Enviando solicitação e documentos…' : requestId ? 'Concluir envio dos documentos' : 'Enviar solicitação e documentos'}
       </button>
     </form>}
