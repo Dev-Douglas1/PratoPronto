@@ -544,3 +544,31 @@
 .app-screen:not(.profile-page) .section-heading > span {
   color: #c0c5cb;
 }
+
+/* Superfícies do marketplace em grafite mais escuro, sem alterar imagens dos produtos. */
+.app-screen:not(.profile-page) .icon-button,
+.app-screen:not(.profile-page) .search-box,
+.app-screen:not(.profile-page) .category-tabs button,
+.app-screen:not(.profile-page) .search-category-tabs button,
+.app-screen:not(.profile-page) .product-card,
+.app-screen:not(.profile-page) .delivery-summary,
+.app-screen:not(.profile-page) .cart-panel,
+.app-screen:not(.profile-page) .search-empty,
+.app-screen:not(.profile-page) .search-company-item,
+.app-screen:not(.profile-page) .search-product-item,
+.app-screen:not(.profile-page) .light-card,
+.app-screen:not(.profile-page) form.light-card input:not([type=file]),
+.app-screen:not(.profile-page) form.light-card input[type=file],
+.app-screen:not(.profile-page) .bottom-nav-pill,
+.app-screen:not(.profile-page) .quantity-stepper,
+.app-screen:not(.profile-page) .quantity-stepper button {
+  background-color: #2b3036;
+  border-color: #454d56;
+}
+.app-screen:not(.profile-page) .product-card__image,
+.app-screen:not(.profile-page) .product-detail-image {
+  background: #353c44;
+}
+.app-screen:not(.profile-page) .bottom-nav-pill {
+  background: rgba(32,36,41,.97);
+}
