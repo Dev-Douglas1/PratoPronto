@@ -50,6 +50,11 @@ export function subscribeCompany(companyId, onChange, onError) {
       description: data.descricao,
       phone: data.telefone,
       address: data.endereco,
+      logoUrl: data.avatar_url || '',
+      coverUrl: data.capa_url || '',
+      category: data.categoria || 'Restaurante',
+      whatsapp: data.whatsapp || '',
+      instagram: data.instagram || '',
       active: data.ativo,
     } : null)
   }
