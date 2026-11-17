@@ -146,3 +146,32 @@
   color:#F2D45C;
 }
 .home-screen .hero-tagline { color:rgba(245,244,239,.68); }
+
+/* Landing escura com textura mínima e destaque âmbar para a ação principal. */
+.home-screen {
+  background-color:#171B1F;
+  background-image:
+    radial-gradient(rgba(240,201,79,.025) .8px, transparent .8px),
+    radial-gradient(ellipse at 50% 28%, rgba(233,166,58,.035), transparent 48%),
+    linear-gradient(160deg, #20262B 0%, #191E23 56%, #171B1F 100%);
+  background-size:24px 24px, 100% 100%, 100% 100%;
+}
+.home-screen .home-hero .eyebrow { color:#F0C94F; }
+.home-screen .hero-tagline { color:rgba(244,242,236,.66); }
+.home-screen .home-actions .btn-primary {
+  background:linear-gradient(180deg,#F4D66D 0%,#E9BE45 100%);
+  color:#211F18;
+  box-shadow:0 8px 24px rgba(233,190,69,.12), inset 0 1px 0 rgba(255,255,255,.28);
+}
+.home-screen .home-actions .btn-primary:hover { filter:brightness(1.04); }
+.home-screen .home-actions .btn-outline {
+  border-color:rgba(244,242,236,.17);
+  background:rgba(244,242,236,.035);
+  color:#F4F2EC;
+}
+.home-screen .subtle-badge {
+  border-color:rgba(240,201,79,.18);
+  background:rgba(240,201,79,.045);
+  color:#F0C94F;
+}
+.home-screen .legal-links a { color:#858D94; }
