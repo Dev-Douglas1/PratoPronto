@@ -199,3 +199,26 @@ body {
     #10151A;
 }
 ::selection { background:#C8F36B; color:#10151A; }
+
+/* PRATOPRONTO — paleta oficial de prévia: grafite + amarelo dourado */
+:root {
+  color-scheme: dark;
+  --yellow: #D9A928;
+  --yellow-soft: #F2D98A;
+  --orange: #C58B20;
+  --black: #22262B;
+  --surface: #2D333A;
+  --surface-2: #383F47;
+  --white: #F5F3ED;
+  --muted: #B8BEC5;
+  --line: rgba(245,243,237,.14);
+  --focus-outline: 3px solid #D9A928;
+}
+body {
+  color: #F5F3ED;
+  background:
+    radial-gradient(ellipse at 50% -12%, rgba(217,169,40,.055), transparent 46%),
+    #22262B;
+}
+::selection { background:#D9A928; color:#22262B; }
+:focus-visible { outline-color:#D9A928; }
