@@ -8,6 +8,7 @@ import { DEFAULT_COMPANY_ID } from '../../config/marketplace.js'
 const days = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado']
 const empty = () => ({
   name: '', legalName: '', document: '', phone: '', privacyEmail: '',
+  publicProfile: { description: '', category: 'Restaurante', logoUrl: '', coverUrl: '', whatsapp: '', instagram: '' },
   address: { endereco: '', numero: '', bairro: '', complemento: '', cep: '', cidade: '', uf: '' },
   timezone: 'America/Sao_Paulo', estimateMinutes: 45, retentionDays: 90, acceptingOrders: false,
   methods: ['maquina_entrega'], hours: days.map(() => []),
@@ -23,6 +24,7 @@ const fromStored = data => {
     ...(data || {}),
     methods: ['maquina_entrega'],
     address: { ...base.address, ...(data?.address || {}) },
+    publicProfile: { ...base.publicProfile, ...(data?.publicProfile || {}) },
     hours: days.map((_,index) => data?.hours?.[index] || []),
     zones: zones.map(zone => ({
       bairro: zone.bairro || '',
@@ -43,6 +45,10 @@ export default function StoreSettings({ demo, companyId = DEFAULT_COMPANY_ID }) 
   function change(event) {
     const { name, value, type, checked } = event.target
     setForm(current => ({ ...current, [name]: type === 'checkbox' ? checked : type === 'number' ? Number(value) : value }))
+  }
+  function profileChange(event) {
+    const { name, value } = event.target
+    setForm(current => ({ ...current, publicProfile: { ...current.publicProfile, [name]: value } }))
   }
   function addressChange(event) {
     const { name, value } = event.target
@@ -126,6 +132,19 @@ export default function StoreSettings({ demo, companyId = DEFAULT_COMPANY_ID }) 
           <label key={name}>{label}<input name={name} value={form[name]} onChange={change} type={name === 'privacyEmail' ? 'email' : 'text'} maxLength={name === 'privacyEmail' ? 254 : 160} required={name !== 'document'} /></label>
         )}
       </div>
+
+      <h3>Perfil público da loja</h3>
+      <p className="muted">Essas informações formam a apresentação da empresa para os clientes. Use links HTTPS para as imagens.</p>
+      <div className="settings-grid">
+        <label>Descrição da loja<textarea name="description" value={form.publicProfile.description} onChange={profileChange} maxLength={500} rows={3} placeholder="Conte o que torna sua loja especial..." /></label>
+        <label>Categoria<select name="category" value={form.publicProfile.category} onChange={profileChange}>{['Restaurante','Hamburgueria','Pizzaria','Lanchonete','Padaria','Doceria','Mercado','Bebidas','Outro'].map(value => <option key={value}>{value}</option>)}</select></label>
+        <label>URL da logo (HTTPS)<input name="logoUrl" type="url" value={form.publicProfile.logoUrl} onChange={profileChange} maxLength={1000} placeholder="https://..." /></label>
+        <label>URL da capa (HTTPS)<input name="coverUrl" type="url" value={form.publicProfile.coverUrl} onChange={profileChange} maxLength={1000} placeholder="https://..." /></label>
+        <label>WhatsApp da loja<input name="whatsapp" type="tel" value={form.publicProfile.whatsapp} onChange={profileChange} maxLength={20} placeholder="(41) 99999-9999" /></label>
+        <label>Instagram<input name="instagram" value={form.publicProfile.instagram} onChange={profileChange} maxLength={80} placeholder="@sualoja" /></label>
+      </div>
+      {form.publicProfile.logoUrl && <div className="profile-image-preview"><img src={form.publicProfile.logoUrl} alt="Prévia da logo da loja" onError={event => { event.currentTarget.style.display = 'none' }} /><span>Prévia da logo</span></div>}
+      {form.publicProfile.coverUrl && <div className="profile-cover-preview"><img src={form.publicProfile.coverUrl} alt="Prévia da capa da loja" onError={event => { event.currentTarget.style.display = 'none' }} /><span>Prévia da capa</span></div>}
       <h3>Endereço da empresa</h3>
       <AddressFields data={form.address} onChange={addressChange} />
       <div className="settings-grid">
