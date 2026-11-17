@@ -19,7 +19,7 @@
 .account-overview { padding: 24px 20px 22px; }
 .account-overview__top { display: flex; align-items: center; gap: 19px; margin-bottom: 19px; }
 .account-avatar { flex: 0 0 82px; width: 82px; height: 82px; display: grid; place-items: center; padding: 4px; border: 2px solid #e5ce00; border-radius: 50%; background: #fff; }
-.account-avatar > :is(span, img) { display: grid; place-items: center; width: 100%; height: 100%; border-radius: 50%; background: #171914; color: #ffeb18; font-size: 32px; font-weight: 750; object-fit: cover; }
+.account-avatar > :is(span, img) { display: grid; place-items: center; width: 100%; height: 100%; border-radius: 50%; background: #3d444c; color: #ffeb18; font-size: 32px; font-weight: 750; object-fit: cover; }
 .account-stats { flex: 1; min-width: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 0; }
 .account-stats > div { min-width: 0; display: flex; flex-direction: column-reverse; align-items: center; gap: 5px; text-align: center; }
 .account-stats dt { color: #63675d; font-size: .75rem; line-height: 1.3; }
