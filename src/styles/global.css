@@ -15,12 +15,12 @@
     --yellow: #ffeb18;
     --yellow-soft: #fff7a6;
     --orange: #ffeb18;
-    --black: #090909;
-    --surface: #151515;
-    --surface-2: #1d1d1d;
+    --black: #30343a;
+    --surface: #383e45;
+    --surface-2: #424951;
     --white: #ffffff;
-    --muted: #a7a7a7;
-    --line: rgba(255, 255, 255, 0.1);
+    --muted: #c0c5cb;
+    --line: rgba(255, 255, 255, 0.16);
     --danger: #d93636;
     --success: #25a65a;
   
@@ -59,7 +59,7 @@
         rgba(255, 235, 24, 0.13),
         transparent 33%
       ),
-      #070707;
+      #292e34;
     font-family: inherit;
   }
   
@@ -110,3 +110,18 @@
 
 /* Evita rolagem horizontal causada por conteúdo em telas estreitas. */
 html, body, #root { width: 100%; max-width: 100%; overflow-x: clip; }
+
+
+/* Base grafite compartilhada por todas as rotas do aplicativo. */
+:root {
+  --black: #30343a;
+  --surface: #383e45;
+  --surface-2: #424951;
+  --muted: #c0c5cb;
+  --line: rgba(255,255,255,.16);
+}
+body {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255,235,24,.07), transparent 33%),
+    #292e34;
+}
