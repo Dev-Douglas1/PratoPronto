@@ -605,3 +605,36 @@
   border-color:rgba(242,212,92,.65);
   background:rgba(242,212,92,.1);
 }
+
+/* Superfícies mais escuras e elevadas para manter hierarquia em todo o marketplace. */
+.app-screen:not(.profile-page) .icon-button,
+.app-screen:not(.profile-page) .search-box,
+.app-screen:not(.profile-page) .category-tabs button,
+.app-screen:not(.profile-page) .search-category-tabs button,
+.app-screen:not(.profile-page) .product-card,
+.app-screen:not(.profile-page) .delivery-summary,
+.app-screen:not(.profile-page) .cart-panel,
+.app-screen:not(.profile-page) .search-empty,
+.app-screen:not(.profile-page) .search-company-item,
+.app-screen:not(.profile-page) .search-product-item,
+.app-screen:not(.profile-page) .light-card,
+.app-screen:not(.profile-page) form.light-card input:not([type=file]),
+.app-screen:not(.profile-page) form.light-card input[type=file],
+.app-screen:not(.profile-page) .quantity-stepper {
+  background-color:#20262B;
+  border-color:#3A434B;
+}
+.app-screen:not(.profile-page) .product-card__image,
+.app-screen:not(.profile-page) .product-detail-image {
+  background:#2A3239;
+}
+.app-screen:not(.profile-page) .bottom-nav-pill {
+  background:rgba(23,27,31,.97);
+  border-color:#343D45;
+}
+.app-screen:not(.profile-page) .category-tabs button.is-active,
+.app-screen:not(.profile-page) .search-category-tabs button.is-active {
+  color:#F0C94F;
+  border-color:rgba(240,201,79,.58);
+  background:rgba(240,201,79,.085);
+}
