@@ -1,0 +1,58 @@
+/* Mobile-first refinement for the company workspace and profile editor. */
+.store-settings .profile-image-preview,.store-settings .profile-cover-preview{display:flex;align-items:center;gap:14px;margin:12px 0;padding:12px;border:1px solid #38312B;border-radius:14px;background:#241F1B;color:#B8AFA6}
+.store-settings .profile-image-preview img{width:76px;height:76px;object-fit:cover;border-radius:50%;background:#181512}
+.store-settings .profile-cover-preview{position:relative;min-height:110px;overflow:hidden}
+.store-settings .profile-cover-preview img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.72}
+.store-settings .profile-cover-preview span{position:relative;z-index:1;padding:6px 10px;border-radius:8px;background:#181512;color:#FFF8F0}
+@media(max-width:760px){
+ .company-app{display:block;min-height:100dvh;padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+ .company-sidebar{position:fixed;z-index:30;inset:auto 0 0;width:100%;height:auto;min-height:0;padding:7px 8px calc(7px + env(safe-area-inset-bottom));border:0;border-top:1px solid #38312B;background:rgba(24,21,18,.97);backdrop-filter:blur(16px);overflow:visible}
+ .company-brand,.workspace-label,.company-selector,.sidebar-bottom{display:none}
+ .company-nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px}
+ .company-nav a,.company-nav .company-more{display:flex;min-width:0;min-height:54px;padding:5px 2px;flex-direction:column;justify-content:center;gap:3px;border-radius:10px;color:#B8AFA6;font-size:10px;line-height:1.1;text-align:center}
+ .company-nav a svg,.company-nav .company-more svg{width:19px;height:19px}
+ .company-nav a.active,.company-nav .company-more.active{background:rgba(255,184,0,.13);color:#FFB800}
+ .company-nav a b{position:absolute;margin:0 0 30px 24px;min-width:17px;padding:1px 4px;font-size:9px}
+ .company-nav .nav-secondary{display:none}
+ .company-nav .company-more{display:flex;border:0;background:transparent}
+ .company-main{width:100%;min-width:0}
+ .company-topbar{height:54px;padding:0 16px;background:#181512;border-bottom:1px solid #38312B}
+ .company-live-note,.company-demo-banner{padding:9px 16px;font-size:11px;line-height:1.4}
+ .company-content{padding:22px 14px 18px;background:#181512}
+ .company-page-heading{margin-bottom:18px;gap:8px}
+ .company-page-heading h1{font-size:25px;letter-spacing:-.6px}
+ .company-page-heading p{font-size:12px}
+ .today-label{font-size:10px}
+ .company-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:18px}
+ .company-stats>div{padding:13px;border-radius:13px}
+ .company-stats strong{font-size:29px}
+ .company-stats>div>span,.company-stats small{font-size:11px}
+ .company-toolbar{display:grid;grid-template-columns:1fr;gap:9px;margin-bottom:14px}
+ .company-search,.company-toolbar select{width:100%;min-height:48px}
+ .results-count{margin:0;text-align:right}
+ .company-orders,.company-reviews,.company-catalog{grid-template-columns:1fr;gap:12px}
+ .company-order,.company-panel{padding:15px;border-radius:14px}
+ .company-order h2{font-size:17px}
+ .company-order-actions{gap:8px}
+ .company-footer{display:grid;gap:8px;padding:16px 0;font-size:11px}
+ .company-footer>span:nth-child(2){display:none}
+ .store-settings{min-width:0}
+ .store-settings .company-panel{padding:15px;margin-bottom:12px;border-radius:14px}
+ .settings-form{display:grid;gap:14px}
+ .settings-form h2{font-size:18px}
+ .settings-form h3{margin:12px 0 0;font-size:15px}
+ .settings-form .settings-grid{grid-template-columns:1fr;gap:12px}
+ .settings-form :is(input:not([type=checkbox]),select,textarea){width:100%;min-width:0;min-height:48px;font-size:16px}
+ .settings-form textarea{min-height:100px}
+ .hours-row,.zone-row{display:grid;grid-template-columns:1fr;gap:9px;padding:12px 0}
+ .hours-period{display:grid;grid-template-columns:1fr auto 1fr auto;align-items:center;gap:6px}
+ .hours-period input{width:100%;min-width:0}
+ .settings-form>.company-button{width:100%;min-height:52px}
+ .company-menu-dialog{margin:0 8px calc(78px + env(safe-area-inset-bottom));width:calc(100% - 16px)}
+ .company-more-links a{min-height:52px}
+}
+@media(max-width:380px){
+ .company-nav a,.company-nav .company-more{font-size:9px}
+ .company-content{padding-inline:11px}
+ .company-stats>div{padding:11px}
+}
