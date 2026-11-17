@@ -498,3 +498,49 @@
   .app-screen:not(.profile-page) .bottom-nav-pill { gap: 1px; padding: 5px; }
   .app-screen:not(.profile-page) .nav-item { min-height: 54px; }
 }
+
+
+/* Substituição dos fundos pretos por grafite nas telas do marketplace. */
+.app-screen:not(.profile-page) .icon-button,
+.app-screen:not(.profile-page) .search-box,
+.app-screen:not(.profile-page) .category-tabs button,
+.app-screen:not(.profile-page) .search-category-tabs button,
+.app-screen:not(.profile-page) .product-card,
+.app-screen:not(.profile-page) .delivery-summary,
+.app-screen:not(.profile-page) .cart-panel,
+.app-screen:not(.profile-page) .search-empty,
+.app-screen:not(.profile-page) .search-company-item,
+.app-screen:not(.profile-page) .search-product-item,
+.app-screen:not(.profile-page) .light-card,
+.app-screen:not(.profile-page) form.light-card input:not([type=file]),
+.app-screen:not(.profile-page) form.light-card input[type=file],
+.app-screen:not(.profile-page) .bottom-nav-pill,
+.app-screen:not(.profile-page) .quantity-stepper,
+.app-screen:not(.profile-page) .quantity-stepper button {
+  background-color: #383e45;
+  border-color: #555e68;
+}
+.app-screen:not(.profile-page) .product-card__image,
+.app-screen:not(.profile-page) .product-detail-image {
+  background: #424951;
+}
+.app-screen:not(.profile-page) .title-pill,
+.app-screen:not(.profile-page) .catalog-heading h1,
+.app-screen:not(.profile-page) .page-heading h1,
+.app-screen:not(.profile-page) .section-heading h2,
+.app-screen:not(.profile-page) .product-detail-info h1,
+.app-screen:not(.profile-page) .light-card,
+.app-screen:not(.profile-page) .light-card h2 {
+  color: #f5f6f7;
+}
+.app-screen:not(.profile-page) .search-box input,
+.app-screen:not(.profile-page) form.light-card input:not([type=file]) {
+  color: #f5f6f7;
+}
+.app-screen:not(.profile-page) .catalog-heading p,
+.app-screen:not(.profile-page) .page-heading p,
+.app-screen:not(.profile-page) .product-card__company,
+.app-screen:not(.profile-page) .product-card-content p,
+.app-screen:not(.profile-page) .section-heading > span {
+  color: #c0c5cb;
+}
