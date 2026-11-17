@@ -6,7 +6,7 @@
   align-items: center;
   justify-content: space-between;
   padding: clamp(20px, 5vh, 48px) 20px max(28px, env(safe-area-inset-bottom));
-  background-color: #0d0d0d;
+  background-color: #30343a;
   background-image: radial-gradient(rgba(255, 235, 24, 0.08) 1px, transparent 1px);
   background-size: 22px 22px;
 }
