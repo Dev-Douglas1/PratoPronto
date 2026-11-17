@@ -122,3 +122,27 @@
   background-color: #252a30;
   background-image: radial-gradient(rgba(255,235,24,.055) 1px, transparent 1px);
 }
+
+/* Landing: contraste mais suave e CTA dourado, preservando o amarelo do Pac-Man. */
+.home-screen {
+  background-color:#252A30;
+  background-image:
+    radial-gradient(rgba(242,212,92,.055) 1px, transparent 1px),
+    linear-gradient(145deg, rgba(255,255,255,.012), transparent 52%);
+}
+.home-screen .home-hero .eyebrow { color:#F2D45C; }
+.home-screen .home-actions .btn-primary {
+  background:#F2D45C;
+  color:#252A30;
+  box-shadow:0 8px 22px rgba(242,212,92,.14);
+}
+.home-screen .home-actions .btn-outline {
+  border-color:rgba(245,244,239,.2);
+  background:rgba(245,244,239,.045);
+}
+.home-screen .subtle-badge {
+  border-color:rgba(242,212,92,.2);
+  background:rgba(242,212,92,.055);
+  color:#F2D45C;
+}
+.home-screen .hero-tagline { color:rgba(245,244,239,.68); }
