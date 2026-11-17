@@ -99,3 +99,29 @@
   display: block; width: 30px; height: 30px; flex: 0 0 30px; object-fit: contain;
 }
 .brand-logo-image { aspect-ratio: 1; }
+
+
+/* Prévia do tema grafite global: reduz o preto sem alterar a identidade amarela. */
+.app-shell {
+  background:
+    radial-gradient(circle at 12% 18%, rgba(255, 235, 24, 0.055) 0 2px, transparent 3px),
+    radial-gradient(circle at 88% 72%, rgba(255, 159, 28, 0.05) 0 2px, transparent 3px),
+    linear-gradient(180deg, #30343a 0%, #292e34 52%, #252a30 100%);
+  background-size: 42px 42px, 54px 54px, 100% 100%;
+}
+.app-shell::before { border-color: rgba(255, 235, 24, 0.09); }
+
+/* Fundo branco circular experimental somente atrás do símbolo, sem editar a arte. */
+.brand-logo-image {
+  box-sizing: border-box;
+  padding: 10%;
+  border-radius: 50%;
+  background: #fff;
+}
+.brand-mark--compact .brand-logo-image { padding: 9%; }
+.app-screen:not(.profile-page) .mini-brand {
+  box-sizing: border-box;
+  padding: 3px;
+  border-radius: 50%;
+  background: #fff;
+}
