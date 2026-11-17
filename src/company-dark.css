@@ -147,3 +147,39 @@
 @media (max-width:900px) {
   .company-topbar,.company-content { background:#10151A; }
 }
+
+/* Painel empresarial na identidade grafite + amarelo dourado. */
+.company-app {
+  --ink:#F5F3ED;
+  --muted:#B8BEC5;
+  --line:#48515B;
+  --surface:#2D333A;
+  --surface-raised:#383F47;
+  --accent:#D9A928;
+  background:#22262B;
+  color:#F5F3ED;
+}
+.company-topbar,
+.company-stats > div,.company-order,.company-panel,.company-empty,
+.company-search,.company-toolbar select,.company-product {
+  background:#2D333A;
+  color:#F5F3ED;
+  border-color:#48515B;
+}
+.company-content { background:#22262B; color:#F5F3ED; }
+.company-order,.company-panel,.company-dialog { background-color:#2D333A; }
+.company-stats strong,.company-empty h3 { color:#E6C45F; }
+.company-store-link { color:#E6C45F; }
+.company-more-links a.active {
+  background:rgba(217,169,40,.12);
+  border-color:rgba(217,169,40,.48);
+}
+.company-product input,.answer-form textarea,.company-field textarea,
+.company-dialog :is(input,textarea,select) {
+  background:#252A30;
+  color:#F5F3ED;
+  border-color:#48515B !important;
+}
+@media (max-width:900px) {
+  .company-topbar,.company-content { background:#22262B; }
+}
