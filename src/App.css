@@ -147,3 +147,52 @@
   border: 1.5px solid #111418;
   background: transparent;
 }
+
+/* Acabamento da identidade: grafite profundo e amarelo dourado controlado. */
+.app-shell {
+  background:
+    radial-gradient(circle at 12% 18%, rgba(242,212,92,.035) 0 1px, transparent 2px),
+    radial-gradient(circle at 88% 72%, rgba(242,212,92,.025) 0 1px, transparent 2px),
+    linear-gradient(180deg, #292E34 0%, #22262B 58%, #202429 100%);
+  background-size: 42px 42px, 54px 54px, 100% 100%;
+}
+.app-shell::before {
+  border-color: rgba(242,212,92,.065);
+  box-shadow: 0 0 0 38px rgba(242,212,92,.012), 0 0 0 82px rgba(242,212,92,.008);
+}
+/* A marca fica sem aro externo grande; disco claro menor acompanha o símbolo. */
+.brand-mark { position:relative; isolation:isolate; }
+.brand-mark::before {
+  content:"";
+  position:absolute;
+  z-index:-1;
+  top:30px;
+  left:50%;
+  width:156px;
+  height:156px;
+  transform:translateX(-50%);
+  border-radius:50%;
+  background:#F4F0E4;
+  box-shadow:0 12px 34px rgba(0,0,0,.22);
+}
+.brand-logo-image,
+.brand-mark--compact .brand-logo-image {
+  position:relative;
+  z-index:1;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+}
+.brand-mark--compact::before {
+  top:2px;
+  width:27px;
+  height:27px;
+  box-shadow:none;
+}
+.app-screen:not(.profile-page) .mini-brand {
+  padding:0;
+  border:0;
+  background:transparent;
+}
+.login-screen .brand-mark::before { top:18px; width:142px; height:142px; }
