@@ -87,3 +87,31 @@
 @media (max-width: 900px) {
   .company-topbar, .company-content { background: #202429; }
 }
+
+/* Identidade consistente no painel da empresa. */
+.company-app {
+  --ink:#F5F4EF;
+  --muted:#B8BEC5;
+  --line:#48515B;
+  --surface:#2D333A;
+  --surface-raised:#373F47;
+  --accent:#F2D45C;
+  background:#22262B;
+}
+.company-topbar,
+.company-stats > div, .company-order, .company-panel, .company-empty,
+.company-search, .company-toolbar select, .company-product {
+  background:#2D333A;
+  border-color:#48515B;
+}
+.company-content { background:#22262B; }
+.company-stats > div.stat-highlight {
+  background:rgba(242,212,92,.09);
+  border-color:rgba(242,212,92,.4);
+}
+.company-stats strong { color:#F2D45C; }
+.company-dialog { background:#2D333A; border-color:#48515B; }
+.company-more-links a.active {
+  background:rgba(242,212,92,.12);
+  border-color:rgba(242,212,92,.45);
+}
