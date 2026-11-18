@@ -3,6 +3,7 @@ import { callServer } from '../../services/server.js'
 import { getSupabase } from '../../lib/supabase.js'
 import { restaurantIdForSlug } from '../../services/company.js'
 import AddressFields from '../AddressFields.jsx'
+import SubscriptionOverview from './SubscriptionOverview.jsx'
 import { DEFAULT_COMPANY_ID } from '../../config/marketplace.js'
 
 const days = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado']
@@ -111,6 +112,7 @@ export default function StoreSettings({ demo, companyId = DEFAULT_COMPANY_ID }) 
   ] : []
 
   return <div className="store-settings">
+    {!demo && <SubscriptionOverview companyId={companyId} />}
     <section className="company-panel">
       <h2>Preparação da loja</h2>
       <p>{demo ? 'Veja os campos disponíveis para configurar a operação.' : 'As configurações desta empresa são isoladas no Supabase. Nesta fase, novos pedidos usam pagamento na entrega.'}</p>
