@@ -27,6 +27,8 @@ test('RPCs de assinatura exigem associação empresarial ou administrador da pla
   assert.match(sql,/Plano pago nunca é ativado manualmente/)
   assert.match(sql,/next_status:=case when plan_row\.monthly_price_cents=0 then 'active' else 'pending_payment' end/)
   assert.match(sql,/current_row\.id::text/, 'id UUID deve ser convertido para texto ao gravar auditoria')
+  assert.match(sql,/p_monthly_price_cents is distinct from 0[\s\S]*?status='pending_payment'/, 'plano alterado para pago deve suspender acesso até confirmação')
+  assert.match(sql,/monthlyOrders'[\s\S]*?created_at<date_trunc\('month',now\(\)\) \+ interval '1 month'/, 'uso mensal deve respeitar o fim do mês')
 })
 
 test('frontend consulta assinatura e expõe administração sob rota protegida',async()=>{
