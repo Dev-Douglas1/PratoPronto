@@ -14,11 +14,9 @@ set public = excluded.public,
     file_size_limit = excluded.file_size_limit,
     allowed_mime_types = excluded.allowed_mime_types;
 
+-- Public buckets serve objects by URL without a SELECT policy.
+-- Avoid granting object listing through the Data API.
 drop policy if exists "Company public profile images are readable" on storage.objects;
-create policy "Company public profile images are readable"
-on storage.objects for select
-to public
-using (bucket_id = 'company-public-assets');
 
 drop policy if exists "Company members upload profile images" on storage.objects;
 create policy "Company members upload profile images"
