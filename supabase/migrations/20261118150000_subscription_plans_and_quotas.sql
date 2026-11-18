@@ -87,6 +87,7 @@ declare
 begin
   if tg_table_name='products' then
     rid:=new.restaurant_id;
+    perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('subscription-quota:' || rid::text, 0));
     if tg_op='UPDATE' and old.restaurant_id is not distinct from new.restaurant_id then
       return new;
     end if;
@@ -94,7 +95,7 @@ begin
     from public.restaurant_subscriptions s
     join public.subscription_plans p on p.id=s.plan_id
     where s.restaurant_id=rid and p.is_active=true
-      and s.status in ('active','trialing','canceled')
+      and (s.status in ('active','trialing') or (s.status='canceled' and s.current_period_end > now()))
       and (s.current_period_end is null or s.current_period_end > now());
     if not found then raise exception 'Assinatura inativa ou vencida. Regularize o plano para cadastrar produtos.' using errcode='P0001'; end if;
     quota:=plan_row.product_limit;
@@ -104,6 +105,7 @@ begin
     end if;
   elsif tg_table_name='restaurant_members' then
     rid:=new.restaurante_id;
+    perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('subscription-quota:' || rid::text, 0));
     if tg_op='UPDATE' and old.restaurante_id is not distinct from new.restaurante_id and (new.active is not true or old.active is true) then
       return new;
     end if;
@@ -112,7 +114,7 @@ begin
     from public.restaurant_subscriptions s
     join public.subscription_plans p on p.id=s.plan_id
     where s.restaurant_id=rid and p.is_active=true
-      and s.status in ('active','trialing','canceled')
+      and (s.status in ('active','trialing') or (s.status='canceled' and s.current_period_end > now()))
       and (s.current_period_end is null or s.current_period_end > now());
     if not found then raise exception 'Assinatura inativa ou vencida. Regularize o plano para gerenciar a equipe.' using errcode='P0001'; end if;
     quota:=plan_row.member_limit;
@@ -122,11 +124,12 @@ begin
     end if;
   elsif tg_table_name='orders' then
     rid:=new.restaurant_id;
+    perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('subscription-quota:' || rid::text, 0));
     select p.* into plan_row
     from public.restaurant_subscriptions s
     join public.subscription_plans p on p.id=s.plan_id
     where s.restaurant_id=rid and p.is_active=true
-      and s.status in ('active','trialing','canceled')
+      and (s.status in ('active','trialing') or (s.status='canceled' and s.current_period_end > now()))
       and (s.current_period_end is null or s.current_period_end > now());
     if not found then raise exception 'Assinatura inativa ou vencida. A empresa não pode receber novos pedidos.' using errcode='P0001'; end if;
     quota:=plan_row.monthly_order_limit;
@@ -162,7 +165,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $$
 declare free_plan_id uuid;
 begin
   select id into free_plan_id from public.subscription_plans where code='gratuito' and is_active=true;
@@ -173,7 +176,7 @@ begin
   end if;
   return new;
 end;
-$;
+$$;
 
 drop trigger if exists restaurants_default_subscription on public.restaurantes;
 create trigger restaurants_default_subscription
@@ -276,14 +279,14 @@ language plpgsql
 stable
 security definer
 set search_path = ''
-as $
+as $$
 begin
   if not public.is_platform_admin() then raise exception 'Acesso restrito à administração da plataforma.' using errcode='42501'; end if;
   return query select p.id,p.code,p.name,p.description,p.monthly_price_cents,p.product_limit,
     p.member_limit,p.monthly_order_limit,p.is_active,p.is_public
   from public.subscription_plans p order by p.monthly_price_cents nulls last,p.name;
 end;
-$;
+$$;
 
 create or replace function public.admin_save_subscription_plan(
   p_code text,p_name text,p_description text,p_monthly_price_cents integer,
