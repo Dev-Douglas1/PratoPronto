@@ -330,7 +330,7 @@ begin
   if plan_row.id is null then raise exception 'Plano inexistente ou inativo.' using errcode='22023'; end if;
   if p_period_end is not null and p_period_end<=now() then raise exception 'A data final precisa estar no futuro.' using errcode='22023'; end if;
   -- Plano pago nunca é ativado manualmente: aguarda confirmação do provedor.
-  next_status:=case when coalesce(plan_row.monthly_price_cents,0)=0 then 'active' else 'pending_payment' end;
+  next_status:=case when plan_row.monthly_price_cents=0 then 'active' else 'pending_payment' end;
   insert into public.restaurant_subscriptions(restaurant_id,plan_id,status,current_period_start,current_period_end,cancel_at_period_end,canceled_at,external_provider,external_customer_id,external_subscription_id,updated_at)
   values(p_restaurant_id,plan_row.id,next_status,now(),p_period_end,false,null,null,null,null,now())
   on conflict(restaurant_id) do update set plan_id=excluded.plan_id,status=excluded.status,
