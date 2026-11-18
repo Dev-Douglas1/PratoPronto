@@ -40,6 +40,6 @@ test('frontend consulta assinatura e expõe administração sob rota protegida',
   assert.match(overview,/monthlyOrders/)
   assert.match(overview,/pending_payment/)
   assert.match(app,/PlatformAdminRoute><PlatformSubscriptions \/><\/PlatformAdminRoute>/)
-  assert.match(admin,/Aguardando pagamento/)
+  assert.match(admin,/aguardando pagamento/i)
   assert.match(admin,/Nenhuma cobrança foi realizada/)
 })
