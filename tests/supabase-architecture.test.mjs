@@ -234,7 +234,7 @@ test('cadastro usa OTP de seis dígitos e recuperação possui tela para nova se
   assert.match(user, /type:\s*'email'/)
   assert.match(user, /\/redefinir-senha/)
   assert.match(verify, /one-time-code/)
-  assert.match(verify, /\\d\{6\}/)
+  assert.match(verify, /!\/\^\\d\{6\}\$\/\.test\(codigo\)/)
   assert.match(app, /\/redefinir-senha/)
   assert.match(reset, /exchangeCodeForSession/)
   assert.match(reset, /auth\.updateUser\(\{ password:/)

@@ -50,6 +50,11 @@ export function subscribeCompany(companyId, onChange, onError) {
       description: data.descricao,
       phone: data.telefone,
       address: data.endereco,
+      logoUrl: data.avatar_url || '',
+      coverUrl: data.capa_url || '',
+      category: data.categoria || 'Restaurante',
+      whatsapp: data.whatsapp || '',
+      instagram: data.instagram || '',
       active: data.ativo,
     } : null)
   }
@@ -344,11 +349,33 @@ export async function offerDelivery({ orderId, pilotProfileId = null, pilotConta
   return data
 }
 
+
+const COMPANY_PROFILE_BUCKET = 'company-public-assets'
+const COMPANY_IMAGE_TYPES = new Set(['image/jpeg','image/png','image/webp'])
+const COMPANY_IMAGE_MAX_BYTES = 4 * 1024 * 1024
+
+export async function uploadCompanyProfileImage(companyId, kind, file) {
+  if (!file) throw new Error('Selecione uma imagem.')
+  if (!['logo','cover'].includes(kind)) throw new Error('Tipo de imagem inválido.')
+  if (!COMPANY_IMAGE_TYPES.has(file.type)) throw new Error('Use JPG, PNG ou WEBP.')
+  if (file.size < 1 || file.size > COMPANY_IMAGE_MAX_BYTES) throw new Error('A imagem deve ter até 4 MB.')
+  const supabase = ready()
+  const { data: auth, error: authError } = await supabase.auth.getUser()
+  if (authError) throw authError
+  if (!auth.user) throw new Error('Entre novamente para enviar imagens.')
+  const ext = ({'image/jpeg':'jpg','image/png':'png','image/webp':'webp'})[file.type]
+  const path = companyId + '/' + kind + '-' + crypto.randomUUID() + '.' + ext
+  const { error } = await supabase.storage.from(COMPANY_PROFILE_BUCKET).upload(path,file,{upsert:false,contentType:file.type,cacheControl:'3600'})
+  if (error) throw error
+  const { data } = supabase.storage.from(COMPANY_PROFILE_BUCKET).getPublicUrl(path)
+  return data.publicUrl
+}
+
 export async function searchMarketplace(term = '') {
   const supabase = ready()
   const needle = normalizeSearch(term)
   const [{ data: companies, error: companiesError }, { data: products, error: productsError }] = await Promise.all([
-    supabase.from('restaurantes').select('id,slug,nome,ativo').eq('ativo', true).order('nome').limit(100),
+    supabase.from('restaurantes').select('id,slug,nome,ativo,descricao,avatar_url,categoria,capa_url,whatsapp,instagram').eq('ativo', true).order('nome').limit(100),
     supabase.from('products').select('id,restaurant_id,name,description,category,price_cents,image_url,active,slug,config,promotion').eq('active', true).order('name').limit(500),
   ])
   if (companiesError) throw companiesError
@@ -370,7 +397,7 @@ export async function searchMarketplace(term = '') {
   })).filter(product => product.companyId)
 
   const filteredProducts = matchingProducts(mappedProducts, needle)
-  const filteredCompanies = matchingCompanies((companies || []).map(company => ({ id: company.slug, name: company.nome, active: company.ativo })), filteredProducts, needle)
+  const filteredCompanies = matchingCompanies((companies || []).map(company => ({ id: company.slug, name: company.nome, active: company.ativo, description: company.descricao || '', logoUrl: company.avatar_url || '', category: company.categoria || 'Restaurante', coverUrl: company.capa_url || '', whatsapp: company.whatsapp || '', instagram: company.instagram || '' })), filteredProducts, needle)
 
   return { companies: filteredCompanies, products: filteredProducts }
 }

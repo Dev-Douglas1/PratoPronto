@@ -99,3 +99,194 @@
   display: block; width: 30px; height: 30px; flex: 0 0 30px; object-fit: contain;
 }
 .brand-logo-image { aspect-ratio: 1; }
+
+
+/* Prévia do tema grafite global: reduz o preto sem alterar a identidade amarela. */
+.app-shell {
+  background:
+    radial-gradient(circle at 12% 18%, rgba(255, 235, 24, 0.055) 0 2px, transparent 3px),
+    radial-gradient(circle at 88% 72%, rgba(255, 159, 28, 0.05) 0 2px, transparent 3px),
+    linear-gradient(180deg, #30343a 0%, #292e34 52%, #252a30 100%);
+  background-size: 42px 42px, 54px 54px, 100% 100%;
+}
+.app-shell::before { border-color: rgba(255, 235, 24, 0.09); }
+
+/* Fundo branco circular experimental somente atrás do símbolo, sem editar a arte. */
+.brand-logo-image {
+  box-sizing: border-box;
+  padding: 10%;
+  border-radius: 50%;
+  background: #fff;
+}
+.brand-mark--compact .brand-logo-image { padding: 9%; }
+.app-screen:not(.profile-page) .mini-brand {
+  box-sizing: border-box;
+  padding: 3px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+/* Grafite escuro em toda a estrutura principal. */
+.app-shell {
+  background:
+    radial-gradient(circle at 12% 18%, rgba(255,235,24,.04) 0 2px, transparent 3px),
+    radial-gradient(circle at 88% 72%, rgba(255,159,28,.035) 0 2px, transparent 3px),
+    linear-gradient(180deg, #252a30 0%, #202429 52%, #1c2126 100%);
+  background-size: 42px 42px, 54px 54px, 100% 100%;
+}
+/* Símbolo com fundo branco menor e contorno preto discreto. */
+.brand-logo-image {
+  padding: 3%;
+  border: 2px solid #111418;
+  border-radius: 50%;
+  background: transparent;
+}
+.brand-mark--compact .brand-logo-image { padding: 2.5%; }
+.app-screen:not(.profile-page) .mini-brand {
+  padding: 2px;
+  border: 1.5px solid #111418;
+  background: transparent;
+}
+
+/* Acabamento da identidade: grafite profundo e amarelo dourado controlado. */
+.app-shell {
+  background:
+    radial-gradient(circle at 12% 18%, rgba(242,212,92,.035) 0 1px, transparent 2px),
+    radial-gradient(circle at 88% 72%, rgba(242,212,92,.025) 0 1px, transparent 2px),
+    linear-gradient(180deg, #292E34 0%, #22262B 58%, #202429 100%);
+  background-size: 42px 42px, 54px 54px, 100% 100%;
+}
+.app-shell::before {
+  border-color: rgba(242,212,92,.065);
+  box-shadow: 0 0 0 38px rgba(242,212,92,.012), 0 0 0 82px rgba(242,212,92,.008);
+}
+/* A marca fica sem aro externo grande; disco claro menor acompanha o símbolo. */
+.brand-mark { position:relative; isolation:isolate; }
+.brand-mark::before {
+  content:"";
+  position:absolute;
+  z-index:-1;
+  top:30px;
+  left:50%;
+  width:156px;
+  height:156px;
+  transform:translateX(-50%);
+  border-radius:50%;
+  background:#F4F0E4;
+  box-shadow:0 12px 34px rgba(0,0,0,.22);
+}
+.brand-logo-image,
+.brand-mark--compact .brand-logo-image {
+  position:relative;
+  z-index:1;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+}
+.brand-mark--compact::before {
+  top:2px;
+  width:27px;
+  height:27px;
+  box-shadow:none;
+}
+.app-screen:not(.profile-page) .mini-brand {
+  padding:0;
+  border:0;
+  background:transparent;
+}
+.login-screen .brand-mark::before { top:18px; width:142px; height:142px; }
+
+/* Estrutura externa mais profunda; brilho decorativo quase imperceptível. */
+.app-shell {
+  background:
+    radial-gradient(circle at 12% 18%, rgba(240,201,79,.022) 0 1px, transparent 2px),
+    radial-gradient(circle at 88% 72%, rgba(233,166,58,.018) 0 1px, transparent 2px),
+    linear-gradient(180deg, #20262B 0%, #191E23 54%, #171B1F 100%);
+  background-size: 48px 48px, 60px 60px, 100% 100%;
+}
+.app-shell::before {
+  border-color: rgba(240,201,79,.045);
+  box-shadow: 0 0 0 38px rgba(240,201,79,.008), 0 0 0 82px rgba(240,201,79,.005);
+}
+/* Halo pequeno e discreto para destacar a marca sem competir com o Pac-Man. */
+.brand-mark::before {
+  top: 34px;
+  width: 138px;
+  height: 138px;
+  background: radial-gradient(circle, #34312A 0%, #292A27 68%, #22262A 100%);
+  border: 1px solid rgba(240,201,79,.16);
+  box-shadow: 0 10px 34px rgba(0,0,0,.32), 0 0 38px rgba(240,201,79,.035);
+}
+.brand-mark--compact::before {
+  top: 2px;
+  width: 27px;
+  height: 27px;
+}
+.login-screen .brand-mark::before {
+  top: 20px;
+  width: 128px;
+  height: 128px;
+}
+
+/* Aplicação de carvão profundo e luzes discretas em toda a estrutura. */
+.app-shell {
+  background:
+    radial-gradient(circle at 12% 18%, rgba(72,215,232,.025) 0 1px, transparent 2px),
+    radial-gradient(circle at 88% 72%, rgba(200,243,107,.02) 0 1px, transparent 2px),
+    linear-gradient(180deg, #191F25 0%, #12181E 56%, #10151A 100%);
+  background-size:48px 48px,60px 60px,100% 100%;
+}
+.app-shell::before {
+  border-color:rgba(72,215,232,.045);
+  box-shadow:0 0 0 38px rgba(72,215,232,.008),0 0 0 82px rgba(72,215,232,.004);
+}
+/* Logo sem disco, sem fundo e sem contorno: somente a arte original. */
+.brand-mark::before,
+.login-screen .brand-mark::before {
+  content:none !important;
+  display:none !important;
+}
+.brand-logo-image,
+.brand-mark--compact .brand-logo-image {
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+.app-screen:not(.profile-page) .mini-brand {
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+
+/* Paleta grafite e dourado aplicada à estrutura principal. */
+.app-shell {
+  background:
+    radial-gradient(circle at 12% 18%, rgba(217,169,40,.035) 0 1px, transparent 2px),
+    radial-gradient(circle at 88% 72%, rgba(217,169,40,.025) 0 1px, transparent 2px),
+    linear-gradient(180deg,#2D333A 0%,#252A30 55%,#22262B 100%);
+  background-size:42px 42px,54px 54px,100% 100%;
+}
+.app-shell::before {
+  border-color:rgba(217,169,40,.06);
+  box-shadow:0 0 0 38px rgba(217,169,40,.01),0 0 0 82px rgba(217,169,40,.006);
+}
+/* Logo sem fundo, aro, borda ou sombra: apenas a arte original. */
+.brand-mark::before,
+.login-screen .brand-mark::before {
+  content:none !important;
+  display:none !important;
+}
+.brand-logo-image,
+.brand-mark--compact .brand-logo-image,
+.app-screen:not(.profile-page) .mini-brand {
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}

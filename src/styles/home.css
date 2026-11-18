@@ -1,15 +1,24 @@
-/* Estilos exclusivos da página inicial. Não aplicar regras globais às telas internas. */
+/* Estilos exclusivos da página inicial. */
 .home-screen {
+  width: 100%;
+  min-width: 0;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
+  overflow-x: clip;
   padding: clamp(20px, 5vh, 48px) 20px max(28px, env(safe-area-inset-bottom));
-  background-color: #0d0d0d;
-  background-image: radial-gradient(rgba(255, 235, 24, 0.08) 1px, transparent 1px);
-  background-size: 22px 22px;
+  color: #FFF8F0;
+  background-color: #191714;
+  background-image:
+    radial-gradient(ellipse 72% 42% at 50% 20%, rgba(255,184,0,.075), transparent 76%),
+    linear-gradient(180deg, #211E1A 0%, #1B1916 48%, #171512 100%);
 }
+
+.home-screen > *,
+.home-screen .home-hero > * { min-width: 0; max-width: 100%; }
+
 .home-screen .home-hero {
   display: flex;
   flex: 1;
@@ -20,32 +29,40 @@
   max-width: 440px;
   text-align: center;
 }
+
 .home-screen .home-hero .brand-mark { margin-bottom: 14px; }
+
 .home-screen .hero-tagline {
   display: block;
   margin: 12px auto 18px;
-  color: rgba(255,255,255,.65);
+  color: rgba(255,248,240,.72);
   font-size: .76rem;
-  font-weight: 700;
-  letter-spacing: .08em;
+  font-weight: 650;
+  letter-spacing: .045em;
+  line-height: 1.5;
   text-align: center;
 }
+
 .home-screen .home-hero .eyebrow {
   margin: 0 0 10px;
-  color: #ffeb18;
+  color: #F4C44E;
   font-size: .72rem;
   font-weight: 800;
   letter-spacing: .14em;
 }
+
 .home-screen .home-hero h1 {
+  width: 100%;
   max-width: 390px;
   margin: 8px auto 24px;
-  color: #fff;
+  color: #FFF8F0;
   font-size: clamp(1.8rem, 8vw, 2.6rem);
   font-weight: 800;
-  letter-spacing: -.04em;
+  letter-spacing: -.045em;
   line-height: 1.12;
+  overflow-wrap: anywhere;
 }
+
 .home-screen .home-actions {
   display: flex;
   flex-direction: column;
@@ -53,66 +70,87 @@
   width: 100%;
   margin: 12px 0;
 }
+
 .home-screen .home-actions .btn {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   width: 100%;
-  min-height: 50px;
+  min-width: 0;
+  min-height: 52px;
   padding: 0 18px;
-  border-radius: 999px;
+  border-radius: 16px;
   font-size: .95rem;
   font-weight: 750;
   text-decoration: none;
+  white-space: normal;
+  transition: transform .18s ease, background-color .18s ease, border-color .18s ease;
 }
+
+.home-screen .home-actions .btn:active { transform: scale(.985); }
+
 .home-screen .home-actions .btn-primary {
-  background: #ffeb18;
-  color: #111;
+  border: 1px solid rgba(255,231,166,.35);
+  background: linear-gradient(180deg, #FFD15B 0%, #F2B92F 100%);
+  color: #21190B;
+  box-shadow: 0 7px 20px rgba(242,185,47,.13), inset 0 1px 0 rgba(255,255,255,.28);
 }
+
+.home-screen .home-actions .btn-primary:hover {
+  background: linear-gradient(180deg, #FFDA78 0%, #F7C54A 100%);
+}
+
 .home-screen .home-actions .btn-outline {
-  border: 1px solid rgba(255,255,255,.18);
-  background: rgba(255,255,255,.05);
-  color: #fff;
+  border: 1px solid rgba(255,248,240,.16);
+  background: rgba(255,248,240,.035);
+  color: #FFF8F0;
 }
+
+.home-screen .home-actions .btn-outline:hover {
+  border-color: rgba(255,209,91,.42);
+  background: rgba(255,209,91,.055);
+}
+
 .home-screen .subtle-badge {
   max-width: 100%;
   margin: 14px auto 8px;
   padding: 10px 14px;
-  border: 1px solid rgba(255,235,24,.2);
-  border-radius: 999px;
-  background: rgba(255,235,24,.06);
-  color: #ffeb18;
-  font-size: .76rem;
+  border: 1px solid rgba(255,209,91,.16);
+  border-radius: 12px;
+  background: rgba(255,209,91,.045);
+  color: #E9C36B;
+  font-size: .74rem;
+  line-height: 1.45;
   text-align: center;
+  overflow-wrap: anywhere;
 }
+
 .home-screen .home-footer { width: 100%; padding-top: 18px; }
+
 .home-screen .legal-links {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 18px;
 }
+
 .home-screen .legal-links a {
-  color: #929292;
+  color: #958D82;
   font-size: .75rem;
   text-decoration: none;
 }
+
+.home-screen .legal-links a:hover { color: #F4C44E; }
 .home-screen .install-app { margin-top: 14px; }
-@media (max-width: 360px) {
-  .home-screen { padding-inline: 14px; }
-  .home-screen .hero-tagline { font-size: .68rem; }
-}
 
-
-/* Proteção contra overflow em janelas estreitas e quando o DevTools está acoplado. */
-.home-screen { width: 100%; min-width: 0; overflow-x: clip; }
-.home-screen > *, .home-screen .home-hero > * { min-width: 0; max-width: 100%; }
-.home-screen .hero-tagline, .home-screen .subtle-badge { overflow-wrap: anywhere; }
-.home-screen .home-hero h1 { width: 100%; overflow-wrap: anywhere; }
-.home-screen .home-actions .btn { min-width: 0; white-space: normal; }
 @media (max-width: 380px) {
   .home-screen { padding-inline: 14px; }
+  .home-screen .hero-tagline { font-size: .7rem; }
   .home-screen .home-hero h1 { font-size: clamp(1.55rem, 8vw, 2rem); }
-  .home-screen .subtle-badge { border-radius: 14px; line-height: 1.45; }
+  .home-screen .subtle-badge { border-radius: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-screen .home-actions .btn { transition: none; }
 }

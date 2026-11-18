@@ -14,7 +14,7 @@ export default function VerificarEmail() {
   const [enviando, setEnviando] = useState(false)
   const [tempoRestante, setTempoRestante] = useState(30)
 
-  const emailUsuario = user?.email || usuario?.email || 'joao.silva@exemplo.com'
+  const emailUsuario = user?.email || usuario?.email || 'seu e-mail cadastrado'
 
   useEffect(() => {
     if (tempoRestante > 0) {
@@ -25,7 +25,7 @@ export default function VerificarEmail() {
 
   async function handleVerificar(e) {
     e.preventDefault()
-    if (!/^\\d{6}$/.test(codigo)) {
+    if (!/^\d{6}$/.test(codigo)) {
       setErro('Digite o código completo de 6 dígitos.')
       return
     }
@@ -124,7 +124,7 @@ export default function VerificarEmail() {
             <button
               className="btn btn-primary"
               type="submit"
-              disabled={enviando || !/^\\d{6}$/.test(codigo)}
+              disabled={enviando || !/^\d{6}$/.test(codigo)}
             >
               {enviando ? 'A verificar...' : 'Confirmar código'}
             </button>

@@ -62,8 +62,9 @@ export async function callServer(name, data = {}) {
     return {
       companyId: data.companyId || 'pratopronto',
       environment: 'production',
-      liveEnabled: true,
-      appCheck: true,
+      // O checkout online permanece bloqueado até credenciais e recebedor serem verificados.
+      liveEnabled: false,
+      appCheck: false,
       paymentSecrets: false,
       receiverVerified: false,
       publicUrlConfigured: true,

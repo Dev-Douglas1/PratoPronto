@@ -12,13 +12,13 @@ function localDate(value) {
   return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
 }
 
-function PromotionForm({ product, offer, available, settings, onSave, onClose, busy, feedback }) {
+function PromotionForm({ product, offer, available, settings, products: companyProducts, onSave, onClose, busy, feedback }) {
   const [id, setId] = useState(product.id)
   const [form, setForm] = useState(() => ({ titulo: offer?.titulo || '', percentual: offer?.percentual || 15, inicio: localDate(offer?.inicio || Date.now()), fim: localDate(offer?.fim || Date.now() + 7 * 86400000), ativa: offer?.ativa ?? true }))
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
-  const selected = produtos.find(item => item.id === id)
-  const price = settings.find(item => item.id === id)?.preco ?? selected.preco
+  const selected = (Array.isArray(companyProducts) ? companyProducts : produtos).find(item => item.id === id)
+  const price = settings.find(item => item.id === id)?.preco ?? selected?.preco ?? 0
   const percent = Number(form.percentual)
   const preview = Number.isInteger(percent) && percent >= 1 && percent <= 90 ? Math.max(.01, Math.round(Math.round(price * 100) * (100 - percent) / 100) / 100) : null
   function change(event) {
@@ -54,8 +54,8 @@ function PromotionForm({ product, offer, available, settings, onSave, onClose, b
       <small>Até 90 dias. Horário do seu aparelho: {Intl.DateTimeFormat().resolvedOptions().timeZone}.</small>
       <label className="offer-enable"><input type="checkbox" name="ativa" checked={form.ativa} onChange={change} disabled={busy || saving} />Exibir durante o período escolhido</label>
       <div className="offer-preview" aria-label="Prévia da promoção">
-        <img src={selected.imagem} alt="" width="80" height="80" />
-        <div><span>PRÉVIA · {selected.personalizavel ? 'PIZZA GRANDE' : 'UNIDADE'}</span><h3>{form.titulo || selected.nome}</h3><p><del>{money(price)}</del> <strong>{preview === null ? 'Confira o desconto' : money(preview)}</strong></p></div>
+        <img src={selected?.imagem || '/icons/app-icon.svg'} alt="" width="80" height="80" />
+        <div><span>PRÉVIA · {selected?.personalizavel ? 'PIZZA GRANDE' : 'UNIDADE'}</span><h3>{form.titulo || selected?.nome || 'Produto'}</h3><p><del>{money(price)}</del> <strong>{preview === null ? 'Confira o desconto' : money(preview)}</strong></p></div>
       </div>
       <p className="promotion-help">O desconto vale para o produto e seus opcionais. A taxa de entrega permanece a mesma. Há uma oferta por produto.</p>
       {(error || feedback) && <p className="company-alert" role="alert">{error || feedback}</p>}
@@ -64,14 +64,15 @@ function PromotionForm({ product, offer, available, settings, onSave, onClose, b
   </Modal>
 }
 
-export default function Promotions({ settings, onSave, busy, now, demo, feedback }) {
+export default function Promotions({ settings, products: companyProducts, onSave, busy, now, demo, feedback }) {
   const [editing, setEditing] = useState(null)
   const [filter, setFilter] = useState('todas')
-  const offers = produtos.flatMap(product => {
+  const catalog = Array.isArray(companyProducts) ? companyProducts : produtos
+  const offers = catalog.flatMap(product => {
     const setting = settings.find(item => item.id === product.id)
     return setting?.promocao ? [{ product, setting, status: promotionStatus(setting.promocao, now) }] : []
   })
-  const available = produtos.filter(product => !offers.some(item => item.product.id === product.id))
+  const available = catalog.filter(product => !offers.some(item => item.product.id === product.id))
   const filtered = offers.filter(item => filter === 'todas' || item.status === filter)
   const startEdit = item => setEditing(item)
   return <section className="promotions-workspace" aria-label="Ofertas da empresa">
@@ -84,7 +85,7 @@ export default function Promotions({ settings, onSave, busy, now, demo, feedback
       const preview = promotionalPrice(Math.round((setting.preco ?? product.preco) * 100), { ...offer, ativa: true }, offer.inicio)
       return <article className="promotion-card" key={product.id}>
         <div className="promotion-card-heading"><span className={'offer-status offer-' + status}>{statusLabels[status]}</span><b>−{offer.percentual}%</b></div>
-        <div className="promotion-product"><img src={product.imagem} alt="" width="96" height="96" /><div><span>{product.nome}{product.personalizavel ? ' · grande' : ''}</span><h3>{offer.titulo}</h3><p><del>{money(setting.preco ?? product.preco)}</del><strong>{money(preview.finalCents / 100)}</strong></p></div></div>
+        <div className="promotion-product"><img src={product.imagem || '/icons/app-icon.svg'} alt="" width="96" height="96" /><div><span>{product.nome}{product.personalizavel ? ' · grande' : ''}</span><h3>{offer.titulo}</h3><p><del>{money(setting.preco ?? product.preco)}</del><strong>{money(preview.finalCents / 100)}</strong></p></div></div>
         <p className="promotion-period"><Icon name="clock" size={18} /><span>{date(offer.inicio)} até {date(offer.fim)}</span></p>
         {setting.disponivel === false && <p className="promotion-help">Produto pausado no cardápio. A oferta não permite comprar um item indisponível.</p>}
         <div className="promotion-actions"><button type="button" className="company-button secondary" disabled={busy} onClick={() => startEdit({ product, setting })}>Editar oferta</button><button type="button" className="company-button subtle" disabled={busy || status === 'encerrada'} onClick={() => onSave(product.id, { ...offer, ativa: !offer.ativa })}>{offer.ativa ? 'Pausar' : 'Ativar'}</button></div>
@@ -92,6 +93,6 @@ export default function Promotions({ settings, onSave, busy, now, demo, feedback
     })}</div>
     {!filtered.length && <div className="company-empty"><Icon name="tag" size={30} /><h3>{offers.length ? 'Nenhuma oferta neste filtro' : 'Sua próxima oferta começa aqui'}</h3><p>{offers.length ? 'Escolha outro filtro para ver suas promoções.' : 'Crie uma promoção para destacar um produto no cardápio.'}</p></div>}
     {!available.length && <p className="promotion-help">Todos os produtos já têm uma oferta. Use “Editar oferta” para renovar as datas ou mudar o desconto.</p>}
-    {editing && <PromotionForm key={editing.product.id} product={editing.product} offer={editing.setting?.promocao} available={available} settings={settings} onSave={onSave} busy={busy} onClose={() => setEditing(null)} feedback={feedback} />}
+    {editing && <PromotionForm key={editing.product.id} product={editing.product} offer={editing.setting?.promocao} available={available} settings={settings} products={catalog} onSave={onSave} busy={busy} onClose={() => setEditing(null)} feedback={feedback} />}
   </section>
 }

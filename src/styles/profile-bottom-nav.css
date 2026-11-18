@@ -12,9 +12,9 @@
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 3px;
   padding: 7px;
-  border: 1px solid #34362e;
+  border: 1px solid #59616b;
   border-radius: 20px;
-  background: rgba(20, 21, 17, .96);
+  background: rgba(56, 62, 69, .97);
   box-shadow: 0 12px 34px rgba(0,0,0,.28);
   backdrop-filter: blur(16px);
 }
@@ -51,10 +51,10 @@
   padding: 0 4px;
   display: grid;
   place-items: center;
-  border: 1px solid #171914;
+  border: 1px solid #3d444c;
   border-radius: 999px;
   background: #ffeb18;
-  color: #171914;
+  color: #3d444c;
   font-size: 10px;
   font-weight: 800;
 }
@@ -62,4 +62,19 @@
   .app-screen.profile-page .bottom-nav-pill { padding: 5px 3px; gap: 1px; }
   .app-screen.profile-page .nav-item { min-height: 50px; font-size: 9px; }
   .app-screen.profile-page .nav-icon { font-size: 17px; }
+}
+
+/* Navegação inferior do perfil compatível com a paleta dourada. */
+.app-screen.profile-page .bottom-nav-pill {
+  background:rgba(34,38,43,.97);
+  border-color:#48515B;
+}
+.app-screen.profile-page .nav-item.active {
+  background:rgba(217,169,40,.13);
+  color:#E6C45F;
+}
+.app-screen.profile-page .cart-badge {
+  border-color:#D9A928;
+  background:#D9A928;
+  color:#22262B;
 }
