@@ -297,7 +297,7 @@ returns uuid
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $$
 declare result_id uuid; previous_price integer;
 begin
   if not public.is_platform_admin() then raise exception 'Acesso restrito à administração da plataforma.' using errcode='42501'; end if;
@@ -322,7 +322,7 @@ begin
   end if;
   return result_id;
 end;
-$;
+$$;
 
 create or replace function public.admin_set_restaurant_subscription(
   p_restaurant_id uuid,p_plan_code text,p_period_end timestamptz default null
