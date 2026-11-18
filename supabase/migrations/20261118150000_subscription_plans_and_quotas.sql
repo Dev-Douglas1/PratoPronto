@@ -212,7 +212,7 @@ begin
     'usage',jsonb_build_object(
       'products',(select count(*) from public.products x where x.restaurant_id=rid),
       'members',(select count(*) from public.restaurant_members x where x.restaurante_id=rid and x.active=true),
-      'monthlyOrders',(select count(*) from public.orders x where x.restaurant_id=rid and x.created_at>=date_trunc('month',now()))
+      'monthlyOrders',(select count(*) from public.orders x where x.restaurant_id=rid and x.created_at>=date_trunc('month',now()) and x.created_at<date_trunc('month',now()) + interval '1 month')
     ),
     'entitled',private.subscription_is_entitled(rid)
   ) into result
@@ -313,9 +313,15 @@ begin
     member_limit=excluded.member_limit,monthly_order_limit=excluded.monthly_order_limit,
     is_active=excluded.is_active,is_public=excluded.is_public,updated_at=now()
   returning id into result_id;
+  -- Alterar um plano para pago invalida acessos que estavam ativos sem confirmação de cobrança.
+  if p_monthly_price_cents is distinct from 0 then
+    update public.restaurant_subscriptions
+    set status='pending_payment',updated_at=now()
+    where plan_id=result_id and status in ('active','trialing');
+  end if;
   return result_id;
 end;
-$$;
+$;
 
 create or replace function public.admin_set_restaurant_subscription(
   p_restaurant_id uuid,p_plan_code text,p_period_end timestamptz default null
