@@ -204,6 +204,7 @@ export default function PlatformCompanies() {
 
     <div className="light-card">
       <div className="inline-actions">
+        <Link className="btn btn-secondary" to="/plataforma/assinaturas">Gerenciar planos e assinaturas</Link>
         <Link className="btn btn-secondary" to="/plataforma/pilotos">Analisar pilotos</Link>
         <Link className="btn btn-secondary" to="/perfil">Voltar ao perfil</Link>
       </div>
