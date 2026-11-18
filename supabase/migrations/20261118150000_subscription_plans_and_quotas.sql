@@ -342,7 +342,7 @@ begin
     external_customer_id=null,external_subscription_id=null,updated_at=now()
   returning * into current_row;
   insert into public.audit_events(actor_id,restaurant_id,action,target_type,target_id,metadata)
-  values(uid,p_restaurant_id,'subscription.plan_changed','restaurant_subscription',current_row.id,
+  values(uid,p_restaurant_id,'subscription.plan_changed','restaurant_subscription',current_row.id::text,
     jsonb_build_object('planCode',plan_row.code,'status',next_status,'periodEnd',p_period_end));
   return jsonb_build_object('subscriptionId',current_row.id,'status',next_status,'planCode',plan_row.code);
 end;
