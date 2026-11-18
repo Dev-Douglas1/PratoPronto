@@ -22,7 +22,7 @@ test('RPCs de assinatura exigem associação empresarial ou administrador da pla
   assert.match(sql,/admin_save_subscription_plan[\s\S]*?public\.is_platform_admin\(\)/)
   assert.match(sql,/admin_set_restaurant_subscription[\s\S]*?public\.is_platform_admin\(\)/)
   assert.match(sql,/Plano pago nunca é ativado manualmente/)
-  assert.match(sql,/next_status:=case when coalesce\(plan_row\.monthly_price_cents,0\)=0 then 'active' else 'pending_payment' end/)
+  assert.match(sql,/next_status:=case when plan_row\.monthly_price_cents=0 then 'active' else 'pending_payment' end/)
 })
 
 test('frontend consulta assinatura e expõe administração sob rota protegida',async()=>{
