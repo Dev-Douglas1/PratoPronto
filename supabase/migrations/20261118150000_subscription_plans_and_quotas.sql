@@ -68,7 +68,7 @@ as $$
     join public.subscription_plans p on p.id=s.plan_id
     where s.restaurant_id=p_restaurant_id
       and p.is_active=true
-      and s.status in ('active','trialing','canceled')
+      and (s.status in ('active','trialing') or (s.status='canceled' and s.current_period_end > now()))
       and (s.current_period_end is null or s.current_period_end > now())
   );
 $$;
@@ -156,6 +156,29 @@ drop trigger if exists orders_subscription_quota on public.orders;
 create trigger orders_subscription_quota
 before insert on public.orders
 for each row execute function private.enforce_subscription_quota();
+
+create or replace function private.assign_free_subscription_to_new_restaurant()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare free_plan_id uuid;
+begin
+  select id into free_plan_id from public.subscription_plans where code='gratuito' and is_active=true;
+  if free_plan_id is not null then
+    insert into public.restaurant_subscriptions(restaurant_id,plan_id,status)
+    values(new.id,free_plan_id,'active')
+    on conflict(restaurant_id) do nothing;
+  end if;
+  return new;
+end;
+$;
+
+drop trigger if exists restaurants_default_subscription on public.restaurantes;
+create trigger restaurants_default_subscription
+after insert on public.restaurantes
+for each row execute function private.assign_free_subscription_to_new_restaurant();
 
 create or replace function public.get_my_restaurant_subscription(p_restaurant_slug text)
 returns jsonb
@@ -307,6 +330,7 @@ alter table public.restaurant_subscriptions enable row level security;
 revoke all on public.subscription_plans from anon,authenticated;
 revoke all on public.restaurant_subscriptions from anon,authenticated;
 revoke all on function private.subscription_is_entitled(uuid) from public,anon,authenticated;
+revoke all on function private.assign_free_subscription_to_new_restaurant() from public,anon,authenticated;
 revoke all on function private.enforce_subscription_quota() from public,anon,authenticated;
 revoke all on function public.get_my_restaurant_subscription(text) from public,anon;
 revoke all on function public.list_platform_subscriptions() from public,anon;
