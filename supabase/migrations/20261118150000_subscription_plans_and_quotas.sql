@@ -265,6 +265,26 @@ as $$
   order by p.monthly_price_cents nulls last,p.name;
 $$;
 
+
+create or replace function public.list_admin_subscription_plans()
+returns table(
+  id uuid, code text, name text, description text, monthly_price_cents integer,
+  product_limit integer, member_limit integer, monthly_order_limit integer,
+  is_active boolean, is_public boolean
+)
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $
+begin
+  if not public.is_platform_admin() then raise exception 'Acesso restrito à administração da plataforma.' using errcode='42501'; end if;
+  return query select p.id,p.code,p.name,p.description,p.monthly_price_cents,p.product_limit,
+    p.member_limit,p.monthly_order_limit,p.is_active,p.is_public
+  from public.subscription_plans p order by p.monthly_price_cents nulls last,p.name;
+end;
+$;
+
 create or replace function public.admin_save_subscription_plan(
   p_code text,p_name text,p_description text,p_monthly_price_cents integer,
   p_product_limit integer,p_member_limit integer,p_monthly_order_limit integer,
@@ -335,10 +355,12 @@ revoke all on function private.enforce_subscription_quota() from public,anon,aut
 revoke all on function public.get_my_restaurant_subscription(text) from public,anon;
 revoke all on function public.list_platform_subscriptions() from public,anon;
 revoke all on function public.list_subscription_plans() from public,anon;
+revoke all on function public.list_admin_subscription_plans() from public,anon;
 revoke all on function public.admin_save_subscription_plan(text,text,text,integer,integer,integer,integer,boolean,boolean) from public,anon;
 revoke all on function public.admin_set_restaurant_subscription(uuid,text,timestamptz) from public,anon;
 grant execute on function public.get_my_restaurant_subscription(text) to authenticated;
 grant execute on function public.list_platform_subscriptions() to authenticated;
 grant execute on function public.list_subscription_plans() to anon,authenticated;
+grant execute on function public.list_admin_subscription_plans() to authenticated;
 grant execute on function public.admin_save_subscription_plan(text,text,text,integer,integer,integer,integer,boolean,boolean) to authenticated;
 grant execute on function public.admin_set_restaurant_subscription(uuid,text,timestamptz) to authenticated;
