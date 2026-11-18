@@ -37,6 +37,7 @@ const PilotPartner = lazy(() => import('./pages/PilotPartner.jsx'))
 const PilotSignup = lazy(() => import('./pages/PilotSignup.jsx'))
 const PilotReview = lazy(() => import('./pages/PilotReview.jsx'))
 const PlatformCompanies = lazy(() => import('./pages/PlatformCompanies.jsx'))
+const PlatformSubscriptions = lazy(() => import('./pages/PlatformSubscriptions.jsx'))
 const DemoCompany = lazy(() => import('./pages/DemoCompany.jsx'))
 const DemoPilot = lazy(() => import('./pages/DemoPilot.jsx'))
 
@@ -84,6 +85,7 @@ export default function App() {
         <Route path="/piloto" element={<PilotRoute><PilotPartner /></PilotRoute>} />
         <Route path="/plataforma/pilotos" element={<PlatformAdminRoute><PilotReview /></PlatformAdminRoute>} />
         <Route path="/plataforma/empresas" element={<PlatformAdminRoute><PlatformCompanies /></PlatformAdminRoute>} />
+        <Route path="/plataforma/assinaturas" element={<PlatformAdminRoute><PlatformSubscriptions /></PlatformAdminRoute>} />
         <Route path="/demo/empresa" element={<PlatformAdminRoute><DemoCompany /></PlatformAdminRoute>} />
         <Route path="/demo/piloto" element={<PlatformAdminRoute><DemoPilot /></PlatformAdminRoute>} />
         <Route path="/admin" element={<Navigate to="/empresa/pedidos" replace />} />

@@ -74,6 +74,20 @@ export async function callServer(name, data = {}) {
   }
   if (name === 'appPilotStartDelivery') return rpc('pilot_start_delivery', { p_order_id: data.orderId })
   if (name === 'appPilotConfirmDelivery') return rpc('pilot_confirm_delivery', { p_order_id: data.orderId, p_code: data.code, p_received: data.received === true })
+  if (name === 'appSubscription') return rpc('get_my_restaurant_subscription', { p_restaurant_slug: data.companyId })
+  if (name === 'appAdminSubscriptions') return rpc('list_platform_subscriptions')
+  if (name === 'appAdminPlans') return rpc('list_admin_subscription_plans')
+  if (name === 'appSavePlan') return rpc('admin_save_subscription_plan', {
+    p_code: data.code, p_name: data.name, p_description: data.description || '',
+    p_monthly_price_cents: data.monthlyPriceCents,
+    p_product_limit: data.productLimit, p_member_limit: data.memberLimit,
+    p_monthly_order_limit: data.monthlyOrderLimit,
+    p_is_active: data.active === true, p_is_public: data.public === true,
+  })
+  if (name === 'appAssignPlan') return rpc('admin_set_restaurant_subscription', {
+    p_restaurant_id: data.restaurantId, p_plan_code: data.planCode,
+    p_period_end: data.periodEnd || null,
+  })
   if (name === 'appPrivacyRequest') return rpc('request_account_deletion')
   if (name === 'appMigrateDefaultCompany') return { companyId: 'pratopronto', changed: 0 }
   if (name === 'appResume') throw new Error('Pagamento online está desativado durante a migração para o Supabase.')

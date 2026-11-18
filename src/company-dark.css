@@ -58,3 +58,21 @@
   .company-topbar { background: #1c2a3b; }
   .company-content { background: #17212d; }
 }
+
+
+/* Assinaturas e limites por empresa */
+.subscription-overview { display: grid; gap: 14px; }
+.subscription-plan-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.subscription-plan-heading > div { display:grid; gap:4px; }
+.subscription-plan-heading small { color:#b4c5d9; }
+.subscription-status { flex-shrink:0; border-radius:999px; padding:6px 10px; font-size:.78rem; font-weight:700; }
+.subscription-status.is-active { background:#173d32; color:#a8f0d0; }
+.subscription-status.is-blocked { background:#4a2929; color:#ffd0c9; }
+.subscription-price { margin:0; color:#fff; font-size:1.2rem; font-weight:800; }
+.subscription-usage-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.subscription-usage { min-width:0; padding:12px; border:1px solid #3a506a; border-radius:12px; background:#202f40; }
+.subscription-usage > div:first-child { display:flex; justify-content:space-between; gap:8px; font-size:.82rem; }
+.subscription-usage b { white-space:nowrap; }
+.subscription-meter { height:6px; margin-top:10px; overflow:hidden; border-radius:99px; background:#40536a; }
+.subscription-meter i { display:block; height:100%; border-radius:inherit; background:#e4c64c; }
+@media(max-width:560px) { .subscription-usage-grid { grid-template-columns:1fr; } .subscription-plan-heading { flex-direction:column; } }
