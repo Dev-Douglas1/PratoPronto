@@ -5,10 +5,11 @@ import { readFile } from 'node:fs/promises'
 const migrationPath = 'supabase/drafts/company-public-profile.sql'
 const servicePath = 'src/services/marketplace.js'
 
-test('bucket público limita leitura ao bucket de imagens do perfil', async () => {
+test('bucket público limita formato e tamanho sem conceder listagem pública', async () => {
   const sql = await readFile(migrationPath, 'utf8')
   assert.match(sql, /values\s*\('company-public-assets','company-public-assets',true,4194304,array\['image\/jpeg','image\/png','image\/webp'\]\)/i)
-  assert.match(sql, /on storage\.objects for select\s+to public\s+using\s*\(bucket_id = 'company-public-assets'\)/i)
+  assert.match(sql, /drop policy if exists "Company public profile images are readable" on storage\.objects/i)
+  assert.doesNotMatch(sql, /create policy "Company public profile images are readable"/i)
 })
 
 test('upload exige usuário autenticado e papel owner/admin da empresa indicada pela pasta', async () => {
