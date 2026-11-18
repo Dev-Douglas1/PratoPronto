@@ -297,8 +297,8 @@ returns uuid
 language plpgsql
 security definer
 set search_path = ''
-as $$
-declare result_id uuid;
+as $
+declare result_id uuid; previous_price integer;
 begin
   if not public.is_platform_admin() then raise exception 'Acesso restrito à administração da plataforma.' using errcode='42501'; end if;
   if p_code !~ '^[a-z0-9][a-z0-9_-]{1,39}$' or length(trim(p_name))<2 then raise exception 'Código ou nome de plano inválido.' using errcode='22023'; end if;
@@ -306,6 +306,7 @@ begin
   if p_product_limit is not null and p_product_limit<0 then raise exception 'Limite de produtos inválido.' using errcode='22023'; end if;
   if p_member_limit is not null and p_member_limit<1 then raise exception 'Limite de membros inválido.' using errcode='22023'; end if;
   if p_monthly_order_limit is not null and p_monthly_order_limit<0 then raise exception 'Limite de pedidos inválido.' using errcode='22023'; end if;
+  select monthly_price_cents into previous_price from public.subscription_plans where code=p_code for update;
   insert into public.subscription_plans(code,name,description,monthly_price_cents,product_limit,member_limit,monthly_order_limit,is_active,is_public,updated_at)
   values(p_code,trim(p_name),left(coalesce(p_description,''),500),p_monthly_price_cents,p_product_limit,p_member_limit,p_monthly_order_limit,p_is_active,p_is_public,now())
   on conflict(code) do update set name=excluded.name,description=excluded.description,
@@ -314,7 +315,7 @@ begin
     is_active=excluded.is_active,is_public=excluded.is_public,updated_at=now()
   returning id into result_id;
   -- Alterar um plano para pago invalida acessos que estavam ativos sem confirmação de cobrança.
-  if p_monthly_price_cents is distinct from 0 then
+  if previous_price is distinct from p_monthly_price_cents and p_monthly_price_cents is distinct from 0 then
     update public.restaurant_subscriptions
     set status='pending_payment',updated_at=now()
     where plan_id=result_id and status in ('active','trialing');
