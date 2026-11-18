@@ -93,6 +93,6 @@ export default function Promotions({ settings, products: companyProducts, onSave
     })}</div>
     {!filtered.length && <div className="company-empty"><Icon name="tag" size={30} /><h3>{offers.length ? 'Nenhuma oferta neste filtro' : 'Sua próxima oferta começa aqui'}</h3><p>{offers.length ? 'Escolha outro filtro para ver suas promoções.' : 'Crie uma promoção para destacar um produto no cardápio.'}</p></div>}
     {!available.length && <p className="promotion-help">Todos os produtos já têm uma oferta. Use “Editar oferta” para renovar as datas ou mudar o desconto.</p>}
-    {editing && <PromotionForm key={editing.product.id} product={editing.product} offer={editing.setting?.promocao} available={available} settings={settings} products={catalog} onSave={onSave} busy={busy} onClose={() => setEditing(null)} feedback={feedback} products={catalog} />}
+    {editing && <PromotionForm key={editing.product.id} product={editing.product} offer={editing.setting?.promocao} available={available} settings={settings} products={catalog} onSave={onSave} busy={busy} onClose={() => setEditing(null)} feedback={feedback} />}
   </section>
 }
