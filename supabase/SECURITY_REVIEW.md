@@ -112,7 +112,7 @@ A suíte usa PGlite para executar as migrations em PostgreSQL temporário e test
 - leitura própria do código de entrega e ausência de permissões de escrita diretas;
 - bloqueio de vitrine para empresas inativas.
 
-Os testes ainda precisam concluir com sucesso no workflow do GitHub. A validação PGlite não substitui testes de integração com usuários reais em staging.
+O workflow GitHub Actions do commit `21398cb65b734ce9dd8c6c01e8b42d228a9e0533` concluiu com **76/76 testes aprovados** e `npm run build` aprovado. O check de Supabase Preview foi ignorado porque a branch não está vinculada a um Supabase Branch; a validação PGlite não substitui testes de integração com usuários reais em staging.
 
 ## Segurança de produção
 
