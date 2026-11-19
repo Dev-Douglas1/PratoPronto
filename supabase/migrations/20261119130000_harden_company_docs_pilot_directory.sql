@@ -13,7 +13,6 @@ RETURNS TABLE(
   vehicle_color text
 )
 LANGUAGE plpgsql
-STABLE
 SECURITY DEFINER
 SET search_path TO ''
 AS $function$
@@ -32,6 +31,8 @@ BEGIN
     RAISE EXCEPTION 'Entre com uma conta verificada para continuar.'
       USING errcode = '42501';
   END IF;
+
+  PERFORM private.enforce_rate_limit('pilots.directory', 30, 60);
 
   IF NOT EXISTS (
     SELECT 1
