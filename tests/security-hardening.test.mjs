@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { PGlite } from '@electric-sql/pglite'
 
-const migrationPath = 'supabase/migrations/20261119120000_enable_rls_on_private_rate_limits.sql'
+const migrationPath = 'supabase/pending-migrations/20261119120000_enable_rls_on_private_rate_limits.sql'
 
 test('hardening da tabela interna de rate limit não concede acesso direto', async () => {
   const sql = await readFile(migrationPath, 'utf8')
@@ -45,7 +45,7 @@ test('auditoria de segurança não aplica revogação em massa de RPCs SECURITY 
 })
 
 
-const advancedMigrationPath = 'supabase/migrations/20261119130000_harden_company_docs_pilot_directory.sql'
+const advancedMigrationPath = 'supabase/pending-migrations/20261119130000_harden_company_docs_pilot_directory.sql'
 
 test('hardening avançado restringe diretório de pilotos, documentos e segredos de entrega', async () => {
   const sql = await readFile(advancedMigrationPath, 'utf8')
@@ -318,7 +318,7 @@ test('migration avançada aplica em PostgreSQL temporário e mantém os fluxos a
 
 
 test('storefront e cotação não expõem nem aceitam restaurantes inativos', async () => {
-  const migrationPath = 'supabase/migrations/20261119140000_guard_inactive_restaurant_storefront.sql'
+  const migrationPath = 'supabase/pending-migrations/20261119140000_guard_inactive_restaurant_storefront.sql'
   const sql = await readFile(migrationPath, 'utf8')
   assert.match(sql, /r\.ativo = true AND r\.account_status = 'active'/i)
   assert.match(sql, /if r\.ativo IS DISTINCT FROM true or r\.account_status IS DISTINCT FROM 'active'/i)
