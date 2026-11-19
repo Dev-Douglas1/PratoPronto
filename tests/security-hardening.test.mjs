@@ -43,3 +43,268 @@ test('auditoria de segurança não aplica revogação em massa de RPCs SECURITY 
   const migration = await readFile(migrationPath, 'utf8')
   assert.doesNotMatch(migration, /REVOKE\s+EXECUTE|ALTER\s+FUNCTION|DROP\s+FUNCTION/i)
 })
+
+
+const advancedMigrationPath = 'supabase/migrations/20261119130000_harden_company_docs_pilot_directory.sql'
+
+test('hardening avançado restringe diretório de pilotos, documentos e segredos de entrega', async () => {
+  const sql = await readFile(advancedMigrationPath, 'utf8')
+  assert.match(sql, /public\.list_available_pilots\(\)/i)
+  assert.match(sql, /rm\.role IN \('owner', 'admin', 'attendant'\)/i)
+  assert.match(sql, /r\.account_status = 'active'/i)
+  assert.match(sql, /DROP POLICY IF EXISTS company_docs_upload_owner/i)
+  assert.match(sql, /DROP POLICY IF EXISTS company_docs_update_owner/i)
+  assert.match(sql, /public\.can_upload_company_registration_document/i)
+  assert.match(sql, /o\.owner_id = uid::text/i)
+  assert.match(sql, /p_path IS DISTINCT FROM expected_path/i)
+  assert.match(sql, /REVOKE ALL ON TABLE public\.delivery_secrets FROM anon, authenticated/i)
+  assert.match(sql, /GRANT SELECT ON TABLE public\.delivery_secrets TO authenticated/i)
+  assert.doesNotMatch(sql, /DROP TABLE|TRUNCATE|DELETE FROM public\.delivery_secrets/i)
+})
+
+test('migration avançada aplica em PostgreSQL temporário e mantém os fluxos autorizados', async () => {
+  const sql = await readFile(advancedMigrationPath, 'utf8')
+  const db = new PGlite()
+  const userId = '11111111-1111-4111-8111-111111111111'
+  const otherUserId = '22222222-2222-4222-8222-222222222222'
+  const restaurantId = '33333333-3333-4333-8333-333333333333'
+  const requestId = '44444444-4444-4444-8444-444444444444'
+  const rejectedRequestId = '55555555-5555-4555-8555-555555555555'
+  const validPath = `${userId}/${requestId}/cnpj_card.pdf`
+
+  try {
+    await db.exec(`
+      CREATE ROLE anon;
+      CREATE ROLE authenticated;
+      CREATE ROLE service_role;
+      CREATE SCHEMA auth;
+      CREATE SCHEMA private;
+      CREATE SCHEMA storage;
+
+      CREATE TABLE auth.users (
+        id uuid PRIMARY KEY,
+        email_confirmed_at timestamptz,
+        phone_confirmed_at timestamptz,
+        deleted_at timestamptz,
+        banned_until timestamptz
+      );
+      CREATE FUNCTION auth.uid() RETURNS uuid
+      LANGUAGE sql STABLE
+      AS $$ SELECT nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
+
+      CREATE FUNCTION private.verified(actor uuid) RETURNS boolean
+      LANGUAGE sql STABLE SECURITY DEFINER SET search_path = ''
+      AS $$ SELECT EXISTS (
+        SELECT 1 FROM auth.users u
+        WHERE u.id = actor
+          AND (u.email_confirmed_at IS NOT NULL OR u.phone_confirmed_at IS NOT NULL)
+          AND u.deleted_at IS NULL
+      ) $$;
+
+      CREATE TABLE public.restaurantes (
+        id uuid PRIMARY KEY,
+        account_status text NOT NULL
+      );
+      CREATE TABLE public.restaurant_members (
+        restaurante_id uuid NOT NULL,
+        profile_id uuid NOT NULL,
+        role text NOT NULL,
+        active boolean NOT NULL
+      );
+      CREATE TABLE public.pilot_profiles (
+        profile_id uuid PRIMARY KEY,
+        display_name text,
+        vehicle_type text,
+        city text,
+        accepting_offers boolean,
+        motorcycle_type text,
+        vehicle_color text,
+        approval_status text,
+        account_status text
+      );
+      CREATE TABLE public.company_registration_requests (
+        id uuid PRIMARY KEY,
+        user_id uuid NOT NULL,
+        person_type text NOT NULL,
+        status text NOT NULL
+      );
+      CREATE TABLE public.company_registration_documents (
+        request_id uuid NOT NULL,
+        user_id uuid NOT NULL,
+        document_type text NOT NULL,
+        storage_path text NOT NULL,
+        mime_type text NOT NULL,
+        file_size bigint NOT NULL,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        UNIQUE (request_id, document_type)
+      );
+      CREATE TABLE storage.objects (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        bucket_id text NOT NULL,
+        name text NOT NULL,
+        owner uuid,
+        owner_id text,
+        metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
+        UNIQUE (bucket_id, name)
+      );
+      CREATE FUNCTION storage.foldername(path text) RETURNS text[]
+      LANGUAGE sql IMMUTABLE
+      AS $$
+        SELECT CASE
+          WHEN array_length(string_to_array(path, '/'), 1) > 1
+          THEN string_to_array(path, '/')[1:array_length(string_to_array(path, '/'), 1) - 1]
+          ELSE ARRAY[]::text[]
+        END
+      $$;
+      CREATE FUNCTION public.is_platform_admin() RETURNS boolean
+      LANGUAGE sql STABLE AS $$ SELECT false $$;
+      CREATE FUNCTION public.can_upload_company_registration_document(p_request_id uuid)
+      RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = ''
+      AS $$ SELECT EXISTS (
+        SELECT 1 FROM public.company_registration_requests q
+        WHERE q.id = p_request_id
+          AND q.user_id = auth.uid()
+          AND q.status = 'pending'
+      ) $$;
+
+      CREATE TABLE public.delivery_secrets (
+        order_id uuid PRIMARY KEY,
+        user_id uuid NOT NULL,
+        code text NOT NULL
+      );
+      ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+      ALTER TABLE public.delivery_secrets ENABLE ROW LEVEL SECURITY;
+      CREATE POLICY company_docs_read_owner ON storage.objects
+        FOR SELECT TO authenticated
+        USING (
+          bucket_id = 'company-registration-documents'
+          AND ((storage.foldername(name))[1] = (SELECT auth.uid())::text OR public.is_platform_admin())
+        );
+      CREATE POLICY company_docs_upload_owner ON storage.objects
+        FOR INSERT TO authenticated
+        WITH CHECK (
+          bucket_id = 'company-registration-documents'
+          AND (storage.foldername(name))[1] = (SELECT auth.uid())::text
+        );
+      CREATE POLICY company_docs_update_owner ON storage.objects
+        FOR UPDATE TO authenticated
+        USING (
+          bucket_id = 'company-registration-documents'
+          AND (storage.foldername(name))[1] = (SELECT auth.uid())::text
+        )
+        WITH CHECK (
+          bucket_id = 'company-registration-documents'
+          AND (storage.foldername(name))[1] = (SELECT auth.uid())::text
+        );
+      CREATE POLICY delivery_secret_owner_read ON public.delivery_secrets
+        FOR SELECT TO authenticated USING (user_id = (SELECT auth.uid()));
+      GRANT SELECT, INSERT, UPDATE ON storage.objects TO authenticated;
+      GRANT ALL ON public.delivery_secrets TO anon, authenticated;
+    `)
+
+    await db.exec(sql)
+
+    const privileges = await db.query(`
+      SELECT
+        has_table_privilege('anon', 'public.delivery_secrets', 'SELECT') AS anon_select,
+        has_table_privilege('authenticated', 'public.delivery_secrets', 'SELECT') AS auth_select,
+        has_table_privilege('authenticated', 'public.delivery_secrets', 'INSERT') AS auth_insert,
+        has_table_privilege('authenticated', 'public.delivery_secrets', 'UPDATE') AS auth_update
+    `)
+    assert.equal(privileges.rows[0].anon_select, false)
+    assert.equal(privileges.rows[0].auth_select, true)
+    assert.equal(privileges.rows[0].auth_insert, false)
+    assert.equal(privileges.rows[0].auth_update, false)
+
+    await db.query(
+      `INSERT INTO auth.users(id,email_confirmed_at) VALUES ($1,now()),($2,now())`,
+      [userId, otherUserId],
+    )
+    await db.query(
+      `INSERT INTO public.pilot_profiles VALUES ($1,'Piloto teste','Moto','Curitiba',true,'CG 160','Preta','approved','active')`,
+      [otherUserId],
+    )
+    await db.query(`SELECT set_config('request.jwt.claim.sub',$1,false)`, [userId])
+    await db.exec('SET ROLE authenticated')
+    await assert.rejects(
+      () => db.query('SELECT * FROM public.list_available_pilots()'),
+      /somente para a equipe|Acesso restrito/i,
+    )
+    await db.exec('RESET ROLE')
+
+    await db.query(
+      `INSERT INTO public.restaurantes(id,account_status) VALUES ($1,'active')`,
+      [restaurantId],
+    )
+    await db.query(
+      `INSERT INTO public.restaurant_members VALUES ($1,$2,'attendant',true)`,
+      [restaurantId, userId],
+    )
+    await db.exec('SET ROLE authenticated')
+    const pilots = await db.query('SELECT profile_id FROM public.list_available_pilots()')
+    assert.equal(pilots.rows.length, 1)
+    assert.equal(pilots.rows[0].profile_id, otherUserId)
+    await db.exec('RESET ROLE')
+
+    await db.query(
+      `INSERT INTO public.company_registration_requests VALUES ($1,$2,'pj','pending'),($3,$2,'pj','pending')`,
+      [requestId, userId, rejectedRequestId],
+    )
+    await db.query(`SELECT set_config('request.jwt.claim.sub',$1,false)`, [userId])
+    await db.exec('SET ROLE authenticated')
+    await db.query(
+      `INSERT INTO storage.objects(bucket_id,name,owner,owner_id) VALUES ('company-registration-documents',$1,$2,$2)`,
+      [validPath, userId],
+    )
+    const registered = await db.query(
+      `SELECT public.register_company_document($1,'cnpj_card',$2,'application/pdf',123) AS result`,
+      [requestId, validPath],
+    )
+    assert.equal(registered.rows[0].result.saved, true)
+
+    await db.query(
+      `UPDATE storage.objects SET metadata='{"version":2}'::jsonb WHERE bucket_id='company-registration-documents' AND name=$1`,
+      [validPath],
+    )
+    await db.exec('RESET ROLE')
+
+    await db.query(
+      `UPDATE public.company_registration_requests SET status='approved' WHERE id=$1`,
+      [requestId],
+    )
+    await db.exec('SET ROLE authenticated')
+    const locked = await db.query(
+      `UPDATE storage.objects SET metadata='{"version":3}'::jsonb WHERE bucket_id='company-registration-documents' AND name=$1`,
+      [validPath],
+    )
+    assert.equal(locked.affectedRows ?? locked.rowCount, 0)
+    await assert.rejects(
+      () => db.query(
+        `SELECT public.register_company_document($1,'cnpj_card',$2,'application/pdf',123)`,
+        [requestId, validPath],
+      ),
+      /Solicitação não encontrada|já analisada/i,
+    )
+    await assert.rejects(
+      () => db.query(
+        `SELECT public.register_company_document($1,'cnpj_card',$2,'application/pdf',123)`,
+        [rejectedRequestId, `${userId}/${rejectedRequestId}/cnpj_card.pdf`],
+      ),
+      /arquivo não foi localizado|armazenamento privado/i,
+    )
+    await db.exec('RESET ROLE')
+
+    await db.query(
+      `INSERT INTO public.delivery_secrets(order_id,user_id,code) VALUES ($1,$2,'1234')`,
+      [restaurantId, userId],
+    )
+    await db.query(`SELECT set_config('request.jwt.claim.sub',$1,false)`, [userId])
+    await db.exec('SET ROLE authenticated')
+    const ownSecret = await db.query('SELECT code FROM public.delivery_secrets')
+    assert.equal(ownSecret.rows.length, 1)
+    assert.equal(ownSecret.rows[0].code, '1234')
+    await db.exec('RESET ROLE')
+  } finally {
+    await db.close()
+  }
+})
