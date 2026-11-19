@@ -152,7 +152,7 @@ test('migration avançada aplica em PostgreSQL temporário e mantém os fluxos a
       AS $$
         SELECT CASE
           WHEN array_length(string_to_array(path, '/'), 1) > 1
-          THEN string_to_array(path, '/')[1:array_length(string_to_array(path, '/'), 1) - 1]
+          THEN (string_to_array(path, '/'))[1:array_length(string_to_array(path, '/'), 1) - 1]
           ELSE ARRAY[]::text[]
         END
       $$;
