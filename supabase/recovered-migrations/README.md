@@ -16,4 +16,4 @@ A branch `recovery/reconciled-migrations` usa as mesmas 44 versões e SQLs em `s
 A reconciliação é somente no Git. Nenhum SQL foi executado durante a recuperação. Nenhuma linha do histórico remoto foi alterada.
 
 ## Verificação isolada
-A organização não possui Supabase Branch/staging disponível no plano atual. As migrations recuperadas já foram aplicadas historicamente no projeto remoto, mas os quatro arquivos pendentes ainda precisam ser testados em uma instância isolada antes de qualquer futura implantação.
+A organização não possui Supabase Branch/staging disponível no plano atual. As migrations recuperadas já foram aplicadas historicamente no projeto remoto. Os quatro arquivos pendentes passaram pelos testes PGlite; antes de implantação ainda falta validar em Supabase gerenciado de staging.
