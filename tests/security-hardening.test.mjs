@@ -308,3 +308,84 @@ test('migration avançada aplica em PostgreSQL temporário e mantém os fluxos a
     await db.close()
   }
 })
+
+
+test('storefront e cotação não expõem nem aceitam restaurantes inativos', async () => {
+  const migrationPath = 'supabase/migrations/20261119140000_guard_inactive_restaurant_storefront.sql'
+  const sql = await readFile(migrationPath, 'utf8')
+  assert.match(sql, /r\.ativo = true AND r\.account_status = 'active'/i)
+  assert.match(sql, /if not r\.ativo or r\.account_status <> 'active'/i)
+
+  const db = new PGlite()
+  const restaurantId = '66666666-6666-4666-8666-666666666666'
+  try {
+    await db.exec(`
+      CREATE SCHEMA private;
+      CREATE SCHEMA auth;
+      CREATE TABLE public.restaurantes (
+        id uuid PRIMARY KEY,
+        slug text NOT NULL,
+        nome text NOT NULL,
+        telefone text,
+        ativo boolean NOT NULL,
+        account_status text NOT NULL
+      );
+      CREATE TABLE public.restaurant_settings (
+        restaurante_id uuid PRIMARY KEY,
+        data jsonb
+      );
+      CREATE TABLE public.profiles (
+        id uuid, nome text, email text, telefone text, endereco text,
+        numero text, bairro text, complemento text, cep text, cidade text, uf text
+      );
+      CREATE TABLE public.products (
+        id uuid, restaurant_id uuid, slug text, active boolean, price_cents integer,
+        config jsonb, promotion jsonb, name text, description text, category text, image_url text
+      );
+      CREATE TABLE public.quotes (
+        id uuid, user_id uuid, restaurant_id uuid, data jsonb, revision uuid, expires_at timestamptz
+      );
+      CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE
+      AS $$ SELECT nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
+      CREATE FUNCTION private.restaurant_id_from_slug(p_slug text) RETURNS uuid
+      LANGUAGE sql STABLE SECURITY DEFINER SET search_path = ''
+      AS $$ SELECT id FROM public.restaurantes WHERE slug = lower(trim(p_slug)) LIMIT 1 $$;
+      CREATE FUNCTION private.verified(actor uuid) RETURNS boolean
+      LANGUAGE sql STABLE AS $$ SELECT true $$;
+      CREATE FUNCTION private.enforce_rate_limit(text, integer, integer) RETURNS void
+      LANGUAGE sql AS $$ SELECT $$;
+      CREATE FUNCTION private.normalize_search(value text) RETURNS text
+      LANGUAGE sql IMMUTABLE AS $$ SELECT lower(trim(coalesce(value,''))) $$;
+    `)
+    await db.exec(sql)
+    await db.query(
+      `INSERT INTO public.restaurantes VALUES ($1,'loja-teste','Loja teste','41999999999',true,'active')`,
+      [restaurantId],
+    )
+    await db.query(
+      `INSERT INTO public.restaurant_settings VALUES ($1,$2::jsonb)`,
+      [restaurantId, JSON.stringify({
+        name: 'Loja teste', phone: '41999999999', address: {}, hours: [], zones: [],
+        methods: ['maquina_entrega'], acceptingOrders: true,
+      })],
+    )
+    const active = await db.query(`SELECT public.get_storefront('loja-teste') AS storefront`)
+    assert.equal(active.rows[0].storefront.name, 'Loja teste')
+
+    await db.query(`UPDATE public.restaurantes SET ativo=false WHERE id=$1`, [restaurantId])
+    await assert.rejects(
+      () => db.query(`SELECT public.get_storefront('loja-teste')`),
+      /Empresa não está disponível/i,
+    )
+    await db.query(
+      `UPDATE public.restaurantes SET ativo=true,account_status='suspended' WHERE id=$1`,
+      [restaurantId],
+    )
+    await assert.rejects(
+      () => db.query(`SELECT public.get_storefront('loja-teste')`),
+      /Empresa não está disponível/i,
+    )
+  } finally {
+    await db.close()
+  }
+})
