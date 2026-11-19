@@ -149,13 +149,16 @@ test('migration avançada aplica em PostgreSQL temporário e mantém os fluxos a
       );
       CREATE FUNCTION storage.foldername(path text) RETURNS text[]
       LANGUAGE sql IMMUTABLE
-      AS $$
+      AS $
         SELECT CASE
           WHEN array_length(string_to_array(path, '/'), 1) > 1
           THEN (string_to_array(path, '/'))[1:array_length(string_to_array(path, '/'), 1) - 1]
           ELSE ARRAY[]::text[]
         END
-      $$;
+      $;
+      GRANT USAGE ON SCHEMA storage, auth TO authenticated;
+      GRANT EXECUTE ON FUNCTION storage.foldername(text) TO authenticated;
+      GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated;
       CREATE FUNCTION public.is_platform_admin() RETURNS boolean
       LANGUAGE sql STABLE AS $$ SELECT false $$;
       CREATE FUNCTION public.can_upload_company_registration_document(p_request_id uuid)
