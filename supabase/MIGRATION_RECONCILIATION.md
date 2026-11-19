@@ -8,11 +8,11 @@ Auditoria somente leitura em 2026-11-19 do projeto Supabase `hllvhzzbkjmhxymuwqi
 |---|---:|
 | Versões no histórico remoto antes da limpeza | 44 |
 | SQLs recuperados de `supabase_migrations.schema_migrations.statements` | 44/44 |
-| Arquivos em `supabase/migrations` após a limpeza | 45 |
+| Arquivos em `supabase/migrations` após as limpezas | 46 |
 | Diferença de versões entre remoto e diretório reconciliado | 0 |
-| Migration de limpeza aplicada nesta tarefa | 1 |
+| Migrations de limpeza aplicadas nesta tarefa | 2 |
 
-O conteúdo SQL das 44 migrations históricas recuperadas vem diretamente da coluna `statements` do histórico remoto. Uma 45ª migration, de limpeza de funções obsoletas, foi aplicada em 2026-11-19 e adicionada ao diretório ativo. Os arquivos ficam no diretório ativo com as versões e nomes registrados pelo Supabase. Cópias de evidência ficam em `supabase/recovered-migrations/applied/`.
+O conteúdo SQL das 44 migrations históricas recuperadas vem diretamente da coluna `statements` do histórico remoto. Duas migrations adicionais de limpeza foram aplicadas em 2026-11-19 e adicionadas ao diretório ativo. Os arquivos ficam no diretório ativo com as versões e nomes registrados pelo Supabase. Cópias de evidência ficam em `supabase/recovered-migrations/applied/`.
 
 ## Comparação com os 12 arquivos da branch anterior
 
@@ -79,6 +79,7 @@ Todos os 12 arquivos originais foram preservados em `supabase/recovered-migratio
 - `20261106004642` — harden_legacy_company_functions
 - `20261117122754` — company_registration_pf_cpf
 - `20261119150046` — remove_unused_legacy_company_rpcs
+- `20261119150215` — remove_orphaned_legacy_store_search
 
 ## Verificações de schema relacionadas ao recurso de recebimentos
 
@@ -93,7 +94,7 @@ O SQL de configuração de recebimentos continua sendo um draft separado. Não f
 
 Foi aplicada a migration `20261119150046_remove_unused_legacy_company_rpcs.sql`, que removeu 7 funções sem chamadas no código atual nem dependências registradas no PostgreSQL: `submit_company_registration(text,text,text,text)`, `my_company_registration_request()`, `list_company_registration_requests()`, `company_catalog_list(uuid)`, `company_catalog_save(uuid,uuid,text,text,text,integer,text,boolean)`, `company_catalog_set_active(uuid,uuid,boolean)` e `create_restaurant(text,text)`. Todas foram removidas com `DROP FUNCTION ... RESTRICT`, sem `CASCADE`.
 
-As versões atuais `submit_company_registration_v2`, `my_company_registration_request_v2`, `list_company_registration_requests_v2`, `save_restaurant_product`, `update_restaurant_product_state` e `my_restaurants` foram verificadas e permanecem disponíveis. Nenhuma tabela ou dado foi removido.
+As versões atuais `submit_company_registration_v2`, `my_company_registration_request_v2`, `list_company_registration_requests_v2`, `save_restaurant_product`, `update_restaurant_product_state` e `my_restaurants` foram verificadas e permanecem disponíveis. Também foi removida `public.buscar_empresas_ranqueadas(numeric,numeric)`: seu único chamador era o hook órfão `src/hooks/useNearbyStores.js`, sem imports no aplicativo. O hook foi removido do repositório. Nenhuma tabela ou dado foi removido.
 
 ## Limites da validação
 
