@@ -95,7 +95,7 @@ Enquanto permanecer no Free, configurar no painel os requisitos de senha dispon�
 
 Comparação do estado observado:
 - Supabase remoto: 44 versões registradas;
-- repositório nesta branch: 11 arquivos de migration;
+- repositório nesta branch: 12 arquivos de migration;
 - versões coincidentes: 2;
 - versões remotas sem arquivo correspondente no repositório: 42;
 - arquivos locais sem versão correspondente no remoto: 9.
