@@ -103,7 +103,7 @@ test('migration avançada aplica em PostgreSQL temporário e mantém os fluxos a
       ) $$;
 
       CREATE FUNCTION private.enforce_rate_limit(text, integer, integer) RETURNS void
-      LANGUAGE sql AS $ SELECT $;
+      LANGUAGE plpgsql AS $rate_limit$ BEGIN RETURN; END $rate_limit$;
 
       CREATE TABLE public.restaurantes (
         id uuid PRIMARY KEY,
@@ -360,7 +360,7 @@ test('storefront e cotação não expõem nem aceitam restaurantes inativos', as
       CREATE FUNCTION private.verified(actor uuid) RETURNS boolean
       LANGUAGE sql STABLE AS $$ SELECT true $$;
       CREATE FUNCTION private.enforce_rate_limit(text, integer, integer) RETURNS void
-      LANGUAGE plpgsql AS $ BEGIN RETURN; END $;
+      LANGUAGE plpgsql AS $rate_limit$ BEGIN RETURN; END $rate_limit$;
       CREATE FUNCTION private.normalize_search(value text) RETURNS text
       LANGUAGE sql IMMUTABLE AS $$ SELECT lower(trim(coalesce(value,''))) $$;
     `)
