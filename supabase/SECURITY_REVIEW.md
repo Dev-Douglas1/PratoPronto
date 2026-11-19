@@ -45,6 +45,7 @@ O fluxo atual aceita apenas maquininha na entrega. Não existe processamento de 
 Antes, `list_available_pilots()` retornava até 100 pilotos aprovados e disponíveis para qualquer usuário autenticado, sem verificar vínculo empresarial.
 
 A nova migration exige:
+- limite de 30 consultas por minuto por usuário;
 - conta autenticada e verificada, não excluída ou banida;
 - associação ativa a uma empresa com status `active`;
 - papel `owner`, `admin` ou `attendant`.
