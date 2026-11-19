@@ -11,7 +11,7 @@ Auditoria somente leitura em 2026-11-19. O diretório `applied/` contém cópias
 A versão `20260921154316` contém operações destrutivas (DROP) e é arquivada apenas para auditoria. Todos os SQLs estão fora do diretório ativo nesta pasta de evidências.
 
 ## Reconciliação
-A branch `recovery/reconciled-migrations` usa as mesmas 44 versões e SQLs em `supabase/migrations/`, correspondendo ao histórico remoto. Os 12 arquivos que existiam na branch anterior foram preservados em `local-branch-original/`. Quatro migrations não aplicadas foram movidas para `supabase/pending-migrations/`.
+A branch `recovery/reconciled-migrations` usa as mesmas 44 versões e SQLs históricos em `supabase/migrations/`, correspondendo ao histórico remoto. A migration adicional `20261119150046_remove_unused_legacy_company_rpcs.sql` remove funções legadas sem uso e foi aplicada depois da reconciliação. Os 12 arquivos que existiam na branch anterior foram preservados em `local-branch-original/`. Quatro migrations não aplicadas foram movidas para `supabase/pending-migrations/`.
 
 A reconciliação é somente no Git. Nenhum SQL foi executado durante a recuperação. Nenhuma linha do histórico remoto foi alterada.
 
