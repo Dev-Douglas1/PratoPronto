@@ -6,13 +6,13 @@ Auditoria somente leitura em 2026-11-19 do projeto Supabase `hllvhzzbkjmhxymuwqi
 
 | Verificação | Resultado |
 |---|---:|
-| Versões no histórico remoto | 44 |
+| Versões no histórico remoto antes da limpeza | 44 |
 | SQLs recuperados de `supabase_migrations.schema_migrations.statements` | 44/44 |
-| Arquivos em `supabase/migrations` nesta branch reconciliada | 44 |
+| Arquivos em `supabase/migrations` após a limpeza | 45 |
 | Diferença de versões entre remoto e diretório reconciliado | 0 |
-| Migrations novas aplicadas durante esta tarefa | 0 |
+| Migration de limpeza aplicada nesta tarefa | 1 |
 
-O conteúdo SQL recuperado vem diretamente da coluna `statements` do histórico remoto. Os arquivos ficam no diretório ativo com as versões e nomes registrados pelo Supabase. Cópias de evidência ficam em `supabase/recovered-migrations/applied/`.
+O conteúdo SQL das 44 migrations históricas recuperadas vem diretamente da coluna `statements` do histórico remoto. Uma 45ª migration, de limpeza de funções obsoletas, foi aplicada em 2026-11-19 e adicionada ao diretório ativo. Os arquivos ficam no diretório ativo com as versões e nomes registrados pelo Supabase. Cópias de evidência ficam em `supabase/recovered-migrations/applied/`.
 
 ## Comparação com os 12 arquivos da branch anterior
 
@@ -78,6 +78,7 @@ Todos os 12 arquivos originais foram preservados em `supabase/recovered-migratio
 - `20261104183241` — fix_private_company_document_upload_policy
 - `20261106004642` — harden_legacy_company_functions
 - `20261117122754` — company_registration_pf_cpf
+- `20261119150046` — remove_unused_legacy_company_rpcs
 
 ## Verificações de schema relacionadas ao recurso de recebimentos
 
@@ -88,6 +89,12 @@ Consulta somente leitura confirmou:
 
 O SQL de configuração de recebimentos continua sendo um draft separado. Não foi aplicado.
 
+## Limpeza de funções antigas — 2026-11-19
+
+Foi aplicada a migration `20261119150046_remove_unused_legacy_company_rpcs.sql`, que removeu 7 funções sem chamadas no código atual nem dependências registradas no PostgreSQL: `submit_company_registration(text,text,text,text)`, `my_company_registration_request()`, `list_company_registration_requests()`, `company_catalog_list(uuid)`, `company_catalog_save(uuid,uuid,text,text,text,integer,text,boolean)`, `company_catalog_set_active(uuid,uuid,boolean)` e `create_restaurant(text,text)`. Todas foram removidas com `DROP FUNCTION ... RESTRICT`, sem `CASCADE`.
+
+As versões atuais `submit_company_registration_v2`, `my_company_registration_request_v2`, `list_company_registration_requests_v2`, `save_restaurant_product`, `update_restaurant_product_state` e `my_restaurants` foram verificadas e permanecem disponíveis. Nenhuma tabela ou dado foi removido.
+
 ## Limites da validação
 
 - Os 44 SQLs são os statements registrados pelo próprio Supabase e já executados historicamente no projeto remoto.
@@ -97,4 +104,4 @@ O SQL de configuração de recebimentos continua sendo um draft separado. Não f
 
 ## Segurança
 
-Nenhuma migration foi aplicada nesta tarefa. Não houve `db push`, `db reset`, `migration repair`, alteração de schema, dados, Storage, Auth ou histórico remoto. Não execute os 4 arquivos de `supabase/pending-migrations/` automaticamente.
+Uma migration de limpeza foi aplicada. Não houve `db push`, `db reset` ou `migration repair`. Nenhuma tabela, dado, Storage ou configuração de Auth foi removida ou alterada. Os 4 arquivos de `supabase/pending-migrations/` continuam pendentes e não foram executados.
