@@ -118,8 +118,8 @@ begin
     raise exception 'Acesso restrito ao proprietário ou administrador da empresa.' using errcode = '42501';
   end if;
 
-  select coalesce(array_agg(distinct x), array[]::text[]) into v_methods
-  from jsonb_array_elements_text(coalesce(p_settings->'methods','[]'::jsonb)) x;
+  select coalesce(array_agg(distinct method), array[]::text[]) into v_methods
+  from jsonb_array_elements_text(coalesce(p_settings->'methods','[]'::jsonb)) as methods(method);
   if cardinality(v_methods) = 0 or not (v_methods <@ array['pix_manual','cash_delivery','maquina_entrega']::text[]) then
     raise exception 'Selecione meios de pagamento válidos.' using errcode = '22023';
   end if;
@@ -130,7 +130,7 @@ begin
   v_bank_doc := regexp_replace(coalesce(p_settings->>'bankHolderDocument',''), '\D', '', 'g');
 
   if 'pix_manual' = any(v_methods) and (
-    v_pix_type not in ('cpf','cnpj','email','telefone','aleatoria')
+    coalesce(v_pix_type,'') not in ('cpf','cnpj','email','telefone','aleatoria')
     or length(trim(coalesce(p_settings->>'pixKey',''))) = 0
     or length(trim(coalesce(p_settings->>'pixHolderName',''))) = 0
     or length(v_pix_doc) not in (11,14)
@@ -140,7 +140,7 @@ begin
 
   if coalesce(p_settings->>'bankName','') <> '' or coalesce(p_settings->>'bankAccount','') <> '' then
     if coalesce(p_settings->>'bankName','') = ''
-      or v_account_type not in ('corrente','poupanca','pagamento')
+      or coalesce(v_account_type,'') not in ('corrente','poupanca','pagamento')
       or coalesce(p_settings->>'bankBranch','') = ''
       or coalesce(p_settings->>'bankAccount','') = ''
       or coalesce(p_settings->>'bankHolderName','') = ''
