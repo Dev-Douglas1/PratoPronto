@@ -1,20 +1,38 @@
 # Reconciliação do histórico de migrations
 
-Auditoria somente leitura em 2026-11-19. Nenhuma linha da tabela `supabase_migrations.schema_migrations` foi alterada e nenhuma migration foi aplicada.
+Auditoria somente leitura em 2026-11-19 do projeto Supabase `hllvhzzbkjmhxymuwqis` (PostgreSQL 17.11).
 
-## Resultado
+## Resultado confirmado
 
-| Fonte | Quantidade |
+| Verificação | Resultado |
 |---|---:|
-| Versões registradas no Supabase remoto | 44 |
-| Arquivos SQL em `supabase/migrations` nesta branch | 12 |
-| Versões coincidentes | 2 |
-| Versões remotas sem arquivo local | 42 |
-| Arquivos locais sem versão remota | 10 |
+| Versões no histórico remoto | 44 |
+| SQLs recuperados de `supabase_migrations.schema_migrations.statements` | 44/44 |
+| Arquivos em `supabase/migrations` nesta branch reconciliada | 44 |
+| Diferença de versões entre remoto e diretório reconciliado | 0 |
+| Migrations novas aplicadas durante esta tarefa | 0 |
 
-A branch `main` tem 8 arquivos, `feature/assinaturas-planos` tem 9 e `security/hardening-audit` tem 12. A consulta ao histórico GitHub encontrou 10 commits que alteraram `supabase/migrations`; isso não recupera as 42 migrations ausentes.
+O conteúdo SQL recuperado vem diretamente da coluna `statements` do histórico remoto. Os arquivos ficam no diretório ativo com as versões e nomes registrados pelo Supabase. Cópias de evidência ficam em `supabase/recovered-migrations/applied/`.
 
-## Versões registradas no remoto sem SQL correspondente na branch
+## Comparação com os 12 arquivos da branch anterior
+
+- 2 versões tinham o mesmo timestamp remoto; uma SQL diferia materialmente (`20260921154316`) e a outra coincidia após remover whitespace final (`20261106004642`).
+- 5 arquivos locais tinham SQL idêntico ao de uma migration aplicada, mas com timestamp diferente:
+  - `20260922144500` corresponde a `20260922143515` (diferença apenas de whitespace final).
+  - `20260922145200` corresponde a `20260922143613`.
+  - `20260922151000` corresponde a `20260922151628`.
+  - `20260923024345` corresponde a `20260923024958`.
+  - `20261110160000` corresponde a `20261117122754`.
+- `20261104120000_company_registration_approval_flow.sql` não é igual ao SQL remoto `20261104181137`; a versão local foi preservada como variante histórica, não como migration ativa.
+- Os 4 arquivos abaixo não constam no histórico remoto e foram movidos para `supabase/pending-migrations/`, fora do caminho executado pelo Supabase CLI:
+  - `20261118150000_subscription_plans_and_quotas.sql`
+  - `20261119120000_enable_rls_on_private_rate_limits.sql`
+  - `20261119130000_harden_company_docs_pilot_directory.sql`
+  - `20261119140000_guard_inactive_restaurant_storefront.sql`
+
+Todos os 12 arquivos originais foram preservados em `supabase/recovered-migrations/local-branch-original/`.
+
+## Versões do histórico remoto
 
 - `20260921114806` — supabase_complete
 - `20260921140532` — multiempresa_membros_pilotos
@@ -32,6 +50,7 @@ A branch `main` tem 8 arquivos, `feature/assinaturas-planos` tem 9 e `security/h
 - `20260921151413` — pilot_documents_and_manual_approval
 - `20260921151449` — pilot_approval_enforcement
 - `20260921151534` — pilot_availability_after_approval
+- `20260921154316` — cleanup_legacy_schema_and_harden_runtime
 - `20260922125616` — audit_blocks_and_rate_limit_core
 - `20260922125632` — rate_limit_critical_rpcs
 - `20260922125800` — enforce_pilot_and_company_blocks
@@ -57,40 +76,25 @@ A branch `main` tem 8 arquivos, `feature/assinaturas-planos` tem 9 e `security/h
 - `20261104183139` — company_registration_documents_and_cnpj_validation
 - `20261104183148` — require_company_documents_before_approval
 - `20261104183241` — fix_private_company_document_upload_policy
+- `20261106004642` — harden_legacy_company_functions
 - `20261117122754` — company_registration_pf_cpf
 
-## Arquivos locais que não constam no histórico remoto
+## Verificações de schema relacionadas ao recurso de recebimentos
 
-- `20260922144500` — 20260922144500_auth_google_phone_profiles.sql
-- `20260922145200` — 20260922145200_auth_social_consent.sql
-- `20260922151000` — 20260922151000_fix_authenticated_profile_loading.sql
-- `20260923024345` — 20260923024345_account_ids_and_team_permissions.sql
-- `20261104120000` — 20261104120000_company_registration_approval_flow.sql
-- `20261110160000` — 20261110160000_company_registration_pf_cpf.sql
-- `20261118150000` — 20261118150000_subscription_plans_and_quotas.sql
-- `20261119120000` — 20261119120000_enable_rls_on_private_rate_limits.sql
-- `20261119130000` — 20261119130000_harden_company_docs_pilot_directory.sql
-- `20261119140000` — 20261119140000_guard_inactive_restaurant_storefront.sql
+Consulta somente leitura confirmou:
+- `private.verified(uuid)` existe e usa `search_path = ''`.
+- `private.company_payment_settings` ainda não existe.
+- As RPCs `get_company_payment_settings` e `save_company_payment_settings` ainda não existem.
 
-Esses arquivos incluem alterações ainda não aplicadas, portanto sua ausência no remoto não é, isoladamente, um erro. Não executar essas migrations em produção até verificar a ordem e dependências.
+O SQL de configuração de recebimentos continua sendo um draft separado. Não foi aplicado.
 
-## Por que não foi feita reconciliação automática
+## Limites da validação
 
-- A tabela de histórico registra versões, mas não contém o SQL original dessas migrations.
-- Marcar versões como aplicadas com `migration repair` sem comparar o schema pode ocultar alterações ausentes.
-- Reaplicar SQL reconstruído por suposição pode recriar tabelas, duplicar triggers, alterar políticas ou afetar dados.
-- O check Supabase Preview do PR foi ignorado porque não há Supabase Branch associado. Não existe ambiente de staging vinculado para executar a sequência real.
-- A organização está no plano Free, que não inclui branching do Supabase.
+- Os 44 SQLs são os statements registrados pelo próprio Supabase e já executados historicamente no projeto remoto.
+- A estrutura local de migrations foi alinhada às 44 versões remotas, sem executar novamente nenhuma delas.
+- Não existe Supabase Branch/staging disponível nesta organização Free. Portanto, não foi executada uma segunda reprodução das 44 migrations em instância isolada.
+- A validação isolada dos 4 arquivos pendentes permanece necessária antes de qualquer aplicação futura.
 
-## Procedimento seguro recomendado
+## Segurança
 
-1. Fazer backup completo do banco e Storage; validar que a restauração é possível.
-2. Recuperar os SQLs originais das versões remotas em computadores de desenvolvimento, branches antigas, PRs ou backups.
-3. Comparar cada SQL recuperado com o schema atual e com as versões registradas no remoto.
-4. Executar a sequência completa em um projeto/instância isolada, sem dados de produção.
-5. Se os SQLs originais não puderem ser recuperados, preparar um baseline de schema atual revisado manualmente; documentar explicitamente quais versões históricas foram substituídas e por quê.
-6. Só depois de validação e aprovação explícita, aplicar a estratégia de reconciliação em produção.
-
-## Regra de segurança
-
-**Não executar `supabase db reset`, `supabase db push`, `migration repair` ou migrations novas em produção enquanto esta divergência existir.** As migrations de segurança deste PR ficam apenas na branch até a reconciliação.
+Nenhuma migration foi aplicada nesta tarefa. Não houve `db push`, `db reset`, `migration repair`, alteração de schema, dados, Storage, Auth ou histórico remoto. Não execute os 4 arquivos de `supabase/pending-migrations/` automaticamente.

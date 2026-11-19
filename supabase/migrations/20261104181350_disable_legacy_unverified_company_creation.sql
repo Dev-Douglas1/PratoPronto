@@ -1,0 +1,1 @@
+revoke all on function public.create_restaurant(text,text) from public, anon, authenticated;
