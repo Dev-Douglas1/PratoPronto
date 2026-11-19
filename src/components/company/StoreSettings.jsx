@@ -122,6 +122,7 @@ export default function StoreSettings({ demo, companyId = DEFAULT_COMPANY_ID }) 
     </section>
     {error && <p className="company-alert" role="alert">{error}</p>}
     {notice && <p className="company-notice" role="status">{notice}</p>}
+    <PaymentSettings companyId={companyId} demo={demo} />
     <form className="company-panel settings-form" onSubmit={save}>
       <h2>Dados e atendimento</h2>
       <div className="settings-grid">
@@ -158,8 +159,6 @@ export default function StoreSettings({ demo, companyId = DEFAULT_COMPANY_ID }) 
         <button type="button" className="company-button subtle" disabled={form.zones.length === 1} onClick={() => setForm(current => ({ ...current, zones: current.zones.filter((_,n) => n !== i) }))}>Remover bairro</button>
       </div>)}
       <button className="company-button secondary" type="button" disabled={form.zones.length >= 100} onClick={() => setForm(current => ({ ...current, zones: [...current.zones,{ bairro:'',fee:'',min:'',freeAbove:'' }] }))}>+ Bairro</button>
-
-      <PaymentSettings companyId={companyId} demo={demo} />
 
       <h3>Pagamento e operação</h3>
       <label className="company-checkbox"><input type="checkbox" checked readOnly />Maquininha na entrega</label>
