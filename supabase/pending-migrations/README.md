@@ -7,4 +7,4 @@ Estes arquivos existiam na branch de auditoria, mas não aparecem no histórico 
 - `20261119130000_harden_company_docs_pilot_directory.sql`
 - `20261119140000_guard_inactive_restaurant_storefront.sql`
 
-Antes de mover qualquer arquivo para `supabase/migrations/`, validar dependências, testar a sequência em uma instância isolada, revisar os advisors e obter aprovação explícita para implantação.
+Os 4 arquivos são cobertos pelos testes automatizados PGlite (PostgreSQL isolado); o preview Vercel concluiu 76/76 testes e build Vite aprovado. Antes de qualquer implantação, ainda é necessário testar em Supabase gerenciado de staging, revisar dependências/advisors e obter aprovação explícita.
