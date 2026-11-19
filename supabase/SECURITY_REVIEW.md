@@ -70,7 +70,7 @@ A proteção contra senhas vazadas está desativada. A organização Supabase es
 
 ## Validação e limites
 
-Os SQLs ativos na branch reconciliada são cópias dos statements registrados no histórico remoto e já executados historicamente. Não foi possível reproduzir a sequência em staging porque não há Supabase Branch disponível no plano atual. Os quatro arquivos pendentes precisam de validação isolada antes de aplicação.
+Os SQLs ativos na branch reconciliada são cópias dos statements registrados no histórico remoto e já executados historicamente. Os quatro arquivos pendentes foram exercitados pelos testes automatizados PGlite; o preview Vercel confirmou 76/76 testes e build Vite aprovado. Não há Supabase Branch disponível no plano atual, então ainda falta uma rodada em Supabase gerenciado de staging antes de aplicação.
 
 Os advisors de segurança continuam apontando findings existentes, incluindo funções `SECURITY DEFINER` expostas a authenticated e a proteção contra senhas vazadas desativada. Esses avisos exigem revisão por função e não foram resolvidos por uma revogação global.
 
