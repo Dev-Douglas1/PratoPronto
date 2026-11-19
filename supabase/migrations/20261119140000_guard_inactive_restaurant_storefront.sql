@@ -12,7 +12,7 @@ begin
   rid:=private.restaurant_id_from_slug(p_slug);
   if rid is null then raise exception 'Empresa não encontrada.'; end if;
   select * into r from public.restaurantes where id=rid;
-  if not r.ativo or r.account_status <> 'active' then
+  if r.ativo IS DISTINCT FROM true or r.account_status IS DISTINCT FROM 'active' then
     raise exception 'Empresa não está disponível.';
   end if;
   select data into s from public.restaurant_settings where restaurante_id=rid;
