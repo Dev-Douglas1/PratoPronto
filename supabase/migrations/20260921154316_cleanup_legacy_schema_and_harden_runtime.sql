@@ -1,6 +1,6 @@
--- Applied to Supabase project on 2026-09-21.
--- Removes the abandoned single-store schema and hardens the live multi-company runtime.
 
+-- Platform admin lookup first, so privacy policies can stop depending on the
+-- abandoned restaurant_admins table.
 drop policy if exists "platform admins self read" on public.platform_admins;
 create policy "platform admins self read"
 on public.platform_admins
@@ -19,8 +19,10 @@ security invoker
 set search_path = ''
 as $$
   select exists(
-    select 1 from public.platform_admins a
-    where a.profile_id=auth.uid() and a.active=true
+    select 1
+    from public.platform_admins a
+    where a.profile_id=auth.uid()
+      and a.active=true
   )
 $$;
 revoke all on function public.is_platform_admin() from public;
@@ -33,11 +35,16 @@ for select
 to authenticated
 using (
   private.verified((select auth.uid()))
-  and (user_id=(select auth.uid()) or public.is_platform_admin())
+  and (
+    user_id=(select auth.uid())
+    or public.is_platform_admin()
+  )
 );
 
+-- Remove the abandoned single-store/Firebase-era database path.
 drop function if exists public.app_commit(uuid,text,jsonb);
 drop function if exists public.app_rate(uuid,text);
+
 drop trigger if exists zz_accept_admin_invitation on auth.users;
 drop function if exists private.accept_admin_invitation();
 drop function if exists private.admin(uuid);
@@ -54,9 +61,11 @@ drop table if exists public.enderecos;
 drop table if exists public.produtos;
 drop table if exists public.store_settings;
 drop table if exists public.restaurant_admins;
+
 drop table if exists private.rate_limits;
 drop table if exists private.admin_invitations;
 
+-- Pilot records: direct reads expose only the signed-in pilot's own row.
 drop policy if exists "pilots authenticated directory" on public.pilot_profiles;
 drop policy if exists "pilots own read" on public.pilot_profiles;
 create policy "pilots own read"
@@ -65,6 +74,7 @@ for select
 to authenticated
 using (profile_id=(select auth.uid()));
 
+-- Profile mutations remain RPC-only.
 drop policy if exists "pilots own insert" on public.pilot_profiles;
 drop policy if exists "pilots own update" on public.pilot_profiles;
 revoke all on public.pilot_profiles from anon, authenticated;
@@ -85,6 +95,7 @@ $$;
 revoke all on function public.get_my_pilot_profile() from public;
 grant execute on function public.get_my_pilot_profile() to authenticated;
 
+-- Split ALL into write-only policies so SELECT has a single permissive policy.
 drop policy if exists "products managers write" on public.products;
 drop policy if exists "products managers insert" on public.products;
 drop policy if exists "products managers update" on public.products;
@@ -103,14 +114,23 @@ create policy "products managers delete"
 on public.products for delete to authenticated
 using (private.restaurant_member(restaurant_id,array['owner','admin'],(select auth.uid())));
 
+-- Remove exact duplicate indexes and cover live foreign keys.
 drop index if exists public.orders_pilot_status_idx;
 drop index if exists public.orders_user_created_idx;
 
-create index if not exists delivery_secrets_user_id_idx on public.delivery_secrets(user_id);
-create index if not exists order_delivery_offers_offered_by_idx on public.order_delivery_offers(offered_by);
-create index if not exists order_delivery_offers_pilot_contact_idx on public.order_delivery_offers(pilot_contact_id);
-create index if not exists pilot_profiles_reviewed_by_idx on public.pilot_profiles(reviewed_by);
-create index if not exists quotes_restaurant_id_idx on public.quotes(restaurant_id);
-create index if not exists restaurant_pilot_contacts_created_by_idx on public.restaurant_pilot_contacts(created_by);
-create index if not exists restaurant_pilot_contacts_pilot_profile_idx on public.restaurant_pilot_contacts(pilot_profile_id);
-create index if not exists restaurant_settings_updated_by_idx on public.restaurant_settings(updated_by);
+create index if not exists delivery_secrets_user_id_idx
+  on public.delivery_secrets(user_id);
+create index if not exists order_delivery_offers_offered_by_idx
+  on public.order_delivery_offers(offered_by);
+create index if not exists order_delivery_offers_pilot_contact_idx
+  on public.order_delivery_offers(pilot_contact_id);
+create index if not exists pilot_profiles_reviewed_by_idx
+  on public.pilot_profiles(reviewed_by);
+create index if not exists quotes_restaurant_id_idx
+  on public.quotes(restaurant_id);
+create index if not exists restaurant_pilot_contacts_created_by_idx
+  on public.restaurant_pilot_contacts(created_by);
+create index if not exists restaurant_pilot_contacts_pilot_profile_idx
+  on public.restaurant_pilot_contacts(pilot_profile_id);
+create index if not exists restaurant_settings_updated_by_idx
+  on public.restaurant_settings(updated_by);
