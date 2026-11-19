@@ -53,6 +53,11 @@ export async function callServer(name, data = {}) {
     p_config: { personalizavel: data.personalizavel === true },
     p_promotion: data.promocao || null,
   })
+  if (name === 'appGetPaymentSettings') return rpc('get_company_payment_settings', { p_restaurant_slug: data.companyId || 'pratopronto' })
+  if (name === 'appSavePaymentSettings') return rpc('save_company_payment_settings', {
+    p_restaurant_slug: data.companyId || 'pratopronto',
+    p_settings: data.settings,
+  })
   if (name === 'appSaveSettings') {
     const { companyId = 'pratopronto', ...settings } = data
     return rpc('save_restaurant_settings', { p_restaurant_slug: companyId, p_data: settings })
