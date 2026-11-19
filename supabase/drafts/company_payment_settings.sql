@@ -42,8 +42,8 @@ declare
   v_restaurant_id uuid;
   v_data jsonb;
 begin
-  if auth.uid() is null then
-    raise exception 'Autenticação necessária.' using errcode = '42501';
+  if auth.uid() is null or not private.verified(auth.uid()) then
+    raise exception 'Autenticação verificada necessária.' using errcode = '42501';
   end if;
 
   select r.id into v_restaurant_id
