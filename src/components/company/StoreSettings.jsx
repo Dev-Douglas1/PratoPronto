@@ -4,6 +4,7 @@ import { getSupabase } from '../../lib/supabase.js'
 import { restaurantIdForSlug } from '../../services/company.js'
 import AddressFields from '../AddressFields.jsx'
 import SubscriptionOverview from './SubscriptionOverview.jsx'
+import PaymentSettings from './PaymentSettings.jsx'
 import { DEFAULT_COMPANY_ID } from '../../config/marketplace.js'
 
 const days = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado']
@@ -121,6 +122,7 @@ export default function StoreSettings({ demo, companyId = DEFAULT_COMPANY_ID }) 
     </section>
     {error && <p className="company-alert" role="alert">{error}</p>}
     {notice && <p className="company-notice" role="status">{notice}</p>}
+    <PaymentSettings companyId={companyId} demo={demo} />
     <form className="company-panel settings-form" onSubmit={save}>
       <h2>Dados e atendimento</h2>
       <div className="settings-grid">
