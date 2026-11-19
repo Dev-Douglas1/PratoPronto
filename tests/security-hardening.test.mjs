@@ -321,7 +321,7 @@ test('storefront e cotação não expõem nem aceitam restaurantes inativos', as
   const migrationPath = 'supabase/migrations/20261119140000_guard_inactive_restaurant_storefront.sql'
   const sql = await readFile(migrationPath, 'utf8')
   assert.match(sql, /r\.ativo = true AND r\.account_status = 'active'/i)
-  assert.match(sql, /if not r\.ativo or r\.account_status <> 'active'/i)
+  assert.match(sql, /if r\.ativo IS DISTINCT FROM true or r\.account_status IS DISTINCT FROM 'active'/i)
 
   const db = new PGlite()
   const restaurantId = '66666666-6666-4666-8666-666666666666'
