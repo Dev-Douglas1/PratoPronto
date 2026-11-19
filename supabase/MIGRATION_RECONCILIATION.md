@@ -92,8 +92,8 @@ O SQL de configuração de recebimentos continua sendo um draft separado. Não f
 
 - Os 44 SQLs são os statements registrados pelo próprio Supabase e já executados historicamente no projeto remoto.
 - A estrutura local de migrations foi alinhada às 44 versões remotas, sem executar novamente nenhuma delas.
-- Não existe Supabase Branch/staging disponível nesta organização Free. Portanto, não foi executada uma segunda reprodução das 44 migrations em instância isolada.
-- A validação isolada dos 4 arquivos pendentes permanece necessária antes de qualquer aplicação futura.
+- Os 4 arquivos pendentes foram executados pelos testes automatizados com PGlite no build de preview Vercel; a suíte concluiu 76/76 testes aprovados e o build Vite passou.
+- Isso valida os fluxos cobertos pelo harness PostgreSQL isolado, mas não substitui uma validação em Supabase gerenciado (Auth/Storage/RLS reais). Não há Supabase Branch/staging disponível no plano atual.
 
 ## Segurança
 
