@@ -4,6 +4,7 @@ import { getSupabase } from '../../lib/supabase.js'
 import { restaurantIdForSlug } from '../../services/company.js'
 import AddressFields from '../AddressFields.jsx'
 import SubscriptionOverview from './SubscriptionOverview.jsx'
+import PaymentSettings from './PaymentSettings.jsx'
 import { DEFAULT_COMPANY_ID } from '../../config/marketplace.js'
 
 const days = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado']
@@ -157,6 +158,8 @@ export default function StoreSettings({ demo, companyId = DEFAULT_COMPANY_ID }) 
         <button type="button" className="company-button subtle" disabled={form.zones.length === 1} onClick={() => setForm(current => ({ ...current, zones: current.zones.filter((_,n) => n !== i) }))}>Remover bairro</button>
       </div>)}
       <button className="company-button secondary" type="button" disabled={form.zones.length >= 100} onClick={() => setForm(current => ({ ...current, zones: [...current.zones,{ bairro:'',fee:'',min:'',freeAbove:'' }] }))}>+ Bairro</button>
+
+      <PaymentSettings companyId={companyId} demo={demo} />
 
       <h3>Pagamento e operação</h3>
       <label className="company-checkbox"><input type="checkbox" checked readOnly />Maquininha na entrega</label>
