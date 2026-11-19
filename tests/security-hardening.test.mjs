@@ -360,7 +360,7 @@ test('storefront e cotação não expõem nem aceitam restaurantes inativos', as
       CREATE FUNCTION private.verified(actor uuid) RETURNS boolean
       LANGUAGE sql STABLE AS $$ SELECT true $$;
       CREATE FUNCTION private.enforce_rate_limit(text, integer, integer) RETURNS void
-      LANGUAGE sql AS $$ SELECT $$;
+      LANGUAGE plpgsql AS $ BEGIN RETURN; END $;
       CREATE FUNCTION private.normalize_search(value text) RETURNS text
       LANGUAGE sql IMMUTABLE AS $$ SELECT lower(trim(coalesce(value,''))) $$;
     `)
