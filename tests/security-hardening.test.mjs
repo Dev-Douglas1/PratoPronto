@@ -52,6 +52,7 @@ test('hardening avançado restringe diretório de pilotos, documentos e segredos
   assert.match(sql, /public\.list_available_pilots\(\)/i)
   assert.match(sql, /rm\.role IN \('owner', 'admin', 'attendant'\)/i)
   assert.match(sql, /r\.account_status = 'active'/i)
+  assert.match(sql, /enforce_rate_limit\('pilots\.directory', 30, 60\)/i)
   assert.match(sql, /DROP POLICY IF EXISTS company_docs_upload_owner/i)
   assert.match(sql, /DROP POLICY IF EXISTS company_docs_update_owner/i)
   assert.match(sql, /public\.can_upload_company_registration_document/i)
@@ -100,6 +101,9 @@ test('migration avançada aplica em PostgreSQL temporário e mantém os fluxos a
           AND (u.email_confirmed_at IS NOT NULL OR u.phone_confirmed_at IS NOT NULL)
           AND u.deleted_at IS NULL
       ) $$;
+
+      CREATE FUNCTION private.enforce_rate_limit(text, integer, integer) RETURNS void
+      LANGUAGE sql AS $ SELECT $;
 
       CREATE TABLE public.restaurantes (
         id uuid PRIMARY KEY,
