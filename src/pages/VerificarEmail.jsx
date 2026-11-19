@@ -6,15 +6,15 @@ import '../styles/auth.css'
 
 export default function VerificarEmail() {
   const navigate = useNavigate()
-  const { user, usuario, deslogar, verificarCodigo, reenviarCodigo } = useUser()
+  const { usuario, sair, confirmarCodigoEmail, enviarVerificacaoEmail } = useUser()
 
   const [codigo, setCodigo] = useState('')
   const [erro, setErro] = useState('')
   const [sucesso, setSucesso] = useState('')
   const [enviando, setEnviando] = useState(false)
-  const [tempoRestante, setTempoRestante] = useState(30)
+  const [tempoRestante, setTempoRestante] = useState(60)
 
-  const emailUsuario = user?.email || usuario?.email || 'joao.silva@exemplo.com'
+  const emailUsuario = usuario?.email || sessionStorage.getItem('pratopronto:pending-email') || ''
 
   useEffect(() => {
     if (tempoRestante > 0) {
@@ -25,7 +25,7 @@ export default function VerificarEmail() {
 
   async function handleVerificar(e) {
     e.preventDefault()
-    if (!/^\\d{6}$/.test(codigo)) {
+    if (!/^\d{6}$/.test(codigo)) {
       setErro('Digite o código completo de 6 dígitos.')
       return
     }
@@ -35,9 +35,7 @@ export default function VerificarEmail() {
     setEnviando(true)
 
     try {
-      if (verificarCodigo) {
-        await verificarCodigo(codigo)
-      }
+      await confirmarCodigoEmail(codigo)
       navigate('/pizzas', { replace: true })
     } catch (error) {
       setErro(error.message || 'Código inválido ou expirado.')
@@ -52,9 +50,7 @@ export default function VerificarEmail() {
     setSucesso('')
 
     try {
-      if (reenviarCodigo) {
-        await reenviarCodigo(emailUsuario)
-      }
+      await enviarVerificacaoEmail()
       setSucesso('Novo código enviado para o seu e-mail!')
       setTempoRestante(60)
     } catch (error) {
@@ -63,7 +59,7 @@ export default function VerificarEmail() {
   }
 
   async function handleSair() {
-    if (deslogar) await deslogar()
+    await sair()
     navigate('/login')
   }
 
@@ -124,7 +120,7 @@ export default function VerificarEmail() {
             <button
               className="btn btn-primary"
               type="submit"
-              disabled={enviando || !/^\\d{6}$/.test(codigo)}
+              disabled={enviando || !/^\d{6}$/.test(codigo)}
             >
               {enviando ? 'A verificar...' : 'Confirmar código'}
             </button>
