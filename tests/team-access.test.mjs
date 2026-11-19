@@ -9,7 +9,7 @@ const restaurant = n => `20000000-0000-4000-8000-${String(n).padStart(12, '0')}`
 before(async () => {
   db = new PGlite()
   await db.exec(await readFile(new URL('./support/team-schema.sql', import.meta.url), 'utf8'))
-  await db.exec(await readFile(new URL('../supabase/migrations/20260923024345_account_ids_and_team_permissions.sql', import.meta.url), 'utf8'))
+  await db.exec(await readFile(new URL('../supabase/migrations/20260923024958_account_ids_and_team_permissions.sql', import.meta.url), 'utf8'))
 })
 after(async () => { await db?.close() })
 beforeEach(async () => { await db.exec('begin') })
