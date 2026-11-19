@@ -260,7 +260,7 @@ test('migration avançada aplica em PostgreSQL temporário e mantém os fluxos a
     await db.query(`SELECT set_config('request.jwt.claim.sub',$1,false)`, [userId])
     await db.exec('SET ROLE authenticated')
     await db.query(
-      `INSERT INTO storage.objects(bucket_id,name,owner,owner_id) VALUES ('company-registration-documents',$1,$2,$2)`,
+      `INSERT INTO storage.objects(bucket_id,name,owner,owner_id) VALUES ('company-registration-documents',$1,$2,$2::text)`,
       [validPath, userId],
     )
     const registered = await db.query(
