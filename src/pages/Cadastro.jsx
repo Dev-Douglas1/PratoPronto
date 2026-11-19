@@ -208,7 +208,7 @@ export default function Cadastro() {
       {etapa === 1 && (
         <form onSubmit={avancarParaEtapa2} noValidate>
           <div className="form-card">
-            <h3 className="form-section-title">👤 Dados Pessoais & Acesso</h3>
+            <h3 className="form-section-title">Dados Pessoais e Acesso</h3>
 
             <div className="input-group">
               <label htmlFor="nome">Nome</label>
@@ -292,7 +292,7 @@ export default function Cadastro() {
 
             {erro && (
               <p className="form-error dark-error" role="alert">
-                ⚠️ {erro}
+                {erro}
               </p>
             )}
 
@@ -323,12 +323,12 @@ export default function Cadastro() {
       {etapa === 2 && (
         <form onSubmit={handleSubmit} noValidate>
           <div className="form-card">
-            <h3 className="form-section-title">📍 Endereço de Entrega</h3>
+            <h3 className="form-section-title">Endereço de Entrega</h3>
 
             <AddressFields data={dados} onChange={alterar} />
 
             {buscandoCep && (
-              <small className="field-help warning-text">🔍 Buscando endereço pelo CEP...</small>
+              <small className="field-help warning-text">Buscando endereço pelo CEP...</small>
             )}
 
             <div className="input-group">
