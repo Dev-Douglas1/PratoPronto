@@ -109,6 +109,9 @@ Deno.serve(async (request) => {
     }
 
     const gateway = await getAsaasKey(order.restaurant_id, environment);
+    if (!gateway.wallet_id || gateway.wallet_id === platformWalletId) {
+      return fail("A carteira recebedora do restaurante é inválida ou coincide com a carteira da plataforma.", 409);
+    }
     const paymentId = prepared.paymentId;
     let providerPaymentId = prepared.providerPaymentId || null;
     let providerCustomerId = prepared.providerCustomerId || null;
