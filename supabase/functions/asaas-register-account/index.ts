@@ -61,7 +61,7 @@ Deno.serve(async (request) => {
     if (!membership || membership.role !== "owner") return json({ error: { message: "Somente o proprietário pode vincular a conta de recebimento." } }, 403);
 
     const [accountStatus, wallets] = await Promise.all([
-      asaas("/myAccount/status/", apiKey),
+      asaas("/myAccount/status", apiKey),
       asaas("/wallets/", apiKey),
     ]);
     const walletId = typeof wallets?.walletId === "string"
