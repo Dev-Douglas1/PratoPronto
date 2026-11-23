@@ -1,4 +1,5 @@
 import AppScreen from '../components/AppScreen.jsx'
+import '../styles/admin-console.css'
 import TopBar from '../components/TopBar.jsx'
 import { Link } from 'react-router-dom'
 
@@ -8,7 +9,7 @@ const deliveries = [
 ]
 
 export default function DemoPilot() {
-  return <AppScreen>
+  return <AppScreen className="admin-console-screen admin-demo-pilot">
     <TopBar titulo="Demonstração do piloto" />
     <div className="page-heading">
       <span className="eyebrow">AMBIENTE DE TESTE · SOMENTE LEITURA</span>
