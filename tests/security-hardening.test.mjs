@@ -9,7 +9,7 @@ test('hardening da tabela interna de rate limit não concede acesso direto', asy
   const sql = await readFile(migrationPath, 'utf8')
   assert.match(sql, /ALTER TABLE private\.rpc_rate_limits ENABLE ROW LEVEL SECURITY/i)
   assert.doesNotMatch(sql, /CREATE\s+POLICY|GRANT\s+/i)
-  assert.match(sql, /Direct client access is intentionally denied/i)
+  assert.match(sql, /REVOKE ALL ON TABLE private\.rpc_rate_limits FROM PUBLIC, ANON, AUTHENTICATED, SERVICE_ROLE/i)
 
   const db = new PGlite()
   try {
