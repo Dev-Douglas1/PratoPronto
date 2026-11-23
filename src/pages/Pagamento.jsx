@@ -59,12 +59,12 @@ export default function Pagamento() {
 
   async function finish(attempt) {
     const result = await callServer('appCheckout', attempt)
+    if (result.paymentMethod === 'pix' && (!result.pix?.payload || !result.pix?.encodedImage)) {
+      throw new Error('O Asaas criou ou está conciliando a cobrança, mas não retornou o QR Code. Não inicie outro pedido; consulte o acompanhamento.')
+    }
     setPending(null)
     try { sessionStorage.removeItem(storageKey) } catch { /* Same attempt is retained in memory. */ }
     if (result.paymentMethod === 'pix') {
-      if (!result.pix?.payload || !result.pix?.encodedImage) {
-        throw new Error('O Asaas criou a cobrança, mas não retornou o QR Code. Consulte seus pedidos antes de tentar novamente.')
-      }
       setPixPayment({
         orderId: result.orderId,
         paymentId: result.providerPaymentId,
