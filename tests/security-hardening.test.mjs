@@ -318,9 +318,9 @@ test('migration avançada aplica em PostgreSQL temporário e mantém os fluxos a
 
 
 test('storefront e cotação não expõem nem aceitam restaurantes inativos', async () => {
-  const migrationPath = 'supabase/pending-migrations/20261119140000_guard_inactive_restaurant_storefront.sql'
+  const migrationPath = 'supabase/migrations/20261123123454_guard_inactive_restaurants_in_payment_checkout.sql'
   const sql = await readFile(migrationPath, 'utf8')
-  assert.match(sql, /r\.ativo = true AND r\.account_status = 'active'/i)
+  assert.match(sql, /r\.ativo\s+(?:=|is)\s+true\s+and\s+r\.account_status\s*=\s*'active'/i)
   assert.match(sql, /if r\.ativo IS DISTINCT FROM true or r\.account_status IS DISTINCT FROM 'active'/i)
 
   const db = new PGlite()
