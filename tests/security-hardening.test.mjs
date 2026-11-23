@@ -45,14 +45,16 @@ test('auditoria de segurança não aplica revogação em massa de RPCs SECURITY 
 })
 
 
-const advancedMigrationPath = 'supabase/pending-migrations/20261119130000_harden_company_docs_pilot_directory.sql'
+const advancedMigrationPath = 'supabase/migrations/20261123130000_harden_company_document_storage.sql'
+const pilotMigrationPath = 'supabase/migrations/20261123123516_harden_pilot_directory_access.sql'
 
 test('hardening avançado restringe diretório de pilotos, documentos e segredos de entrega', async () => {
   const sql = await readFile(advancedMigrationPath, 'utf8')
-  assert.match(sql, /public\.list_available_pilots\(\)/i)
-  assert.match(sql, /rm\.role IN \('owner', 'admin', 'attendant'\)/i)
-  assert.match(sql, /r\.account_status = 'active'/i)
-  assert.match(sql, /enforce_rate_limit\('pilots\.directory', 30, 60\)/i)
+  const pilotSql = await readFile(pilotMigrationPath, 'utf8')
+  assert.match(pilotSql, /public\.list_available_pilots\(\)/i)
+  assert.match(pilotSql, /rm\.role IN \('owner', 'admin', 'attendant'\)/i)
+  assert.match(pilotSql, /r\.account_status = 'active'/i)
+  assert.match(pilotSql, /enforce_rate_limit\('pilots\.directory', 30, 60\)/i)
   assert.match(sql, /DROP POLICY IF EXISTS company_docs_upload_owner/i)
   assert.match(sql, /DROP POLICY IF EXISTS company_docs_update_owner/i)
   assert.match(sql, /public\.can_upload_company_registration_document/i)
@@ -65,6 +67,7 @@ test('hardening avançado restringe diretório de pilotos, documentos e segredos
 
 test('migration avançada aplica em PostgreSQL temporário e mantém os fluxos autorizados', async () => {
   const sql = await readFile(advancedMigrationPath, 'utf8')
+  const pilotSql = await readFile(pilotMigrationPath, 'utf8')
   const db = new PGlite()
   const userId = '11111111-1111-4111-8111-111111111111'
   const otherUserId = '22222222-2222-4222-8222-222222222222'
@@ -209,6 +212,7 @@ test('migration avançada aplica em PostgreSQL temporário e mantém os fluxos a
       GRANT ALL ON public.delivery_secrets TO anon, authenticated;
     `)
 
+    await db.exec(pilotSql)
     await db.exec(sql)
 
     const privileges = await db.query(`
@@ -349,6 +353,16 @@ test('storefront e cotação não expõem nem aceitam restaurantes inativos', as
         id uuid, restaurant_id uuid, slug text, active boolean, price_cents integer,
         config jsonb, promotion jsonb, name text, description text, category text, image_url text
       );
+      CREATE TABLE public.orders (
+        id uuid PRIMARY KEY, user_id uuid, restaurant_id uuid, items jsonb, delivery_address jsonb,
+        total_cents integer, payment_method text, payment_status text, status text, data jsonb,
+        quote_id uuid, request_id uuid, delivery_status text, delivery_verification_required boolean,
+        created_at timestamptz, updated_at timestamptz
+      );
+      CREATE TABLE public.order_events (id uuid, order_id uuid, data jsonb, created_at timestamptz);
+      CREATE TABLE private.payment_gateway_accounts (
+        restaurant_id uuid, provider text, environment text, onboarding_status text, vault_secret_id uuid
+      );
       CREATE TABLE public.quotes (
         id uuid, user_id uuid, restaurant_id uuid, data jsonb, revision uuid, expires_at timestamptz
       );
@@ -395,4 +409,32 @@ test('storefront e cotação não expõem nem aceitam restaurantes inativos', as
   } finally {
     await db.close()
   }
+})
+
+
+test('checkout online usa página hospedada do Asaas sem capturar dados do cartão', async () => {
+  const migration = await readFile('supabase/migrations/20261123130100_asaas_card_and_refund_support.sql', 'utf8')
+  const paymentFunction = await readFile('supabase/functions/asaas-order-payment/index.ts', 'utf8')
+  assert.match(migration, /credit_card/)
+  assert.match(migration, /edge_mark_order_paid/)
+  assert.match(paymentFunction, /CREDIT_CARD/)
+  assert.match(paymentFunction, /invoiceUrl/)
+  assert.doesNotMatch(paymentFunction, /creditCardHolderInfo|creditCardToken|creditCard:/)
+})
+
+test('fluxo de estorno exige aprovação, idempotência e confirmação do Asaas', async () => {
+  const migration = await readFile('supabase/migrations/20261123130100_asaas_card_and_refund_support.sql', 'utf8')
+  const refundFunction = await readFile('supabase/functions/asaas-refund/index.ts', 'utf8')
+  const webhook = await readFile('supabase/functions/asaas-webhook/index.ts', 'utf8')
+  assert.match(migration, /aprovado_aguardando_estorno/)
+  assert.match(migration, /edge_prepare_asaas_refund/)
+  assert.match(migration, /private\.restaurant_role\(o\.restaurant_id,p_actor_id\)/)
+  assert.match(migration, /edge_finalize_asaas_refund/)
+  assert.match(migration, /confirm_manual_refund/)
+  assert.match(refundFunction, /\/refund/)
+  assert.match(refundFunction, /method: "DELETE"/)
+  assert.match(refundFunction, /p_actor_id: user.id/)
+  assert.match(refundFunction, /refundedSplits/)
+  assert.match(webhook, /PAYMENT_REFUND_IN_PROGRESS/)
+  assert.match(webhook, /refundedSplits/)
 })

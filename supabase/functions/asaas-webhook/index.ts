@@ -102,7 +102,7 @@ Deno.serve(async (request) => {
     } else if (eventType === "PAYMENT_SPLIT_DONE" && typeof paymentId === "string") {
       const { error } = await admin.rpc("edge_mark_asaas_split_done", { p_provider_payment_id: paymentId });
       if (error) throw new Error("Não foi possível conciliar a liquidação do Split.");
-    } else if ((eventType === "PAYMENT_RECEIVED" || eventType === "PAYMENT_OVERDUE") && typeof paymentId === "string") {
+    } else if ((eventType === "PAYMENT_RECEIVED" || eventType === "PAYMENT_CONFIRMED" || eventType === "PAYMENT_OVERDUE" || eventType === "PAYMENT_REFUNDED" || eventType === "PAYMENT_REFUND_IN_PROGRESS" || eventType === "PAYMENT_REFUND_DENIED" || eventType === "PAYMENT_PARTIALLY_REFUNDED") && typeof paymentId === "string") {
       if (typeof subscriptionId === "string") {
         const { data: subscription, error: subscriptionError } = await admin.from("restaurant_subscriptions")
           .select("id,external_subscription_id,checkout_external_reference")
@@ -114,7 +114,7 @@ Deno.serve(async (request) => {
           const rootKey = Deno.env.get("ASAAS_API_KEY") || "";
           if (rootKey.length < 20) throw new Error("Chave principal Asaas não configurada.");
           const authoritative = await asaas(`/payments/${encodeURIComponent(paymentId)}`, rootKey);
-          const paymentStatus = String(authoritative.status || "");
+          const paymentStatus = eventType === "PAYMENT_REFUNDED" ? "REFUNDED" : String(authoritative.status || "");
           if (authoritative.subscription !== subscriptionId ||
               authoritative.externalReference !== subscription.checkout_external_reference) {
             throw new Error("A cobrança não corresponde à assinatura registrada no PratoPronto.");
@@ -145,8 +145,40 @@ Deno.serve(async (request) => {
           const secret = Array.isArray(secretRows) ? secretRows[0] : secretRows;
           if (!secret?.api_key) throw new Error("Credencial Asaas do recebedor indisponível.");
           const authoritative = await asaas(`/payments/${encodeURIComponent(paymentId)}`, secret.api_key);
-          if (eventType === "PAYMENT_RECEIVED") {
-            if (authoritative.status !== "RECEIVED") throw new Error("O Asaas ainda não confirmou o recebimento efetivo.");
+          if (eventType === "PAYMENT_REFUNDED") {
+            const refunds = Array.isArray(authoritative.refunds) ? authoritative.refunds : [];
+            const doneCents = refunds.filter((item: any) => item?.status === "DONE")
+              .reduce((sum: number, item: any) => sum + cents(item.value), 0);
+            const splitPending = refunds.some((item: any) => item?.status === "DONE" && Array.isArray(item?.refundedSplits) && item.refundedSplits.some((split: any) => split?.done !== true));
+            const fullRefund = doneCents >= cents(authoritative.value) && !splitPending;
+            const { error } = await admin.rpc("edge_finalize_asaas_refund", {
+              p_order_id: localPayment.orderId,
+              p_provider_status: fullRefund ? "refunded" : "processing",
+              p_provider_reference: paymentId,
+              p_error: null,
+            });
+            if (error) throw new Error("Não foi possível conciliar o estorno no PratoPronto.");
+          } else if (eventType === "PAYMENT_REFUND_IN_PROGRESS" || eventType === "PAYMENT_PARTIALLY_REFUNDED") {
+            const { error } = await admin.rpc("edge_finalize_asaas_refund", {
+              p_order_id: localPayment.orderId,
+              p_provider_status: "processing",
+              p_provider_reference: paymentId,
+              p_error: null,
+            });
+            if (error) throw new Error("Não foi possível atualizar o processamento do estorno.");
+          } else if (eventType === "PAYMENT_REFUND_DENIED") {
+            const reason = String(event?.additionalInfo?.denialReason || "Estorno negado pelo Asaas.");
+            const { error } = await admin.rpc("edge_finalize_asaas_refund", {
+              p_order_id: localPayment.orderId,
+              p_provider_status: "failed",
+              p_provider_reference: paymentId,
+              p_error: reason,
+            });
+            if (error) throw new Error("Não foi possível registrar a negativa do estorno.");
+          } else if (eventType === "PAYMENT_RECEIVED" || eventType === "PAYMENT_CONFIRMED") {
+            const confirmed = authoritative.status === "RECEIVED" ||
+              (localPayment.method === "credit_card" && authoritative.status === "CONFIRMED");
+            if (!confirmed) throw new Error("O Asaas ainda não confirmou o recebimento efetivo.");
             if (authoritative.externalReference !== localPayment.orderId) throw new Error("Referência externa não corresponde ao pedido.");
             const amountCents = cents(authoritative.value);
             const netCents = authoritative.netValue == null ? amountCents : cents(authoritative.netValue);

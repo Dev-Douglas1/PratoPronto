@@ -24,14 +24,34 @@ export async function callServer(name, data = {}) {
   }
   if (name === 'appCheckout') {
     const order = await rpc('checkout_order', { p_quote_id: data.quoteId, p_request_id: data.requestId })
-    if (order?.paymentMethod === 'pix' && order?.checkoutState === 'awaiting_payment') {
+    if (['pix', 'credit_card'].includes(order?.paymentMethod) && order?.checkoutState === 'awaiting_payment') {
       return { ...order, ...await paymentGateway.createOrderPayment(order.orderId) }
     }
     return order
   }
   if (name === 'appAdvance') return rpc('advance_order', { p_order_id: data.orderId, p_next: data.next, p_received: data.received === true })
   if (name === 'appRefundRequest') return rpc('submit_refund_request', { p_order_id: data.orderId, p_reason: data.reason })
-  if (name === 'appRefundDecision') return rpc('decide_refund_request', { p_order_id: data.orderId, p_approve: data.approve === true, p_answer: data.answer })
+  if (name === 'appRefundDecision') {
+    const decision = await rpc('decide_refund_request', {
+      p_order_id: data.orderId, p_approve: data.approve === true, p_answer: data.answer,
+    })
+    if (decision?.requiresGatewayAction) {
+      const { data: gatewayResult, error } = await getSupabase().functions.invoke('asaas-refund', { body: { orderId: data.orderId } })
+      if (error) throw new Error(gatewayResult?.error?.message || error.message || 'Não foi possível processar a solicitação no Asaas.')
+      if (gatewayResult?.error?.message) throw new Error(gatewayResult.error.message)
+      return { ...decision, gatewayResult }
+    }
+    return decision
+  }
+  if (name === 'appRetryRefund') {
+    const { data: gatewayResult, error } = await getSupabase().functions.invoke('asaas-refund', { body: { orderId: data.orderId } })
+    if (error) throw new Error(gatewayResult?.error?.message || error.message || 'Não foi possível reprocessar o estorno no Asaas.')
+    if (gatewayResult?.error?.message) throw new Error(gatewayResult.error.message)
+    return gatewayResult
+  }
+  if (name === 'appConfirmManualRefund') {
+    return rpc('confirm_manual_refund', { p_order_id: data.orderId, p_proof: data.proof })
+  }
   if (name === 'appStorefront') return rpc('get_storefront', { p_slug: data.companyId || 'pratopronto' })
   if (name === 'appMyCompanies') {
     const rows = await rpc('my_restaurants')
@@ -72,8 +92,8 @@ export async function callServer(name, data = {}) {
       environment: 'production',
       liveEnabled: true,
       appCheck: true,
-      paymentSecrets: store?.methods?.includes('pix') === true,
-      receiverVerified: store?.methods?.includes('pix') === true,
+      paymentSecrets: ['pix', 'credit_card'].some(method => store?.methods?.includes(method)),
+      receiverVerified: ['pix', 'credit_card'].some(method => store?.methods?.includes(method)),
       publicUrlConfigured: true,
       restaurantConfigured: Boolean(store?.configured),
       acceptingOrders: Boolean(store?.open),
@@ -109,7 +129,7 @@ export async function callServer(name, data = {}) {
   if (name === 'appPrivacyRequest') return rpc('request_account_deletion')
   if (name === 'appMigrateDefaultCompany') return { companyId: 'pratopronto', changed: 0 }
   if (name === 'appResume') return paymentGateway.createOrderPayment(data.orderId)
-  if (name === 'appRetryPayment' || name === 'appConfirmManualRefund') throw new Error('Esta ação não é necessária enquanto o pagamento é feito na entrega.')
+  if (name === 'appRetryPayment') return paymentGateway.createOrderPayment(data.orderId)
   throw new Error('Ação não disponível no backend Supabase: ' + name)
 }
 
@@ -124,6 +144,6 @@ export function cartItems(lista) {
 export function checkoutUrl(value) {
   try {
     const url = new URL(value)
-    return url.protocol === 'https:' && ['www.mercadopago.com.br','sandbox.mercadopago.com.br'].includes(url.hostname) && !url.username && !url.password ? url.href : null
+    return url.protocol === 'https:' && ['www.asaas.com','asaas.com','sandbox.asaas.com','www.asaas.com.br','asaas.com.br'].includes(url.hostname) && !url.username && !url.password ? url.href : null
   } catch { return null }
 }

@@ -5,13 +5,13 @@ import TopBar from '../components/TopBar.jsx'
 import { useCart } from '../context/CartContext.jsx'
 import { useUser } from '../context/UserContext.jsx'
 import { formatarMoeda as money } from '../utils/moeda.js'
-import { callServer, cartItems } from '../services/server.js'
+import { callServer, cartItems, checkoutUrl } from '../services/server.js'
 import useStorefront from '../hooks/useStorefront.js'
 import { getSupabase } from '../lib/supabase.js'
 
 const methods = [
   { id: 'pix', title: 'Pix', detail: 'Confirmação automática pelo Asaas', icon: '◆' },
-  { id: 'cartao_online', title: 'Cartão online', detail: 'Em integração — indisponível no momento', icon: '▰' },
+  { id: 'credit_card', title: 'Cartão online', detail: 'Checkout seguro hospedado pelo Asaas', icon: '▰' },
   { id: 'maquina_entrega', title: 'Maquininha na entrega', detail: 'Pagamento direto ao restaurante', icon: '⌁' },
 ]
 
@@ -62,8 +62,18 @@ export default function Pagamento() {
     if (result.paymentMethod === 'pix' && (!result.pix?.payload || !result.pix?.encodedImage)) {
       throw new Error('O Asaas criou ou está conciliando a cobrança, mas não retornou o QR Code. Não inicie outro pedido; consulte o acompanhamento.')
     }
+    const cardCheckout = result.paymentMethod === 'credit_card' ? checkoutUrl(result.checkoutUrl) : null
+    if (result.paymentMethod === 'credit_card' && !cardCheckout) {
+      throw new Error('O Asaas não retornou um endereço de checkout seguro. A tentativa foi preservada para conciliação.')
+    }
     setPending(null)
     try { sessionStorage.removeItem(storageKey) } catch { /* Same attempt is retained in memory. */ }
+    if (result.paymentMethod === 'credit_card') {
+      setQuote(null)
+      limpar()
+      window.location.assign(cardCheckout)
+      return
+    }
     if (result.paymentMethod === 'pix') {
       setPixPayment({
         orderId: result.orderId,
@@ -147,14 +157,14 @@ export default function Pagamento() {
           ? 'O pedido será entregue pelo restaurante. O pagamento será feito diretamente ao estabelecimento, com maquininha.'
           : method === 'pix'
             ? 'O Pix será gerado pelo Asaas. O pedido só entra em preparação depois que o webhook confirmar o recebimento.'
-            : 'Cartão online ainda não está liberado. A integração depende da tokenização segura do cartão.'}</p></div>
+            : 'Você será direcionado à página segura do Asaas para informar o cartão. O PratoPronto não recebe nem armazena os dados do cartão.'}</p></div>
         <label htmlFor="checkout-note">Observação do pedido (opcional)</label><textarea id="checkout-note" maxLength={500} value={note} onChange={event => setNote(event.target.value)} disabled={busy || Boolean(pending)} placeholder="Ex.: tocar o interfone ao chegar." />
         <div className="delivery-summary light-summary"><strong>Entregar em</strong><span>{usuario?.endereco}, {usuario?.numero} · {usuario?.bairro}</span><span>{usuario?.cidade} / {usuario?.uf} · CEP {usuario?.cep}</span><Link to="/perfil?editar=endereco">Corrigir endereço</Link></div>
-        {quote && <section className="checkout-quote" aria-live="polite"><h3>Detalhamento dos valores</h3>{quote.itens.map(item => <p key={item.id}><span>{item.quantidade} × {item.nome}<small>{item.detalhes}</small>{item.promocao && <small>{item.promocao.percentual}% de desconto · {item.promocao.titulo}</small>}</span><b>{money(item.quantidade * item.precoUnitario)}</b></p>)}<p><span>Subtotal dos produtos</span><b>{money(quoteSubtotal)}</b></p><p><span>Taxa de entrega</span><b>{quote.taxaEntrega === 0 ? 'Grátis' : money(quote.taxaEntrega)}</b></p><div className="payment-total"><span>Total {method === 'maquina_entrega' ? 'na entrega' : 'no Pix'}</span><strong>{money(quote.total)}</strong></div><small>Entrega estimada: {quote.estimateMinutes} minutos. Valores válidos por 5 minutos.</small></section>}
+        {quote && <section className="checkout-quote" aria-live="polite"><h3>Detalhamento dos valores</h3>{quote.itens.map(item => <p key={item.id}><span>{item.quantidade} × {item.nome}<small>{item.detalhes}</small>{item.promocao && <small>{item.promocao.percentual}% de desconto · {item.promocao.titulo}</small>}</span><b>{money(item.quantidade * item.precoUnitario)}</b></p>)}<p><span>Subtotal dos produtos</span><b>{money(quoteSubtotal)}</b></p><p><span>Taxa de entrega</span><b>{quote.taxaEntrega === 0 ? 'Grátis' : money(quote.taxaEntrega)}</b></p><div className="payment-total"><span>Total {method === 'maquina_entrega' ? 'na entrega' : method === 'credit_card' ? 'no cartão' : 'no Pix'}</span><strong>{money(quote.total)}</strong></div><small>Entrega estimada: {quote.estimateMinutes} minutos. Valores válidos por 5 minutos.</small></section>}
         {!usuario?.emailVerificado && <Link className="text-link dark-link" to="/verificar-email">Confirme seu e-mail para finalizar.</Link>}
         {!pending && <label className="checkbox-line"><input type="checkbox" checked={acceptTerms} required disabled={busy} onChange={event => { setAcceptTerms(event.target.checked); setQuote(null) }} />Li os <Link to="/termos-de-uso">Termos de Uso</Link> e a <Link to="/politica-de-privacidade">Política de Privacidade</Link> apresentados para este pedido.</label>}
         {error && <p className="form-error dark-error" role="alert">{error}</p>}
-        <button className="btn btn-primary" type="submit" disabled={busy || (!pending && (!lista.length || !store?.open || !store?.methods?.includes(method))) || !usuario?.emailVerificado}>{busy ? 'Aguarde…' : pending ? 'Retomar tentativa anterior' : !quote ? 'Confirmar seleção e calcular valores' : method === 'maquina_entrega' ? 'Confirmar pedido · ' + money(quote.total) : 'Gerar Pix Asaas · ' + money(quote.total)}</button>
+        <button className="btn btn-primary" type="submit" disabled={busy || (!pending && (!lista.length || !store?.open || !store?.methods?.includes(method))) || !usuario?.emailVerificado}>{busy ? 'Aguarde…' : pending ? 'Retomar tentativa anterior' : !quote ? 'Confirmar seleção e calcular valores' : method === 'maquina_entrega' ? 'Confirmar pedido · ' + money(quote.total) : method === 'credit_card' ? 'Ir para pagamento com cartão · ' + money(quote.total) : 'Gerar Pix Asaas · ' + money(quote.total)}</button>
         {pending && <Link to="/acompanhamento" className="text-link dark-link">Consultar meus pedidos</Link>}
         <Link className="btn btn-secondary" to="/pedido">Voltar ao carrinho</Link>
       </form>

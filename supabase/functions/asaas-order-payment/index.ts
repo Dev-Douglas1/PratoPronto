@@ -15,12 +15,13 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
 const fail = (message: string, status = 400) => json({ error: { message } }, status);
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-function brDate() {
+function brDate(offsetDays = 0) {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit",
   }).formatToParts(new Date());
   const v = Object.fromEntries(parts.map((p) => [p.type, p.value]));
-  return `${v.year}-${v.month}-${v.day}`;
+  return new Date(Date.UTC(Number(v.year), Number(v.month) - 1, Number(v.day) + offsetDays))
+    .toISOString().slice(0, 10);
 }
 function baseUrl(environment: string) {
   if (environment === "production") return "https://api.asaas.com/v3";
@@ -64,6 +65,16 @@ async function getAsaasKey(restaurantId: string, environment: string) {
 async function pixFor(paymentId: string, apiKey: string) {
   return await asaas(`/payments/${encodeURIComponent(paymentId)}/pixQrCode`, apiKey);
 }
+function trustedAsaasInvoice(value: unknown) {
+  try {
+    const url = new URL(String(value || ""));
+    return url.protocol === "https:" &&
+      ["www.asaas.com", "asaas.com", "sandbox.asaas.com", "www.asaas.com.br", "asaas.com.br"].includes(url.hostname) &&
+      !url.username && !url.password;
+  } catch {
+    return false;
+  }
+}
 
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response(null, { headers: cors });
@@ -94,7 +105,8 @@ Deno.serve(async (request) => {
       .select("id,user_id,restaurant_id,payment_method,payment_status,status,total_cents,data")
       .eq("id", orderId).maybeSingle();
     if (orderError || !order || order.user_id !== user.id) return fail("Pedido não encontrado para esta conta.", 404);
-    if (order.payment_method !== "pix") return fail("Este pedido não foi criado para pagamento Pix.");
+    if (!["pix", "credit_card"].includes(order.payment_method)) return fail("Este pedido não foi criado para pagamento online.");
+    const billingType = order.payment_method === "credit_card" ? "CREDIT_CARD" : "PIX";
     if (order.status !== "aguardando_pagamento" || order.payment_status !== "pending") {
       return fail("Este pedido não está aguardando pagamento.", 409);
     }
@@ -117,6 +129,12 @@ Deno.serve(async (request) => {
     let providerCustomerId = prepared.providerCustomerId || null;
 
     if (providerPaymentId) {
+      if (billingType === "CREDIT_CARD") {
+        const existing = await asaas(`/payments/${encodeURIComponent(providerPaymentId)}`, gateway.api_key);
+        if (existing.externalReference !== orderId) return fail("A referência do pagamento no Asaas não corresponde ao pedido.", 409);
+        if (!trustedAsaasInvoice(existing.invoiceUrl)) return fail("A fatura hospedada do Asaas não está disponível para esta tentativa.", 409);
+        return json({ orderId, paymentId, providerPaymentId, status: existing.status || prepared.status, billingType, checkoutUrl: existing.invoiceUrl });
+      }
       const pix = await pixFor(providerPaymentId, gateway.api_key);
       return json({
         orderId, paymentId, providerPaymentId, status: prepared.status,
@@ -159,9 +177,9 @@ Deno.serve(async (request) => {
         method: "POST",
         body: JSON.stringify({
           customer: providerCustomerId,
-          billingType: "PIX",
+          billingType,
           value: Number(prepared.amountCents) / 100,
-          dueDate: brDate(),
+          dueDate: brDate(billingType === "CREDIT_CARD" ? 3 : 0),
           description: `Pedido PratoPronto #${orderId.slice(-8)}`,
           externalReference: orderId,
           ...(split ? { split } : {}),
@@ -190,10 +208,20 @@ Deno.serve(async (request) => {
         platformWalletId,
         commissionCents,
         asaasInvoiceUrl: typeof createdPayment.invoiceUrl === "string" ? createdPayment.invoiceUrl : null,
+        billingType,
       },
     });
     if (saveError) throw new Error("Cobrança criada no Asaas, mas a referência local não foi gravada. Não repita a cobrança; concilie pelo externalReference.");
 
+    if (billingType === "CREDIT_CARD") {
+      if (!trustedAsaasInvoice(createdPayment.invoiceUrl)) {
+        throw new Error("O Asaas criou a cobrança, mas não retornou uma fatura hospedada válida. A referência foi preservada para conciliação.");
+      }
+      return json({
+        orderId, paymentId, providerPaymentId, status: createdPayment.status || "PENDING",
+        billingType, checkoutUrl: createdPayment.invoiceUrl,
+      }, 201);
+    }
     const pix = await pixFor(providerPaymentId, gateway.api_key);
     return json({
       orderId, paymentId, providerPaymentId, status: createdPayment.status || "PENDING",
