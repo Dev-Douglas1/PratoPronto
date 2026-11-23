@@ -59,6 +59,15 @@ Deno.serve(async (request) => {
     const { data: membership } = await admin.from("restaurant_members")
       .select("role,active").eq("restaurante_id", restaurantId).eq("profile_id", user.id).eq("active", true).maybeSingle();
     if (!membership || membership.role !== "owner") return json({ error: { message: "Somente o proprietário pode vincular a conta de recebimento." } }, 403);
+    const { data: restaurant } = await admin.from("restaurantes")
+      .select("ativo,account_status").eq("id", restaurantId).maybeSingle();
+    if (!restaurant || restaurant.ativo !== true || restaurant.account_status !== "active") {
+      return json({ error: { message: "Empresa suspensa ou bloqueada não pode habilitar recebimentos." } }, 403);
+    }
+    const platformWalletId = Deno.env.get("ASAAS_PLATFORM_WALLET_ID") || "";
+    if (!uuid.test(platformWalletId)) {
+      return json({ error: { message: "Configure primeiro ASAAS_PLATFORM_WALLET_ID nos Secrets das Edge Functions." } }, 503);
+    }
 
     const [accountStatus, wallets] = await Promise.all([
       asaas("/myAccount/status", apiKey),
@@ -69,6 +78,9 @@ Deno.serve(async (request) => {
       : (Array.isArray(wallets?.data) ? wallets.data[0]?.walletId : null);
     if (typeof walletId !== "string" || !uuid.test(walletId)) {
       return json({ error: { message: "O Asaas não retornou um walletId válido para esta conta." } }, 422);
+    }
+    if (walletId === platformWalletId) {
+      return json({ error: { message: "Esta é a carteira da plataforma. Informe a chave da subconta do restaurante, não a chave principal." } }, 422);
     }
     const general = String(accountStatus?.general || "");
     const onboardingStatus = general === "APPROVED" ? "active" : "under_review";
