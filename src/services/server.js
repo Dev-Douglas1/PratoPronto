@@ -1,6 +1,7 @@
 import { assertRespectful } from '../shared/input-policy.js'
 import { getSupabase, supabaseConfigured } from '../lib/supabase.js'
 import { criarErroSupabase } from '../utils/supabaseError.js'
+import { paymentGateway } from './paymentGateway.js'
 
 async function rpc(name, args = {}) {
   if (!supabaseConfigured) throw new Error('O Supabase ainda não foi configurado.')
@@ -9,13 +10,6 @@ async function rpc(name, args = {}) {
   return data
 }
 
-async function edge(name, body = {}) {
-  if (!supabaseConfigured) throw new Error('O Supabase ainda não foi configurado.')
-  const { data, error } = await getSupabase().functions.invoke(name, { body })
-  if (error) throw new Error(data?.error?.message || error.message || 'Não foi possível concluir a operação segura.')
-  if (data?.error?.message) throw new Error(data.error.message)
-  return data
-}
 
 export async function callServer(name, data = {}) {
   if (name === 'appQuote') {
@@ -31,7 +25,7 @@ export async function callServer(name, data = {}) {
   if (name === 'appCheckout') {
     const order = await rpc('checkout_order', { p_quote_id: data.quoteId, p_request_id: data.requestId })
     if (order?.paymentMethod === 'pix' && order?.checkoutState === 'awaiting_payment') {
-      return { ...order, ...await edge('asaas-order-payment', { orderId: order.orderId }) }
+      return { ...order, ...await paymentGateway.createOrderPayment(order.orderId) }
     }
     return order
   }
@@ -89,13 +83,13 @@ export async function callServer(name, data = {}) {
   if (name === 'appPilotStartDelivery') return rpc('pilot_start_delivery', { p_order_id: data.orderId })
   if (name === 'appPilotConfirmDelivery') return rpc('pilot_confirm_delivery', { p_order_id: data.orderId, p_code: data.code, p_received: data.received === true })
   if (name === 'appSubscription') return rpc('get_my_restaurant_subscription', { p_restaurant_slug: data.companyId })
-  if (name === 'appStartSubscription') return edge('asaas-subscription', {
+  if (name === 'appStartSubscription') return paymentGateway.createSubscription({
     restaurantId: data.restaurantId,
     billingType: data.billingType || 'PIX',
     acceptTerms: data.acceptTerms === true,
     consentTermsVersion: data.consentTermsVersion,
   })
-  if (name === 'appRegisterAsaasAccount') return edge('asaas-register-account', {
+  if (name === 'appRegisterAsaasAccount') return paymentGateway.registerReceiver({
     restaurantId: data.restaurantId,
     apiKey: data.apiKey,
   })
@@ -114,7 +108,7 @@ export async function callServer(name, data = {}) {
   })
   if (name === 'appPrivacyRequest') return rpc('request_account_deletion')
   if (name === 'appMigrateDefaultCompany') return { companyId: 'pratopronto', changed: 0 }
-  if (name === 'appResume') return edge('asaas-order-payment', { orderId: data.orderId })
+  if (name === 'appResume') return paymentGateway.createOrderPayment(data.orderId)
   if (name === 'appRetryPayment' || name === 'appConfirmManualRefund') throw new Error('Esta ação não é necessária enquanto o pagamento é feito na entrega.')
   throw new Error('Ação não disponível no backend Supabase: ' + name)
 }
