@@ -3,6 +3,8 @@ import { getSupabase, supabaseConfigured } from '../lib/supabase.js'
 import { criarErroSupabase } from '../utils/supabaseError.js'
 import { paymentGateway } from './paymentGateway.js'
 
+const storefrontPaymentEnvironment = import.meta.env.VITE_ASAAS_ENVIRONMENT === 'sandbox' ? 'sandbox' : 'production'
+
 async function rpc(name, args = {}) {
   if (!supabaseConfigured) throw new Error('O Supabase ainda não foi configurado.')
   const { data, error } = await getSupabase().rpc(name, args)
@@ -52,7 +54,7 @@ export async function callServer(name, data = {}) {
   if (name === 'appConfirmManualRefund') {
     return rpc('confirm_manual_refund', { p_order_id: data.orderId, p_proof: data.proof })
   }
-  if (name === 'appStorefront') return rpc('get_storefront', { p_slug: data.companyId || 'pratopronto' })
+  if (name === 'appStorefront') return rpc('get_storefront', { p_slug: data.companyId || 'pratopronto', p_payment_environment: storefrontPaymentEnvironment })
   if (name === 'appMyCompanies') {
     const rows = await rpc('my_restaurants')
     return (rows || []).map(row => ({
@@ -86,7 +88,7 @@ export async function callServer(name, data = {}) {
     return rpc('save_restaurant_settings', { p_restaurant_slug: companyId, p_data: settings })
   }
   if (name === 'appReadiness') {
-    const store = await rpc('get_storefront', { p_slug: data.companyId || 'pratopronto' })
+    const store = await rpc('get_storefront', { p_slug: data.companyId || 'pratopronto', p_payment_environment: storefrontPaymentEnvironment })
     return {
       companyId: data.companyId || 'pratopronto',
       environment: 'production',

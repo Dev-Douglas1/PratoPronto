@@ -451,3 +451,14 @@ test('RPCs privilegiadas exigem usuário verificado e bloqueado não passa', asy
   assert.match(sql, /account\.delete_request/)
   assert.match(sql, /trim\(coalesce\(p_reason, ''\)\)/i)
 })
+
+
+test('vitrine usa o mesmo ambiente Asaas do checkout e mantém compatibilidade', async () => {
+  const migration = await readFile('supabase/migrations/20261123132000_storefront_payment_environment.sql', 'utf8')
+  const server = await readFile('src/services/server.js', 'utf8')
+  assert.match(migration, /p_payment_environment text DEFAULT 'production'/)
+  assert.match(migration, /a\.environment=p_payment_environment/)
+  assert.match(migration, /DROP FUNCTION public\.get_storefront\(text\)/)
+  assert.match(server, /p_payment_environment: storefrontPaymentEnvironment/)
+  assert.match(server, /VITE_ASAAS_ENVIRONMENT === 'sandbox'/)
+})
