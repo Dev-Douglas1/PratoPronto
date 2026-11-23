@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { PGlite } from '@electric-sql/pglite'
 
-const migrationPath = 'supabase/pending-migrations/20261119120000_enable_rls_on_private_rate_limits.sql'
+const migrationPath = 'supabase/migrations/20261123121649_enable_rls_private_rpc_rate_limits.sql'
 
 test('hardening da tabela interna de rate limit não concede acesso direto', async () => {
   const sql = await readFile(migrationPath, 'utf8')
