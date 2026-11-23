@@ -14,6 +14,9 @@ test('hardening da tabela interna de rate limit não concede acesso direto', asy
   const db = new PGlite()
   try {
     await db.exec(`
+      CREATE ROLE anon;
+      CREATE ROLE authenticated;
+      CREATE ROLE service_role;
       CREATE SCHEMA private;
       CREATE TABLE private.rpc_rate_limits (
         scope text NOT NULL,
