@@ -86,7 +86,7 @@ export default function CompanyBilling({ companyId, restaurantId }) {
 
     <section className="company-panel billing-subscription">
       <h2>Ativar mensalidade recorrente</h2>
-      <p>O Asaas emitirá uma cobrança Pix de R$ 49,90 a cada mês. A assinatura só passa ao plano Profissional depois que o primeiro pagamento for confirmado pelo webhook.</p>
+      <p>O Asaas emitirá uma cobrança Pix de R$ 49,90 a cada mês. Se a conta estiver elegível, o primeiro QR Code poderá oferecer Pix Automático para autorizar os próximos débitos. Sem essa autorização, cada cobrança mensal deverá ser paga manualmente. O plano só será ativado após a confirmação do primeiro pagamento.</p>
       <label className="billing-consent"><input type="checkbox" checked={acceptTerms} onChange={event => setAcceptTerms(event.target.checked)} />Autorizo a contratação do plano Profissional por R$ 49,90/mês, com renovação mensal via cobrança Pix, e aceito a comissão de 5% sobre os pedidos.</label>
       <button className="company-button primary" type="button" onClick={subscribe} disabled={busy || !acceptTerms || paid}>{busy ? 'Processando…' : paid ? 'Assinatura ativa' : 'Contratar por R$ 49,90/mês'}</button>
       {result?.subscriptionId && <p className="billing-success">Referência da assinatura Asaas: <code>{result.subscriptionId}</code></p>}
@@ -100,7 +100,7 @@ export default function CompanyBilling({ companyId, restaurantId }) {
         }}>Copiar Pix da mensalidade</button>
       </div>}
       {result?.status === 'awaiting_first_payment' && !currentPayment?.pix && <p className="billing-warning">A assinatura foi criada, mas o Asaas ainda não disponibilizou a primeira cobrança Pix. Ela será exibida quando for gerada.</p>}
-      <p className="billing-footnote">Importante: nesta versão, a recorrência Pix gera uma nova cobrança mensal que precisa ser paga pelo responsável. Não é débito automático nem Pix Automático. Cartão recorrente será habilitado após integração de tokenização.</p>
+      <p className="billing-footnote">A oferta de Pix Automático depende da elegibilidade da conta Asaas e da autorização expressa do pagador no banco. Se não for autorizada, o Asaas continua gerando cobranças Pix mensais comuns. Cartão recorrente será habilitado após integração de tokenização.</p>
     </section>
     {notice && <p className="company-notice" role="status">{notice}</p>}
     {error && <p className="company-alert" role="alert">{error}</p>}
