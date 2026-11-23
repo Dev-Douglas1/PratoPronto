@@ -28,8 +28,8 @@ test('telas de cadastro pessoal e empresarial não exibem emojis', async () => {
     readFile('src/pages/Cadastro.jsx', 'utf8'),
     readFile('src/pages/CompanyOnboarding.jsx', 'utf8'),
   ])
-  assert.doesNotMatch(cadastro, /\\p{Extended_Pictographic}/u)
-  assert.doesNotMatch(empresa, /\\p{Extended_Pictographic}/u)
+  assert.doesNotMatch(cadastro, /\p{Extended_Pictographic}/u)
+  assert.doesNotMatch(empresa, /\p{Extended_Pictographic}/u)
 })
 
 test('fluxos críticos apontam para Supabase e RLS/RPC', async () => {
