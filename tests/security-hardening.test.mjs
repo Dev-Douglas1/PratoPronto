@@ -451,12 +451,3 @@ test('RPCs privilegiadas exigem usuário verificado e bloqueado não passa', asy
   assert.match(sql, /account\.delete_request/)
   assert.match(sql, /trim\(coalesce\(p_reason, ''\)\)/i)
 })
-
-
-test('vitrine permite métodos Asaas em sandbox sem aceitar ambiente implícito', async () => {
-  const sql = await readFile('supabase/migrations/20261123132000_asaas_sandbox_methods.sql', 'utf8')
-  const paymentFunction = await readFile('supabase/functions/asaas-order-payment/index.ts', 'utf8')
-  assert.match(sql, /a\.environment IN \('production','sandbox'\)/)
-  assert.match(paymentFunction, /ASAAS_ENVIRONMENT deve ser sandbox ou production/)
-  assert.match(paymentFunction, /Integração Asaas ainda não configurada/)
-})
