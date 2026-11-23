@@ -1,5 +1,6 @@
 import Promotions from '../components/company/Promotions.jsx'
 import StoreSettings from '../components/company/StoreSettings.jsx'
+import CompanyBilling from '../components/company/CompanyBilling.jsx'
 import { callServer } from '../services/server.js'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, NavLink, Navigate, useNavigate, useParams } from 'react-router-dom'
@@ -28,10 +29,10 @@ import InstallApp from '../components/InstallApp.jsx'
 
 const tabs = [
   ['pedidos', 'Pedidos', 'orders'], ['entregas', 'Entregas', 'delivery'], ['concluidos', 'Concluídos', 'check'],
-  ['promocoes', 'Ofertas', 'tag'], ['avaliacoes', 'Avaliações', 'star'], ['cardapio', 'Cardápio', 'menu'], ['equipe', 'Equipe', 'orders'], ['atendimento', 'Atendimento', 'chat'], ['auditoria', 'Auditoria', 'check'], ['configuracoes', 'Configurações', 'menu'],
+  ['promocoes', 'Ofertas', 'tag'], ['avaliacoes', 'Avaliações', 'star'], ['cardapio', 'Cardápio', 'menu'], ['equipe', 'Equipe', 'orders'], ['atendimento', 'Atendimento', 'chat'], ['auditoria', 'Auditoria', 'check'], ['configuracoes', 'Configurações', 'menu'], ['assinatura', 'Assinatura', 'tag'],
 ]
 const mobileTabs = ['pedidos', 'entregas', 'promocoes', 'cardapio']
-const headings = { promocoes: ['Descontos e campanhas do restaurante', 'Ofertas e promoções'], configuracoes: ['Horários, entrega e pagamentos', 'Configurações da empresa'], pedidos: ['Acompanhe e atualize cada etapa', 'Pedidos em processo'], entregas: ['Organize a saída dos pedidos', 'Central de entregas'], concluidos: ['Histórico do restaurante', 'Pedidos concluídos'], avaliacoes: ['Opinião dos seus clientes', 'Avaliações dos clientes'], cardapio: ['Preços e itens disponíveis', 'Produtos e disponibilidade'], equipe: ['Equipe interna e contatos de entrega', 'Equipe da empresa'], atendimento: ['Cancelamentos e reembolsos', 'Central de atendimento'], auditoria: ['Alterações críticas da operação', 'Auditoria da empresa'] }
+const headings = { promocoes: ['Descontos e campanhas do restaurante', 'Ofertas e promoções'], configuracoes: ['Horários, entrega e pagamentos', 'Configurações da empresa'], pedidos: ['Acompanhe e atualize cada etapa', 'Pedidos em processo'], entregas: ['Organize a saída dos pedidos', 'Central de entregas'], concluidos: ['Histórico do restaurante', 'Pedidos concluídos'], avaliacoes: ['Opinião dos seus clientes', 'Avaliações dos clientes'], cardapio: ['Preços e itens disponíveis', 'Produtos e disponibilidade'], equipe: ['Equipe interna e contatos de entrega', 'Equipe da empresa'], atendimento: ['Cancelamentos e reembolsos', 'Central de atendimento'], auditoria: ['Alterações críticas da operação', 'Auditoria da empresa'], assinatura: ['Mensalidade e recebimentos do marketplace', 'Plano e pagamentos'] }
 const hour = value => new Date(timestampMillis(value)).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 const date = value => new Date(timestampMillis(value)).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
 function Status({ value }) { return <span className={'company-status status-' + normalizeOrderStatus(value)}><i />{orderStatusLabel(value)}</span> }
@@ -103,6 +104,7 @@ export default function CompanyDashboard() {
     if (id === 'atendimento') return can('refunds:manage')
     if (id === 'auditoria') return can('audit:read')
     if (id === 'configuracoes') return can('company:manage')
+    if (id === 'assinatura') return activeCompany?.role === 'owner'
     return true
   })
   const data = useCompanyData(companyId)
@@ -194,6 +196,7 @@ export default function CompanyDashboard() {
         {tabState.error ? <div className="company-empty" role="alert"><h2>Não foi possível carregar esta área</h2><p>{tabState.error}</p><div className="inline-actions"><button className="company-button primary" type="button" onClick={refreshSession} disabled={busy}>{busy ? 'Atualizando…' : 'Atualizar acesso'}</button><Link className="company-button secondary" to={base + '/configuracoes'}>Abrir configurações</Link></div><details className="company-permission-help"><summary>Como conferir as permissões do Supabase</summary><p>Confirme que sua conta está com e-mail verificado e cadastrada em <code>restaurant_members</code> na empresa correta. As permissões desta área são aplicadas pelas políticas RLS do Supabase.</p><p>Se o acesso continuar bloqueado, atualize a sessão e confira a função do membro.</p></details></div> : tabState.loading ? <div className="company-empty" role="status">Carregando esta área…</div> : <>
           {aba === 'promocoes' && (companyId === DEFAULT_COMPANY_ID || demo ? <Promotions settings={data.settings} now={now} demo={demo} busy={blocked} feedback={notice?.error ? notice.text : ''} onSave={(id, offer) => act(() => data.promotion(id, offer), 'Promoção salva. A validade e o desconto serão aplicados no cardápio.')} /> : <div className="company-panel"><h2>Ofertas da empresa</h2><p>O cardápio multiempresa já aceita produtos próprios. A edição de promoções personalizadas será ligada a esses produtos em uma próxima etapa.</p></div>)}
           {aba === 'configuracoes' && <StoreSettings demo={demo} companyId={companyId} />}
+          {aba === 'assinatura' && !demo && <CompanyBilling companyId={companyId} restaurantId={activeCompany?.restaurantId} />}
           {aba === 'equipe' && !demo && <div className="company-team"><CompanyTeam companyId={companyId} actorRole={activeCompany?.role} actorId={usuario?.uid} /><CompanyPilotContacts companyId={companyId} /></div>}
           {aba === 'auditoria' && !demo && <CompanyAudit restaurantId={activeCompany?.restaurantId} />}
           {['pedidos', 'entregas', 'concluidos'].includes(aba) && <>
