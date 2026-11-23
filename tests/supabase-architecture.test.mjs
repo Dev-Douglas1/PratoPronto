@@ -23,6 +23,11 @@ test('runtime do navegador não importa SDK Firebase', async () => {
   assert.deepEqual(violations, [])
 })
 
+test('formulário de cadastro não exibe emojis', async () => {
+  const cadastro = await readFile('src/pages/Cadastro.jsx', 'utf8')
+  assert.doesNotMatch(cadastro, /\\p{Extended_Pictographic}/u)
+})
+
 test('fluxos críticos apontam para Supabase e RLS/RPC', async () => {
   const [user, server, company, marketplace] = await Promise.all([
     readFile('src/context/UserContext.jsx', 'utf8'),
