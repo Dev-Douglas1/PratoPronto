@@ -441,3 +441,13 @@ test('fluxo de estorno exige aprovação, idempotência e confirmação do Asaas
   assert.match(webhook, /PAYMENT_REFUND_IN_PROGRESS/)
   assert.match(webhook, /refundedSplits/)
 })
+
+
+test('RPCs privilegiadas exigem usuário verificado e bloqueado não passa', async () => {
+  const sql = await readFile('supabase/migrations/20261123131500_harden_definer_actor_checks.sql', 'utf8')
+  assert.match(sql, /banned_until IS NULL OR banned_until < now\(\)/i)
+  assert.match(sql, /private\.verified\(p_user_id\)/i)
+  assert.match(sql, /private\.restaurant_role\(p_restaurant_id, auth\.uid\(\)\)/i)
+  assert.match(sql, /account\.delete_request/)
+  assert.match(sql, /trim\(coalesce\(p_reason, ''\)\)/i)
+})
