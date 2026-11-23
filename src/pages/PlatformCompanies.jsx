@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
+import '../styles/admin-console.css'
 import TopBar from '../components/TopBar.jsx'
 import {
   listAuditEvents, listPlatformRestaurants, setRestaurantAccountStatus,
@@ -110,7 +111,7 @@ export default function PlatformCompanies() {
     }
   }
 
-  return <AppScreen>
+  return <AppScreen className="admin-console-screen admin-platform-companies">
     <TopBar titulo="Administração de empresas" />
     <div className="page-heading">
       <span className="eyebrow">ADMINISTRAÇÃO PRATOPRONTO</span>
