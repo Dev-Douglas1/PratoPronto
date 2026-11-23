@@ -454,7 +454,7 @@ test('RPCs privilegiadas exigem usuário verificado e bloqueado não passa', asy
 
 
 test('vitrine usa o mesmo ambiente Asaas do checkout e mantém compatibilidade', async () => {
-  const migration = await readFile('supabase/migrations/20261123132000_storefront_payment_environment.sql', 'utf8')
+  const migration = await readFile('supabase/migrations/20261123132330_storefront_payment_environment.sql', 'utf8')
   const server = await readFile('src/services/server.js', 'utf8')
   assert.match(migration, /p_payment_environment text DEFAULT ''production''/)
   assert.match(migration, /a\.environment=p_payment_environment/)
