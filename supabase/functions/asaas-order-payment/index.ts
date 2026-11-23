@@ -138,10 +138,11 @@ Deno.serve(async (request) => {
       if (typeof providerCustomerId !== "string" || !providerCustomerId.startsWith("cus_")) {
         throw new Error("O Asaas não retornou um identificador válido de cliente.");
       }
-      await admin.rpc("edge_set_order_payment_customer", {
+      const { error: customerSaveError } = await admin.rpc("edge_set_order_payment_customer", {
         p_payment_id: paymentId,
         p_customer_id: providerCustomerId,
       });
+      if (customerSaveError) throw new Error("Não foi possível registrar o cliente do pagamento. A cobrança ainda não foi criada.");
     }
 
     const commissionCents = Number(prepared.commissionCents || 0);
