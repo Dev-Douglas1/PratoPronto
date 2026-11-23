@@ -48,7 +48,7 @@ test('auditoria de segurança não aplica revogação em massa de RPCs SECURITY 
 })
 
 
-const advancedMigrationPath = 'supabase/migrations/20261123130000_harden_company_document_storage.sql'
+const advancedMigrationPath = 'supabase/migrations/20261123131117_harden_company_document_storage.sql'
 const pilotMigrationPath = 'supabase/migrations/20261123123516_harden_pilot_directory_access.sql'
 
 test('hardening avançado restringe diretório de pilotos, documentos e segredos de entrega', async () => {
@@ -416,7 +416,7 @@ test('storefront e cotação não expõem nem aceitam restaurantes inativos', as
 
 
 test('checkout online usa página hospedada do Asaas sem capturar dados do cartão', async () => {
-  const migration = await readFile('supabase/migrations/20261123130100_asaas_card_and_refund_support.sql', 'utf8')
+  const migration = await readFile('supabase/migrations/20261123131145_asaas_card_and_refund_support.sql', 'utf8')
   const paymentFunction = await readFile('supabase/functions/asaas-order-payment/index.ts', 'utf8')
   assert.match(migration, /credit_card/)
   assert.match(migration, /edge_mark_order_paid/)
@@ -426,7 +426,7 @@ test('checkout online usa página hospedada do Asaas sem capturar dados do cart�
 })
 
 test('fluxo de estorno exige aprovação, idempotência e confirmação do Asaas', async () => {
-  const migration = await readFile('supabase/migrations/20261123130100_asaas_card_and_refund_support.sql', 'utf8')
+  const migration = await readFile('supabase/migrations/20261123131145_asaas_card_and_refund_support.sql', 'utf8')
   const refundFunction = await readFile('supabase/functions/asaas-refund/index.ts', 'utf8')
   const webhook = await readFile('supabase/functions/asaas-webhook/index.ts', 'utf8')
   assert.match(migration, /aprovado_aguardando_estorno/)
