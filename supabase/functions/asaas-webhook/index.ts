@@ -105,7 +105,7 @@ Deno.serve(async (request) => {
     } else if ((eventType === "PAYMENT_RECEIVED" || eventType === "PAYMENT_OVERDUE") && typeof paymentId === "string") {
       if (typeof subscriptionId === "string") {
         const { data: subscription, error: subscriptionError } = await admin.from("restaurant_subscriptions")
-          .select("id,external_subscription_id")
+          .select("id,external_subscription_id,checkout_external_reference")
           .eq("external_provider", "asaas")
           .eq("external_subscription_id", subscriptionId)
           .maybeSingle();
@@ -115,6 +115,10 @@ Deno.serve(async (request) => {
           if (rootKey.length < 20) throw new Error("Chave principal Asaas não configurada.");
           const authoritative = await asaas(`/payments/${encodeURIComponent(paymentId)}`, rootKey);
           const paymentStatus = String(authoritative.status || "");
+          if (authoritative.subscription !== subscriptionId ||
+              authoritative.externalReference !== subscription.checkout_external_reference) {
+            throw new Error("A cobrança não corresponde à assinatura registrada no PratoPronto.");
+          }
           const amountCents = cents(authoritative.value);
           const { error } = await admin.rpc("edge_apply_subscription_payment", {
             p_provider_subscription_id: subscriptionId,
@@ -131,6 +135,7 @@ Deno.serve(async (request) => {
         });
         if (lookupError) throw new Error("Não foi possível localizar o pagamento do pedido.");
         if (localPayment?.purpose === "order" && localPayment.restaurantId) {
+          if (localPayment.environment !== environment) throw new Error("Ambiente da cobrança diverge do ambiente configurado.");
           const { data: secretRows, error: secretError } = await admin.rpc("edge_get_gateway_secret", {
             p_restaurant_id: localPayment.restaurantId,
             p_provider: "asaas",
