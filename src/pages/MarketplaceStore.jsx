@@ -32,10 +32,22 @@ export default function MarketplaceStore() {
   return <AppScreen className="menu-screen marketplace-store">
     <TopBar titulo={company?.name || store?.name || 'Empresa'} carrinho />
     <section className="catalog-surface">
-      <div className="catalog-heading">
-        <small>LOJA NO PRATOPRONTO</small>
-        <h1>{company?.name || store?.name || 'Carregando empresa…'}</h1>
-        <p>{store?.open ? 'Recebendo pedidos agora.' : 'Consulte o cardápio. Novos pedidos podem estar pausados neste momento.'}</p>
+      <header className="storefront-brand" aria-label="Perfil do estabelecimento">
+        <div className="storefront-brand-logo" aria-hidden="true">
+          {company?.logoUrl
+            ? <img src={company.logoUrl} alt="" onError={event => { event.currentTarget.hidden = true }} />
+            : <span>{String(company?.name || store?.name || 'Loja').trim().slice(0, 1).toUpperCase()}</span>}
+        </div>
+        <div className="storefront-brand-copy">
+          <small>ESTABELECIMENTO PARCEIRO</small>
+          <h1>{company?.name || store?.name || 'Carregando empresa…'}</h1>
+          {company?.description && <p>{company.description}</p>}
+          <span className={store?.open ? 'storefront-status is-open' : 'storefront-status'}><i />{store?.open ? 'Recebendo pedidos' : 'Pedidos pausados'}</span>
+        </div>
+      </header>
+      <div className="storefront-menu-heading">
+        <div><small>MENU DA EMPRESA</small><h2>Cardápio</h2></div>
+        <span>{filtered.length} {filtered.length === 1 ? 'item' : 'itens'}</span>
       </div>
       <label className="search-box"><span aria-hidden="true">⌕</span><input value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar prato nesta empresa..." /></label>
       {(error || storeError) && <p className="form-error" role="alert">{error || storeError}</p>}
