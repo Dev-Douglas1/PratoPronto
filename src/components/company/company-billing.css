@@ -1,0 +1,20 @@
+.company-billing{display:grid;gap:16px}
+.company-billing .billing-plan-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.company-billing .billing-eyebrow{font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--company-muted,#9b958c)}
+.company-billing .billing-plan-heading h2{margin:5px 0 0}
+.company-billing .billing-plan-heading>strong{font-size:26px;white-space:nowrap}
+.company-billing .billing-plan-heading>strong small{font-size:12px;font-weight:500}
+.company-billing ul{padding-left:20px;display:grid;gap:7px}
+.company-billing .billing-current{display:grid;gap:4px;padding:14px;margin:14px 0;background:rgba(255,184,0,.08);border:1px solid rgba(255,184,0,.2);border-radius:12px}
+.company-billing .billing-current span,.company-billing .billing-current small{color:var(--company-muted,#9b958c);font-size:12px}
+.company-billing form{display:grid;gap:12px}
+.company-billing form label,.company-billing .billing-pix label{display:grid;gap:7px;font-weight:650}
+.company-billing input[type=password],.company-billing textarea{width:100%;padding:12px;border:1px solid var(--company-border,#ddd);border-radius:9px;background:var(--company-card,#fff);color:inherit}
+.company-billing .billing-warning{padding:12px;border-radius:10px;background:rgba(255,184,0,.09);color:inherit;font-size:13px}
+.company-billing .billing-consent{display:flex;gap:10px;align-items:flex-start;margin:12px 0;line-height:1.45}
+.company-billing .billing-consent input{margin-top:4px}
+.company-billing .billing-success{font-size:13px;overflow-wrap:anywhere}
+.company-billing .billing-pix{display:grid;gap:12px;margin-top:16px;padding:16px;border:1px solid var(--company-border,#ddd);border-radius:12px}
+.company-billing .billing-pix img{width:min(260px,100%);margin:auto;image-rendering:auto}
+.company-billing .billing-footnote{font-size:12px;color:var(--company-muted,#9b958c);line-height:1.5}
+@media(max-width:560px){.company-billing .billing-plan-heading{display:grid}.company-billing .billing-plan-heading>strong{font-size:24px}}

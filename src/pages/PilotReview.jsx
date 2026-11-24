@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
+import '../styles/admin-console.css'
 import TopBar from '../components/TopBar.jsx'
 import {
   listPilotApplications, listPilotDocumentCleanupQueue, pilotDocumentUrl, processPilotDocumentCleanup,
@@ -120,7 +121,7 @@ export default function PilotReview() {
     }
   }
 
-  return <AppScreen>
+  return <AppScreen className="admin-console-screen admin-pilot-review">
     <TopBar titulo="Análise de pilotos" />
     <div className="page-heading">
       <span className="eyebrow">ADMINISTRAÇÃO PRATOPRONTO</span>

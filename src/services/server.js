@@ -1,6 +1,9 @@
 import { assertRespectful } from '../shared/input-policy.js'
 import { getSupabase, supabaseConfigured } from '../lib/supabase.js'
 import { criarErroSupabase } from '../utils/supabaseError.js'
+import { paymentGateway } from './paymentGateway.js'
+
+const storefrontPaymentEnvironment = import.meta.env.VITE_ASAAS_ENVIRONMENT === 'sandbox' ? 'sandbox' : 'production'
 
 async function rpc(name, args = {}) {
   if (!supabaseConfigured) throw new Error('O Supabase ainda não foi configurado.')
@@ -8,6 +11,7 @@ async function rpc(name, args = {}) {
   if (error) throw criarErroSupabase(error)
   return data
 }
+
 
 export async function callServer(name, data = {}) {
   if (name === 'appQuote') {
@@ -20,11 +24,37 @@ export async function callServer(name, data = {}) {
       p_accept_terms: data.acceptTerms === true,
     })
   }
-  if (name === 'appCheckout') return rpc('checkout_order', { p_quote_id: data.quoteId, p_request_id: data.requestId })
+  if (name === 'appCheckout') {
+    const order = await rpc('checkout_order', { p_quote_id: data.quoteId, p_request_id: data.requestId })
+    if (['pix', 'credit_card'].includes(order?.paymentMethod) && order?.checkoutState === 'awaiting_payment') {
+      return { ...order, ...await paymentGateway.createOrderPayment(order.orderId) }
+    }
+    return order
+  }
   if (name === 'appAdvance') return rpc('advance_order', { p_order_id: data.orderId, p_next: data.next, p_received: data.received === true })
   if (name === 'appRefundRequest') return rpc('submit_refund_request', { p_order_id: data.orderId, p_reason: data.reason })
-  if (name === 'appRefundDecision') return rpc('decide_refund_request', { p_order_id: data.orderId, p_approve: data.approve === true, p_answer: data.answer })
-  if (name === 'appStorefront') return rpc('get_storefront', { p_slug: data.companyId || 'pratopronto' })
+  if (name === 'appRefundDecision') {
+    const decision = await rpc('decide_refund_request', {
+      p_order_id: data.orderId, p_approve: data.approve === true, p_answer: data.answer,
+    })
+    if (decision?.requiresGatewayAction) {
+      const { data: gatewayResult, error } = await getSupabase().functions.invoke('asaas-refund', { body: { orderId: data.orderId } })
+      if (error) throw new Error(gatewayResult?.error?.message || error.message || 'Não foi possível processar a solicitação no Asaas.')
+      if (gatewayResult?.error?.message) throw new Error(gatewayResult.error.message)
+      return { ...decision, gatewayResult }
+    }
+    return decision
+  }
+  if (name === 'appRetryRefund') {
+    const { data: gatewayResult, error } = await getSupabase().functions.invoke('asaas-refund', { body: { orderId: data.orderId } })
+    if (error) throw new Error(gatewayResult?.error?.message || error.message || 'Não foi possível reprocessar o estorno no Asaas.')
+    if (gatewayResult?.error?.message) throw new Error(gatewayResult.error.message)
+    return gatewayResult
+  }
+  if (name === 'appConfirmManualRefund') {
+    return rpc('confirm_manual_refund', { p_order_id: data.orderId, p_proof: data.proof })
+  }
+  if (name === 'appStorefront') return rpc('get_storefront', { p_slug: data.companyId || 'pratopronto', p_payment_environment: storefrontPaymentEnvironment })
   if (name === 'appMyCompanies') {
     const rows = await rpc('my_restaurants')
     return (rows || []).map(row => ({
@@ -58,14 +88,14 @@ export async function callServer(name, data = {}) {
     return rpc('save_restaurant_settings', { p_restaurant_slug: companyId, p_data: settings })
   }
   if (name === 'appReadiness') {
-    const store = await rpc('get_storefront', { p_slug: data.companyId || 'pratopronto' })
+    const store = await rpc('get_storefront', { p_slug: data.companyId || 'pratopronto', p_payment_environment: storefrontPaymentEnvironment })
     return {
       companyId: data.companyId || 'pratopronto',
       environment: 'production',
       liveEnabled: true,
       appCheck: true,
-      paymentSecrets: false,
-      receiverVerified: false,
+      paymentSecrets: ['pix', 'credit_card'].some(method => store?.methods?.includes(method)),
+      receiverVerified: ['pix', 'credit_card'].some(method => store?.methods?.includes(method)),
       publicUrlConfigured: true,
       restaurantConfigured: Boolean(store?.configured),
       acceptingOrders: Boolean(store?.open),
@@ -75,6 +105,16 @@ export async function callServer(name, data = {}) {
   if (name === 'appPilotStartDelivery') return rpc('pilot_start_delivery', { p_order_id: data.orderId })
   if (name === 'appPilotConfirmDelivery') return rpc('pilot_confirm_delivery', { p_order_id: data.orderId, p_code: data.code, p_received: data.received === true })
   if (name === 'appSubscription') return rpc('get_my_restaurant_subscription', { p_restaurant_slug: data.companyId })
+  if (name === 'appStartSubscription') return paymentGateway.createSubscription({
+    restaurantId: data.restaurantId,
+    billingType: data.billingType || 'PIX',
+    acceptTerms: data.acceptTerms === true,
+    consentTermsVersion: data.consentTermsVersion,
+  })
+  if (name === 'appRegisterAsaasAccount') return paymentGateway.registerReceiver({
+    restaurantId: data.restaurantId,
+    apiKey: data.apiKey,
+  })
   if (name === 'appAdminSubscriptions') return rpc('list_platform_subscriptions')
   if (name === 'appAdminPlans') return rpc('list_admin_subscription_plans')
   if (name === 'appSavePlan') return rpc('admin_save_subscription_plan', {
@@ -90,8 +130,8 @@ export async function callServer(name, data = {}) {
   })
   if (name === 'appPrivacyRequest') return rpc('request_account_deletion')
   if (name === 'appMigrateDefaultCompany') return { companyId: 'pratopronto', changed: 0 }
-  if (name === 'appResume') throw new Error('Pagamento online está desativado durante a migração para o Supabase.')
-  if (name === 'appRetryPayment' || name === 'appConfirmManualRefund') throw new Error('Esta ação não é necessária enquanto o pagamento é feito na entrega.')
+  if (name === 'appResume') return paymentGateway.createOrderPayment(data.orderId)
+  if (name === 'appRetryPayment') return paymentGateway.createOrderPayment(data.orderId)
   throw new Error('Ação não disponível no backend Supabase: ' + name)
 }
 
@@ -106,6 +146,6 @@ export function cartItems(lista) {
 export function checkoutUrl(value) {
   try {
     const url = new URL(value)
-    return url.protocol === 'https:' && ['www.mercadopago.com.br','sandbox.mercadopago.com.br'].includes(url.hostname) && !url.username && !url.password ? url.href : null
+    return url.protocol === 'https:' && ['www.asaas.com','asaas.com','sandbox.asaas.com','www.asaas.com.br','asaas.com.br'].includes(url.hostname) && !url.username && !url.password ? url.href : null
   } catch { return null }
 }

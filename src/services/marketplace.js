@@ -48,6 +48,7 @@ export function subscribeCompany(companyId, onChange, onError) {
       restaurantId: data.id,
       name: data.nome,
       description: data.descricao,
+      logoUrl: data.avatar_url || '',
       phone: data.telefone,
       address: data.endereco,
       active: data.ativo,
@@ -348,7 +349,7 @@ export async function searchMarketplace(term = '') {
   const supabase = ready()
   const needle = normalizeSearch(term)
   const [{ data: companies, error: companiesError }, { data: products, error: productsError }] = await Promise.all([
-    supabase.from('restaurantes').select('id,slug,nome,ativo').eq('ativo', true).order('nome').limit(100),
+    supabase.from('restaurantes').select('id,slug,nome,ativo,avatar_url').eq('ativo', true).order('nome').limit(100),
     supabase.from('products').select('id,restaurant_id,name,description,category,price_cents,image_url,active,slug,config,promotion').eq('active', true).order('name').limit(500),
   ])
   if (companiesError) throw companiesError
@@ -370,7 +371,7 @@ export async function searchMarketplace(term = '') {
   })).filter(product => product.companyId)
 
   const filteredProducts = matchingProducts(mappedProducts, needle)
-  const filteredCompanies = matchingCompanies((companies || []).map(company => ({ id: company.slug, name: company.nome, active: company.ativo })), filteredProducts, needle)
+  const filteredCompanies = matchingCompanies((companies || []).map(company => ({ id: company.slug, name: company.nome, active: company.ativo, logoUrl: company.avatar_url || '' })), filteredProducts, needle)
 
   return { companies: filteredCompanies, products: filteredProducts }
 }

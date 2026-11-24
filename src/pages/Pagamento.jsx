@@ -7,24 +7,26 @@ import { useUser } from '../context/UserContext.jsx'
 import { formatarMoeda as money } from '../utils/moeda.js'
 import { callServer, cartItems, checkoutUrl } from '../services/server.js'
 import useStorefront from '../hooks/useStorefront.js'
+import { getSupabase } from '../lib/supabase.js'
 
 const methods = [
-  { id: 'pix', title: 'Pix', detail: 'Pague no ambiente do Mercado Pago', icon: '◆' },
-  { id: 'cartao_online', title: 'Cartão online', detail: 'Crédito ou débito disponível no provedor', icon: '▰' },
-  { id: 'maquina_entrega', title: 'Máquina na entrega', detail: 'O motoboy leva a maquininha', icon: '⌁' },
+  { id: 'pix', title: 'Pix', detail: 'Confirmação automática pelo Asaas', icon: '◆' },
+  { id: 'credit_card', title: 'Cartão online', detail: 'Checkout seguro hospedado pelo Asaas', icon: '▰' },
+  { id: 'maquina_entrega', title: 'Maquininha na entrega', detail: 'Pagamento direto ao restaurante', icon: '⌁' },
 ]
+
 export default function Pagamento() {
   const navigate = useNavigate()
   const { lista, limpar, companyId } = useCart()
   const { usuario } = useUser()
   const { store, loading, error: storeError } = useStorefront(companyId)
   const [method, setMethod] = useState('pix')
-  const [cardType, setCardType] = useState('credito')
   const [note, setNote] = useState('')
   const [quote, setQuote] = useState(null)
   const [acceptTerms, setAcceptTerms] = useState(false)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [pixPayment, setPixPayment] = useState(null)
   const lock = useRef(false)
   const storageKey = 'pratopronto:checkout:' + usuario?.uid + ':' + companyId
   const [pending, setPending] = useState(() => {
@@ -32,19 +34,71 @@ export default function Pagamento() {
   })
   const cartSignature = JSON.stringify(cartItems(lista))
   const quoteSubtotal = quote?.itens?.reduce((sum, item) => sum + (Number(item.quantidade) || 0) * (Number(item.precoUnitario) || 0), 0) ?? 0
-  useEffect(() => { setQuote(null) }, [cartSignature, method, cardType, note, usuario?.updatedAt])
+
+  useEffect(() => { setQuote(null) }, [cartSignature, method, note, usuario?.updatedAt])
   useEffect(() => {
     if (store?.methods?.length && !store.methods.includes(method)) setMethod(store.methods[0])
   }, [store, method])
+
+  useEffect(() => {
+    if (!pixPayment?.orderId) return
+    const supabase = getSupabase()
+    const channel = supabase.channel('order-payment:' + pixPayment.orderId)
+      .on('postgres_changes', {
+        event: 'UPDATE', schema: 'public', table: 'orders',
+        filter: 'id=eq.' + pixPayment.orderId,
+      }, payload => {
+        if (payload.new?.payment_status === 'paid') {
+          setPixPayment(null)
+          navigate('/acompanhamento?pedido=' + encodeURIComponent(pixPayment.orderId), { replace: true })
+        }
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [pixPayment?.orderId, navigate])
+
   async function finish(attempt) {
     const result = await callServer('appCheckout', attempt)
+    if (result.paymentMethod === 'pix' && (!result.pix?.payload || !result.pix?.encodedImage)) {
+      throw new Error('O Asaas criou ou está conciliando a cobrança, mas não retornou o QR Code. Não inicie outro pedido; consulte o acompanhamento.')
+    }
+    const cardCheckout = result.paymentMethod === 'credit_card' ? checkoutUrl(result.checkoutUrl) : null
+    if (result.paymentMethod === 'credit_card' && !cardCheckout) {
+      throw new Error('O Asaas não retornou um endereço de checkout seguro. A tentativa foi preservada para conciliação.')
+    }
     setPending(null)
-    try { sessionStorage.removeItem(storageKey) } catch { /* Available in memory. */ }
+    try { sessionStorage.removeItem(storageKey) } catch { /* Same attempt is retained in memory. */ }
+    if (result.paymentMethod === 'credit_card') {
+      setQuote(null)
+      limpar()
+      window.location.assign(cardCheckout)
+      return
+    }
+    if (result.paymentMethod === 'pix') {
+      setPixPayment({
+        orderId: result.orderId,
+        paymentId: result.providerPaymentId,
+        payload: result.pix.payload,
+        encodedImage: result.pix.encodedImage,
+        expirationDate: result.pix.expirationDate,
+      })
+      setQuote(null)
+      limpar()
+      return
+    }
     limpar()
-    const url = checkoutUrl(result.checkoutUrl)
-    if (url) window.location.assign(url)
-    else navigate('/acompanhamento?pedido=' + encodeURIComponent(result.orderId), { replace: true })
+    navigate('/acompanhamento?pedido=' + encodeURIComponent(result.orderId), { replace: true })
   }
+
+  async function copyPix() {
+    try {
+      await navigator.clipboard.writeText(pixPayment.payload)
+      setError('Código Pix copiado.')
+    } catch {
+      setError('Não foi possível copiar automaticamente. Selecione o código Pix e copie manualmente.')
+    }
+  }
+
   async function submit(event) {
     event.preventDefault()
     if (lock.current) return
@@ -52,12 +106,15 @@ export default function Pagamento() {
     try {
       if (pending) { await finish(pending); return }
       if (!quote) {
-        const value = await callServer('appQuote', { companyId, items: cartItems(lista), method, cardType, note, acceptTerms })
+        const value = await callServer('appQuote', {
+          companyId, items: cartItems(lista), method, note, acceptTerms,
+        })
         setQuote(value)
         return
       }
       if (new Date(quote.expiresAt).getTime() <= Date.now()) {
-        setQuote(null); throw new Error('O resumo expirou. Confira os valores novamente antes de pagar.')
+        setQuote(null)
+        throw new Error('O resumo expirou. Confira os valores novamente antes de pagar.')
       }
       const attempt = { quoteId: quote.quoteId, requestId: crypto.randomUUID() }
       setPending(attempt)
@@ -66,33 +123,51 @@ export default function Pagamento() {
     } catch (err) {
       if (err.restartCheckout === true) {
         setPending(null); setQuote(null)
-        try { sessionStorage.removeItem(storageKey) } catch { /* Available in memory. */ }
+        try { sessionStorage.removeItem(storageKey) } catch { /* Same key retained in memory. */ }
       }
       setError(err.message)
     }
     finally { lock.current = false; setBusy(false) }
   }
+
   return <AppScreen>
     <TopBar titulo="Pagamento" perfil />
-    <div className="page-heading"><span className="eyebrow">FINALIZAR PEDIDO</span><h1>{quote ? 'Confira antes de confirmar' : 'Escolha como pagar'}</h1><p>O restaurante confirma os preços e a entrega antes do pagamento.</p></div>
-    <form className="light-card payment-card" onSubmit={submit}>
-      {store?.environment === 'test' && <div className="demo-payment-banner" role="note"><strong>AMBIENTE DE TESTES</strong><span>Use somente usuários e cartões de teste do Mercado Pago. Não há cobrança real.</span></div>}
-      {(storeError || (!loading && !store?.open)) && <p className="form-error dark-error" role="status">{storeError || 'O restaurante está fechado para novos pedidos neste horário.'}</p>}
-      {pending && <div className="payment-demo-panel"><p>Existe uma tentativa anterior. Recupere o pedido para conferir o resultado antes de iniciar outra compra.</p></div>}
-      <fieldset className="payment-methods" disabled={busy || Boolean(pending)}><legend>Forma de pagamento</legend>
-        {methods.map(item => <button key={item.id} type="button" disabled={!store?.methods.includes(item.id)} className={'payment-method ' + (method === item.id ? 'is-selected' : '')} aria-pressed={method === item.id} onClick={() => setMethod(item.id)}><span className="payment-method__icon">{item.icon}</span><span><strong>{item.title}</strong><small>{item.detail}</small></span><i>{method === item.id ? '✓' : ''}</i></button>)}
-      </fieldset>
-      {method !== 'pix' && <fieldset className="payment-kind" disabled={busy || Boolean(pending)}><legend>Tipo do cartão</legend>{[['credito','Crédito'],['debito','Débito']].map(([id,title]) => <button key={id} type="button" className={cardType === id ? 'is-selected' : ''} onClick={() => setCardType(id)}>{title}</button>)}</fieldset>}
-      <div className="payment-demo-panel"><p>{method === 'maquina_entrega' ? 'O pagamento será feito na entrega. O pedido informa ao entregador que ele deve levar a maquininha.' : 'Você será encaminhado ao Mercado Pago. Os dados do cartão e o CVV são preenchidos no provedor de pagamento. A aprovação aparecerá aqui após a confirmação.'}</p></div>
-      <label htmlFor="checkout-note">Observação do pedido (opcional)</label><textarea id="checkout-note" maxLength={500} value={note} onChange={event => setNote(event.target.value)} disabled={busy || Boolean(pending)} placeholder="Ex.: tocar o interfone ao chegar." />
-      <div className="delivery-summary light-summary"><strong>Entregar em</strong><span>{usuario?.endereco}, {usuario?.numero} · {usuario?.bairro}</span><span>{usuario?.cidade} / {usuario?.uf} · CEP {usuario?.cep}</span><Link to="/perfil?editar=endereco">Corrigir endereço</Link></div>
-      {quote && <section className="checkout-quote" aria-live="polite"><h3>Detalhamento dos valores</h3>{quote.itens.map(item => <p key={item.id}><span>{item.quantidade} × {item.nome}<small>{item.detalhes}</small>{item.promocao && <small>{item.promocao.percentual}% de desconto · {item.promocao.titulo}</small>}</span><b>{money(item.quantidade * item.precoUnitario)}</b></p>)}<p><span>Subtotal dos pratos</span><b>{money(quoteSubtotal)}</b></p><p><span>Taxa de transporte do motoboy</span><b>{quote.taxaEntrega === 0 ? 'Grátis' : money(quote.taxaEntrega)}</b></p><div className="payment-total"><span>Total a {method === 'maquina_entrega' ? 'pagar na entrega' : 'pagar'}</span><strong>{money(quote.total)}</strong></div><small>Entrega estimada: {quote.estimateMinutes} minutos. Valores válidos por 5 minutos e confirmados pelo estabelecimento.</small></section>}
-      {!usuario?.emailVerificado && <Link className="text-link dark-link" to="/verificar-email">Confirme seu e-mail para finalizar.</Link>}
-      {!pending && <label className="checkbox-line"><input type="checkbox" checked={acceptTerms} required disabled={busy} onChange={event => { setAcceptTerms(event.target.checked); setQuote(null) }} />Li os <Link to="/termos-de-uso">Termos de Uso</Link> e a <Link to="/politica-de-privacidade">Política de Privacidade</Link> apresentados para este pedido.</label>}
-      {error && <p className="form-error dark-error" role="alert">{error}</p>}
-      <button className="btn btn-primary" type="submit" disabled={busy || (!pending && (!lista.length || !store?.open || !store?.methods.includes(method))) || !usuario?.emailVerificado}>{busy ? 'Aguarde…' : pending ? 'Recuperar tentativa anterior' : !quote ? 'Confirmar seleção e calcular valores' : method === 'maquina_entrega' ? 'Confirmar pedido · ' + money(quote.total) : 'Pagar no Mercado Pago · ' + money(quote.total)}</button>
-      {pending && <Link to="/acompanhamento" className="text-link dark-link">Consultar meus pedidos</Link>}
-      <Link className="btn btn-secondary" to="/pedido">Voltar ao carrinho</Link>
-    </form>
+    <div className="page-heading"><span className="eyebrow">FINALIZAR PEDIDO</span><h1>{pixPayment ? 'Pague com Pix' : quote ? 'Confira antes de confirmar' : 'Escolha como pagar'}</h1><p>O restaurante confirma os preços e a entrega antes do pagamento.</p></div>
+
+    {pixPayment ? (
+      <section className="light-card payment-card pix-payment-card" aria-live="polite">
+        <div className="payment-demo-panel"><strong>Pedido #{pixPayment.orderId.slice(-8)}</strong><p>Escaneie o QR Code ou copie o código Pix. O pedido só será confirmado após o Asaas notificar o recebimento.</p></div>
+        <img className="pix-qr-image" src={'data:image/png;base64,' + pixPayment.encodedImage} alt="QR Code Pix para pagamento do pedido" />
+        <label htmlFor="pix-payload">Pix Copia e Cola</label>
+        <textarea id="pix-payload" readOnly value={pixPayment.payload} rows={4} />
+        <button type="button" className="btn btn-primary wide-button" onClick={copyPix}>Copiar código Pix</button>
+        {pixPayment.expirationDate && <p className="muted">Válido até {new Date(pixPayment.expirationDate).toLocaleString('pt-BR')}</p>}
+        <p className="payment-live-note">Aguardando confirmação automática. Esta tela acompanha a atualização do pedido em tempo real.</p>
+        {error && <p className="form-error dark-error" role="status">{error}</p>}
+        <button type="button" className="btn btn-secondary wide-button" onClick={() => navigate('/acompanhamento?pedido=' + encodeURIComponent(pixPayment.orderId))}>Ver acompanhamento do pedido</button>
+      </section>
+    ) : (
+      <form className="light-card payment-card" onSubmit={submit}>
+        {(storeError || (!loading && !store?.open)) && <p className="form-error dark-error" role="status">{storeError || 'O restaurante está fechado para novos pedidos neste horário.'}</p>}
+        {pending && <div className="payment-demo-panel"><p>Existe uma tentativa anterior. Retome a mesma tentativa para evitar uma cobrança duplicada.</p></div>}
+        <fieldset className="payment-methods" disabled={busy || Boolean(pending)}><legend>Forma de pagamento</legend>
+          {methods.map(item => <button key={item.id} type="button" disabled={!store?.methods?.includes(item.id)} className={'payment-method ' + (method === item.id ? 'is-selected' : '')} aria-pressed={method === item.id} onClick={() => setMethod(item.id)}><span className="payment-method__icon">{item.icon}</span><span><strong>{item.title}</strong><small>{item.detail}</small></span><i>{method === item.id ? '✓' : ''}</i></button>)}
+        </fieldset>
+        <div className="payment-demo-panel"><p>{method === 'maquina_entrega'
+          ? 'O pedido será entregue pelo restaurante. O pagamento será feito diretamente ao estabelecimento, com maquininha.'
+          : method === 'pix'
+            ? 'O Pix será gerado pelo Asaas. O pedido só entra em preparação depois que o webhook confirmar o recebimento.'
+            : 'Você será direcionado à página segura do Asaas para informar o cartão. O PratoPronto não recebe nem armazena os dados do cartão.'}</p></div>
+        <label htmlFor="checkout-note">Observação do pedido (opcional)</label><textarea id="checkout-note" maxLength={500} value={note} onChange={event => setNote(event.target.value)} disabled={busy || Boolean(pending)} placeholder="Ex.: tocar o interfone ao chegar." />
+        <div className="delivery-summary light-summary"><strong>Entregar em</strong><span>{usuario?.endereco}, {usuario?.numero} · {usuario?.bairro}</span><span>{usuario?.cidade} / {usuario?.uf} · CEP {usuario?.cep}</span><Link to="/perfil?editar=endereco">Corrigir endereço</Link></div>
+        {quote && <section className="checkout-quote" aria-live="polite"><h3>Detalhamento dos valores</h3>{quote.itens.map(item => <p key={item.id}><span>{item.quantidade} × {item.nome}<small>{item.detalhes}</small>{item.promocao && <small>{item.promocao.percentual}% de desconto · {item.promocao.titulo}</small>}</span><b>{money(item.quantidade * item.precoUnitario)}</b></p>)}<p><span>Subtotal dos produtos</span><b>{money(quoteSubtotal)}</b></p><p><span>Taxa de entrega</span><b>{quote.taxaEntrega === 0 ? 'Grátis' : money(quote.taxaEntrega)}</b></p><div className="payment-total"><span>Total {method === 'maquina_entrega' ? 'na entrega' : method === 'credit_card' ? 'no cartão' : 'no Pix'}</span><strong>{money(quote.total)}</strong></div><small>Entrega estimada: {quote.estimateMinutes} minutos. Valores válidos por 5 minutos.</small></section>}
+        {!usuario?.emailVerificado && <Link className="text-link dark-link" to="/verificar-email">Confirme seu e-mail para finalizar.</Link>}
+        {!pending && <label className="checkbox-line"><input type="checkbox" checked={acceptTerms} required disabled={busy} onChange={event => { setAcceptTerms(event.target.checked); setQuote(null) }} />Li os <Link to="/termos-de-uso">Termos de Uso</Link> e a <Link to="/politica-de-privacidade">Política de Privacidade</Link> apresentados para este pedido.</label>}
+        {error && <p className="form-error dark-error" role="alert">{error}</p>}
+        <button className="btn btn-primary" type="submit" disabled={busy || (!pending && (!lista.length || !store?.open || !store?.methods?.includes(method))) || !usuario?.emailVerificado}>{busy ? 'Aguarde…' : pending ? 'Retomar tentativa anterior' : !quote ? 'Confirmar seleção e calcular valores' : method === 'maquina_entrega' ? 'Confirmar pedido · ' + money(quote.total) : method === 'credit_card' ? 'Ir para pagamento com cartão · ' + money(quote.total) : 'Gerar Pix Asaas · ' + money(quote.total)}</button>
+        {pending && <Link to="/acompanhamento" className="text-link dark-link">Consultar meus pedidos</Link>}
+        <Link className="btn btn-secondary" to="/pedido">Voltar ao carrinho</Link>
+      </form>
+    )}
   </AppScreen>
 }

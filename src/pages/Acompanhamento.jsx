@@ -1,4 +1,4 @@
-import { callServer, checkoutUrl } from '../services/server.js'
+import { callServer } from '../services/server.js'
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useSearchParams } from 'react-router-dom'
 import AppScreen from '../components/AppScreen.jsx'
@@ -29,6 +29,7 @@ export default function Acompanhamento() {
   const [delivery, setDelivery] = useState('')
   const [comment, setComment] = useState('')
   const [deliverySecret, setDeliverySecret] = useState(null)
+  const [pixPayment, setPixPayment] = useState(null)
   const selectedId = params.get('pedido') || location.state?.pedidoId
   const order = selectedId ? orders.find(item => item.id === selectedId) : orders[0]
   function showError(err) { setError(err.code ? traduzirErroSupabase(err) : err.message) }
@@ -61,8 +62,19 @@ export default function Acompanhamento() {
   const test = order?.pagamento.ambiente !== 'producao'
   async function payAgain() {
     setBusy(true); setError('')
-    try { const result = await callServer('appResume', { orderId: order.id }); const url = checkoutUrl(result.checkoutUrl); if (url) window.location.assign(url); else setError(result.checkoutState === 'expired' ? 'O prazo deste pagamento terminou. Aguarde a atualização do pedido.' : 'O provedor ainda não confirmou a abertura do pagamento. Aguarde ou solicite ajuda à empresa.') } catch (err) { setError(err.message) } finally { setBusy(false) }
+    try {
+      const result = await callServer('appResume', { orderId: order.id })
+      if (result?.pix?.payload && result?.pix?.encodedImage) {
+        setPixPayment({ orderId: order.id, payload: result.pix.payload, encodedImage: result.pix.encodedImage, expirationDate: result.pix.expirationDate })
+      } else {
+        setError('O Asaas ainda não retornou o QR Code. Aguarde a conciliação antes de iniciar outra cobrança.')
+      }
+    } catch (err) { setError(err.message) }
+    finally { setBusy(false) }
   }
+  useEffect(() => {
+    if (order?.payment_status === 'paid' || order?.status !== 'aguardando_pagamento') setPixPayment(null)
+  }, [order?.payment_status, order?.status])
   const stages = ORDER_STATUS_OPTIONS.filter(s => s.id !== 'cancelado')
   const index = stages.findIndex(s => s.id === status)
   return <AppScreen>
@@ -74,7 +86,18 @@ export default function Acompanhamento() {
     {order && <>
       <div className="delivery-summary"><span className="delivery-summary__icon">{status === 'entregue' ? '✓' : '#'}</span><div><strong>Pedido #{order.id.slice(-8)}</strong><span>Total: {money(order.total)}</span><small>{order.entrega.endereco}, {order.entrega.numero} · {order.entrega.bairro} · {order.entrega.cidade}/{order.entrega.uf}</small></div></div>
       <div className="payment-status-card"><span>▰</span><div><small>{test ? 'AMBIENTE DE TESTES' : 'PAGAMENTO'}</small><strong>{paymentLabel(order.pagamento)}</strong><p>{paymentStatusLabel(order.pagamento)}.{test ? ' Nenhum valor real foi movimentado.' : ''}</p></div></div>
-      {status === 'aguardando_pagamento' && !demo && <button className="btn btn-primary wide-button" disabled={busy} onClick={payAgain}>Continuar pagamento no Mercado Pago</button>}
+      {status === 'aguardando_pagamento' && !demo && <button className="btn btn-primary wide-button" disabled={busy} onClick={payAgain}>{busy ? 'Consultando cobrança…' : 'Mostrar Pix Asaas'}</button>}
+      {pixPayment && <section className="light-card pix-payment-card" aria-live="polite">
+        <h2>Pagamento Pix</h2>
+        <img className="pix-qr-image" src={'data:image/png;base64,' + pixPayment.encodedImage} alt="QR Code Pix do pedido" />
+        <label htmlFor="tracking-pix-payload">Pix Copia e Cola</label>
+        <textarea id="tracking-pix-payload" readOnly rows={4} value={pixPayment.payload} />
+        <button className="btn btn-primary wide-button" type="button" onClick={async () => {
+          try { await navigator.clipboard.writeText(pixPayment.payload); setError('Código Pix copiado.') }
+          catch { setError('Não foi possível copiar automaticamente. Copie o código manualmente.') }
+        }}>Copiar código Pix</button>
+        {pixPayment.expirationDate && <small>Válido até {new Date(pixPayment.expirationDate).toLocaleString('pt-BR')}</small>}
+      </section>}
       {deliverySecret?.code && ['pronto','saiu_entrega'].includes(status) && <div className="light-card delivery-code-card"><small>SENHA DE ENTREGA</small><h2>{deliverySecret.code}</h2><p>Informe estes 4 números ao Piloto Parceiro somente quando estiver com seu pedido em mãos. Não envie a senha por mensagem antes da entrega.</p></div>}
       {status !== 'cancelado' && <div className="order-progress" aria-label="Etapas do pedido">{stages.map((step, i) => <div key={step.id} className={i < index ? 'is-done' : i === index ? 'is-current' : ''} aria-current={i === index ? 'step' : undefined}><i>{i < index ? '✓' : i + 1}</i><span><strong>{step.label}</strong><small>{i < index ? 'Concluído' : i === index ? 'Etapa atual' : 'Próxima etapa'}</small></span></div>)}</div>}
       <div className="light-card"><h3>Seu pedido</h3>{order.itens.map((item, i) => <p key={item.id + i}><strong>{item.quantidade} × {item.nome}</strong><br /><small>{item.detalhes}</small></p>)}</div>

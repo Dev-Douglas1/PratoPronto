@@ -7,16 +7,23 @@ export function timestampMillis(value) {
 }
 
 export function paymentLabel(payment) {
-  if (payment?.provedorTipo === 'account_money') return 'Saldo Mercado Pago'
-  if (payment?.provedorTipo === 'credit_card') return 'Crédito online'
-  if (payment?.provedorTipo === 'debit_card') return 'Débito online'
+  if (payment?.provedorTipo === 'account_money') return 'Saldo do provedor'
+  if (payment?.provedorTipo === 'credit_card' || payment?.metodo === 'credit_card') return 'Cartão de crédito online'
+  if (payment?.provedorTipo === 'debit_card') return 'Cartão de débito online'
   if (payment?.metodo === 'pix') return 'Pix'
   const card = payment?.modalidade === 'debito' ? 'Débito' : 'Crédito'
   return payment?.metodo === 'maquina_entrega' ? `${card} • levar maquininha` : `${card} online`
 }
 
 export function paymentStatusLabel(payment) {
-  return ({ pendente: 'Aguardando confirmação do provedor', aprovado: 'Pagamento aprovado', recebido_entrega: 'Recebido na entrega', recusado: 'Pagamento recusado', expirado: 'Prazo de pagamento encerrado', cancelado: 'Cancelado · sem cobrança confirmada', reembolso_pendente: 'Devolução solicitada ao Mercado Pago', reembolsado: 'Devolução confirmada pelo Mercado Pago', reembolso_manual_pendente: 'Empresa deve devolver o pagamento da entrega', reembolsado_manual: 'Devolução informada pela empresa', reembolso_parcial: 'Devolução parcial · entre em contato', contestado: 'Pagamento em contestação', pendente_entrega: 'Cobrar na entrega', aprovado_demo: 'Aprovado · teste', recebido_demo: 'Recebido · teste', reembolsado_demo: 'Reembolsado · teste', cancelado_demo: 'Cancelado · sem cobrança' })[payment?.status] || 'Consultar pagamento'
+  return ({ pending: 'Aguardando confirmação do pagamento online', pendente: 'Aguardando confirmação do provedor', awaiting_payment: 'Aguardando pagamento', paid: 'Pagamento confirmado pelo Asaas', aprovado: 'Pagamento aprovado', recebido_entrega: 'Recebido na entrega', recusado: 'Pagamento recusado', failed: 'Cobrança não concluída', expirado: 'Prazo de pagamento encerrado', cancelado: 'Cancelado · sem cobrança confirmada', refunded: 'Estornado pelo Asaas', reembolso_pendente: 'Devolução solicitada ao provedor',
+    aprovado_aguardando_estorno: 'Estorno aguardando processamento',
+    aprovado_aguardando_cancelamento: 'Cancelamento da cobrança em andamento',
+    estorno_em_processamento: 'Estorno em processamento',
+    cancelamento_em_processamento: 'Cancelamento em processamento',
+    falha_estorno: 'Falha no estorno · tente novamente',
+    falha_cancelamento: 'Falha no cancelamento · tente novamente' ,
+    cancelado_sem_cobranca: 'Cancelado sem cobrança', reembolsado: 'Estorno confirmado pelo Asaas', reembolso_manual_pendente: 'Empresa deve devolver o pagamento da entrega', reembolsado_manual: 'Devolução informada pela empresa', reembolso_parcial: 'Devolução parcial · entre em contato', contestado: 'Pagamento em contestação', pendente_entrega: 'Cobrar na entrega', aprovado_demo: 'Aprovado · teste', recebido_demo: 'Recebido · teste', reembolsado_demo: 'Reembolsado · teste', cancelado_demo: 'Cancelado · sem cobrança' })[payment?.status] || 'Consultar pagamento'
 }
 
 export function amountToCollect(order) {

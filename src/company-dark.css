@@ -76,3 +76,62 @@
 .subscription-meter { height:6px; margin-top:10px; overflow:hidden; border-radius:99px; background:#40536a; }
 .subscription-meter i { display:block; height:100%; border-radius:inherit; background:#e4c64c; }
 @media(max-width:560px) { .subscription-usage-grid { grid-template-columns:1fr; } .subscription-plan-heading { flex-direction:column; } }
+
+
+/* PratoPronto graphite identity refinement */
+.company-app {
+  --ink:#f5f1e8; --muted:#b8afa2; --line:#39342d; --surface:#241f1b;
+  --surface-raised:#2d2721; --accent:#ffb800;
+  background:#181512; color:#f5f1e8;
+}
+.company-sidebar { background:#11100e; border-right-color:#302a22; }
+.company-brand > span > span { color:#ffb800; }
+.company-nav a.active { background:#ffb800; color:#17130c; }
+.company-nav a.active b { background:#17130c; color:#ffb800; }
+.company-topbar { background:#1e1a16; border-color:#39342d; }
+.company-store-link,.company-page-heading h1 { color:#fffaf0; }
+.company-page-heading p,.today-label { color:#b8afa2; }
+.company-stats > div,.company-order,.company-panel,.company-empty,
+.company-search,.company-toolbar select,.company-product {
+  background:#241f1b; color:#f5f1e8; border-color:#40382f;
+}
+.company-stats > div.stat-highlight { background:#332b18; border-color:#8d6810; }
+.company-stats > div > span,.company-stats small,.company-order h2,
+.order-card-total b,.company-panel h2,.company-product h3 { color:#fffaf0; }
+.company-stats strong { color:#ffbf24; }
+.company-stats em,.company-stats svg,.order-neighborhood,.order-age,
+.order-products p,.order-card-total > span,.company-panel .muted,.section-explainer { color:#c1b7a8; }
+.company-search input,.company-toolbar select { color:#f5f1e8; background:#241f1b; }
+.company-search input::placeholder { color:#9c9181; }
+.order-products,.company-footer { border-color:#40382f; }
+.order-products > div > span,.company-button.subtle,.company-button.secondary,
+.icon-button,.company-product input,.answer-form textarea,.company-field textarea {
+ background:#302921; color:#f5f1e8; border-color:#514638 !important;
+}
+.company-product p,.company-product-info p,.company-footer,.company-footer a,.company-empty p { color:#c1b7a8; }
+.company-empty { border-style:dashed; }
+.company-empty h3 { color:#ffbf24; }
+.company-dialog { background:#241f1b; color:#f5f1e8; border-color:#514638; color-scheme:dark; }
+.company-more-links a { background:#302921; color:#f5f1e8; border-color:#514638; }
+.company-more-links a.active { background:#493715; border-color:#b88713; }
+.detail-section { border-color:#40382f; }
+.detail-section h3,.detail-item small,.detail-intro { color:#c1b7a8; }
+.detail-item { color:#f5f1e8; }
+.payment-callout,.review-reply { background:#332b18; color:#f7e7b5; }
+.answer-form label,.company-field { color:#e7ddcf; }
+.company-dialog :is(input,textarea,select) { background:#181512; color:#f5f1e8; border-color:#514638; }
+.company-live-note { background:#352b17; color:#f4dfa0; }
+.company-demo-banner { background:#3a2e13; color:#f6e6b5; border-bottom:1px solid #6b5117; }
+.company-demo-banner button { color:#ffcf56; }
+.company-alert { background:#482722; color:#ffdcd3; border-color:#805044; }
+.company-notice { background:#20392b; color:#d1f0d8; border-color:#42694d; }
+.company-app :focus-visible,.company-dialog :focus-visible { outline-color:#ffbf00; }
+.company-button.primary { background:#ffb800; color:#17130c; }
+.company-button.primary:hover { background:#ffca3a; }
+.company-button.dark { background:#3a3024; color:#fff7e9; border-color:#5a4935; }
+.company-button.secondary { background:#302921; color:#f5f1e8; border-color:#514638 !important; }
+.company-button.subtle { background:#302921; color:#e8ddca; }
+@media(max-width:850px) {
+ .company-nav { background:#11100e; border-top-color:#51401c; }
+ .company-nav a.active,.company-nav .company-more.active { background:#ffb800; color:#17130c; }
+}

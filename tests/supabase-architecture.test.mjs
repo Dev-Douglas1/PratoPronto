@@ -23,6 +23,15 @@ test('runtime do navegador não importa SDK Firebase', async () => {
   assert.deepEqual(violations, [])
 })
 
+test('telas de cadastro pessoal e empresarial não exibem emojis', async () => {
+  const [cadastro, empresa] = await Promise.all([
+    readFile('src/pages/Cadastro.jsx', 'utf8'),
+    readFile('src/pages/CompanyOnboarding.jsx', 'utf8'),
+  ])
+  assert.doesNotMatch(cadastro, /\p{Extended_Pictographic}/u)
+  assert.doesNotMatch(empresa, /\p{Extended_Pictographic}/u)
+})
+
 test('fluxos críticos apontam para Supabase e RLS/RPC', async () => {
   const [user, server, company, marketplace] = await Promise.all([
     readFile('src/context/UserContext.jsx', 'utf8'),
@@ -265,7 +274,7 @@ test('login social e telefone usam os fluxos oficiais do Supabase Auth', async (
 
 test('falha na consulta de empresa não derruba o perfil autenticado', async () => {
   const user = await readFile('src/context/UserContext.jsx', 'utf8')
-  const migration = await readFile('supabase/migrations/20260922151000_fix_authenticated_profile_loading.sql', 'utf8')
+  const migration = await readFile('supabase/migrations/20260922151628_fix_authenticated_profile_loading.sql', 'utf8')
   assert.match(user, /withTimeout\(getAdminStatus\(user\.id\), 5000,.*?\)\.catch\(\(\) => false\)/)
   assert.match(migration, /grant execute on function private\.restaurant_membership_exists\(uuid, uuid\) to authenticated/i)
   assert.match(migration, /phone_confirmed_at is not null/)
@@ -297,4 +306,22 @@ test('vínculo empresarial consulta a RPC multiempresa protegida, sem tabelas le
   assert.doesNotMatch(context, /from\(['"]equipe_empresa['"]\)|from\(['"]empresas['"]\)/)
   assert.match(server, /rpc\('my_restaurants'\)/)
   assert.match(server, /permissions: row\.permissions \|\| \[\]/)
+})
+
+
+test('pesquisa e cardápio exibem identidade visual própria de cada estabelecimento', async () => {
+  const [marketplace, search, storefront, styles] = await Promise.all([
+    readFile('src/services/marketplace.js', 'utf8'),
+    readFile('src/pages/Pesquisar.jsx', 'utf8'),
+    readFile('src/pages/MarketplaceStore.jsx', 'utf8'),
+    readFile('src/styles/marketplace-polish.css', 'utf8'),
+  ])
+  assert.match(marketplace, /avatar_url/)
+  assert.match(marketplace, /logoUrl: company\.avatar_url/)
+  assert.match(search, /search-company-avatar/)
+  assert.match(search, /company\.logoUrl/)
+  assert.match(storefront, /storefront-brand/)
+  assert.match(storefront, /company\?\.logoUrl/)
+  assert.match(styles, /storefront-brand-logo/)
+  assert.match(styles, /search-company-copy/)
 })
