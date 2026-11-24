@@ -34,9 +34,8 @@ export default function MarketplaceStore() {
     <section className="catalog-surface">
       <header className="storefront-brand" aria-label="Perfil do estabelecimento">
         <div className="storefront-brand-logo" aria-hidden="true">
-          {company?.logoUrl
-            ? <img src={company.logoUrl} alt="" onError={event => { event.currentTarget.hidden = true }} />
-            : <span>{String(company?.name || store?.name || 'Loja').trim().slice(0, 1).toUpperCase()}</span>}
+          <span>{String(company?.name || store?.name || 'Loja').trim().slice(0, 1).toUpperCase()}</span>
+          {company?.logoUrl && <img src={company.logoUrl} alt="" onError={event => { event.currentTarget.hidden = true }} />}
         </div>
         <div className="storefront-brand-copy">
           <small>ESTABELECIMENTO PARCEIRO</small>
