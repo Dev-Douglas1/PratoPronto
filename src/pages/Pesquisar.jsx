@@ -135,8 +135,12 @@ export default function Pesquisar() {
             <div className="search-company-list">
               {results.companies.map(company => (
                 <Link className="search-company-item" key={company.id} to={storePath(company.id)}>
-                  <span className="search-result-icon" aria-hidden="true">⌂</span>
-                  <span><strong>{company.name}</strong><small>Ver estabelecimento e cardápio</small></span><b aria-hidden="true">›</b>
+                  <span className="search-company-avatar" aria-hidden="true">
+                    {company.logoUrl && <img src={company.logoUrl} alt="" loading="lazy" onError={event => { event.currentTarget.hidden = true }} />}
+                    <span>{String(company.name || 'Loja').trim().slice(0, 1).toUpperCase()}</span>
+                  </span>
+                  <span className="search-company-copy"><strong>{company.name}</strong><small>Perfil da empresa</small><em>Conhecer a loja e ver o cardápio</em></span>
+                  <b className="search-company-arrow" aria-hidden="true">›</b>
                 </Link>
               ))}
               {!results.companies.length && <p className="search-feedback">Nenhum estabelecimento correspondente.</p>}
