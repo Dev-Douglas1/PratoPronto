@@ -48,6 +48,7 @@ export function subscribeCompany(companyId, onChange, onError) {
       restaurantId: data.id,
       name: data.nome,
       description: data.descricao,
+      logoUrl: data.avatar_url || '',
       phone: data.telefone,
       address: data.endereco,
       active: data.ativo,
