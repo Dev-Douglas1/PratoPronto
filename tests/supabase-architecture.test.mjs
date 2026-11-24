@@ -307,3 +307,21 @@ test('vínculo empresarial consulta a RPC multiempresa protegida, sem tabelas le
   assert.match(server, /rpc\('my_restaurants'\)/)
   assert.match(server, /permissions: row\.permissions \|\| \[\]/)
 })
+
+
+test('pesquisa e cardápio exibem identidade visual própria de cada estabelecimento', async () => {
+  const [marketplace, search, storefront, styles] = await Promise.all([
+    readFile('src/services/marketplace.js', 'utf8'),
+    readFile('src/pages/Pesquisar.jsx', 'utf8'),
+    readFile('src/pages/MarketplaceStore.jsx', 'utf8'),
+    readFile('src/styles/marketplace-polish.css', 'utf8'),
+  ])
+  assert.match(marketplace, /avatar_url/)
+  assert.match(marketplace, /logoUrl: company\.avatar_url/)
+  assert.match(search, /search-company-avatar/)
+  assert.match(search, /company\.logoUrl/)
+  assert.match(storefront, /storefront-brand/)
+  assert.match(storefront, /company\?\.logoUrl/)
+  assert.match(styles, /storefront-brand-logo/)
+  assert.match(styles, /search-company-copy/)
+})
